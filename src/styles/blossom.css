@@ -48,11 +48,18 @@ html:has(.bl-root) body { background: #4A5343; }
 /* Fixed layers follow the column instead of the whole viewport. */
 .bl-col { left: 0; right: 0; margin-inline: auto; max-width: 480px; }
 
-/* Full-screen layers (cover, opening flaps). Height, not `bottom: 0`: iOS Safari
-   freezes a fixed box at the viewport of the first paint, so anchoring both
-   edges left a gap once its toolbars settled. `dvh` holds the first frames and
-   useViewportHeight() overrides it with a measured pixel height. */
-.bl-screen { position: fixed; top: 0; height: 100vh; height: 100dvh; }
+/* The cover fills the screen as a normal block, not as a fixed overlay.
+   On iOS a `position: fixed` layer is laid out against a viewport that runs on
+   underneath the browser toolbars: the cover's top slid behind the URL bar while
+   JS reported top:0 and every height agreeing (766 = the visible height), and a
+   fixed probe panel was clipped at the top in exactly the same way. Content in
+   the normal flow honours the browser's insets — which is why the hero below,
+   and everything after it, never showed the bug. Nothing sits behind the cover
+   in any case: the invitation only mounts once the guest opens it. */
+.bl-cover { position: relative; height: 100svh; }
+
+/* The opening flaps do have to overlay the invitation, for 1.25s. */
+.bl-screen { position: fixed; top: 0; height: 100vh; height: 100svh; }
 
 .bl-orn { position: absolute; pointer-events: none; }
 /* Clip without becoming a scroll container — otherwise the scroll-driven

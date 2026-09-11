@@ -172,32 +172,6 @@ function fmtWhen(iso: string, t: Copy) {
   return t.daysAgo.replace('{n}', String(d));
 }
 
-/** Measured height of the visible viewport, or null until the first measurement.
- *
- *  Safari on iOS sizes a `position: fixed` box from the viewport it knows at the
- *  first paint and does not lay it out again when its toolbars settle — opening
- *  the link from another app (which adds a back bar) left the cover shorter than
- *  the screen, with the page background showing underneath, until a reload. The
- *  full-screen layers take their height from this instead; CSS `100dvh` in
- *  `.bl-screen` covers the frames before this lands and browsers without JS. */
-function useViewportHeight() {
-  const [h, setH] = useState<number | null>(null);
-  useEffect(() => {
-    const on = () => setH(window.innerHeight);
-    on();
-    window.addEventListener('resize', on);
-    window.addEventListener('orientationchange', on);
-    // iOS reports toolbar changes here before it reports a window resize.
-    window.visualViewport?.addEventListener('resize', on);
-    return () => {
-      window.removeEventListener('resize', on);
-      window.removeEventListener('orientationchange', on);
-      window.visualViewport?.removeEventListener('resize', on);
-    };
-  }, []);
-  return h;
-}
-
 function useScrollProgress() {
   const [p, setP] = useState(0);
   useEffect(() => {
@@ -237,8 +211,6 @@ export default function Invitation() {
   const [giftOpen, setGiftOpen] = useState(false);
   const music = useMusic(cfg.musicUrl);
   const progress = useScrollProgress();
-  const vh = useViewportHeight();
-  const screenH = vh ? { height: vh } : undefined;
 
   const groom = cfg.groomName || 'Ave';
   const bride = cfg.brideName || 'Mumu';
@@ -343,11 +315,11 @@ export default function Invitation() {
 
           {closed && (
             <Cover cfg={cfg} t={t} dateLabel={dateLabel} coupleShort={coupleShort} guestName={guest.name}
-              langLabel={lang === 'id' ? 'EN' : 'ID'} onOpen={onOpen} onToggleLang={toggleLang} screenH={screenH} />
+              langLabel={lang === 'id' ? 'EN' : 'ID'} onOpen={onOpen} onToggleLang={toggleLang} />
           )}
 
           {opening && (
-            <div className="bl-col bl-screen" style={{ ...screenH, zIndex: 85, pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
+            <div className="bl-col bl-screen" style={{ zIndex: 85, pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
               <div style={{ flex: 1, background: SAGE, animation: 'vFlapTop 1.25s cubic-bezier(.66,0,.25,1) both' }} />
               <div style={{ flex: 1, background: DEEP, animation: 'vFlapBot 1.25s cubic-bezier(.66,0,.25,1) both' }} />
             </div>
@@ -382,13 +354,13 @@ function Petals() {
   );
 }
 
-function Cover({ t, dateLabel, coupleShort, guestName, langLabel, onOpen, onToggleLang, screenH }: S & {
+function Cover({ t, dateLabel, coupleShort, guestName, langLabel, onOpen, onToggleLang }: S & {
   dateLabel: string; coupleShort: string; guestName: string; langLabel: string;
-  onOpen: () => void; onToggleLang: () => void; screenH?: CSSProperties;
+  onOpen: () => void; onToggleLang: () => void;
 }) {
   const assets = useContext(Assets);
   return (
-    <div className="bl-col bl-clip bl-screen" style={{ ...screenH, zIndex: 80, background: SAGE, overscrollBehavior: 'contain' }}>
+    <div className="bl-clip bl-cover" style={{ background: SAGE, overscrollBehavior: 'contain' }}>
       <div style={{ position: 'absolute', inset: 0 }}>
         <Photo slot="v-cover" />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(74,83,67,.7),rgba(74,83,67,.42) 40%,rgba(58,64,52,.94))' }} />
