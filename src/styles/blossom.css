@@ -48,6 +48,12 @@ html:has(.bl-root) body { background: #4A5343; }
 /* Fixed layers follow the column instead of the whole viewport. */
 .bl-col { left: 0; right: 0; margin-inline: auto; max-width: 480px; }
 
+/* Full-screen layers (cover, opening flaps). Height, not `bottom: 0`: iOS Safari
+   freezes a fixed box at the viewport of the first paint, so anchoring both
+   edges left a gap once its toolbars settled. `dvh` holds the first frames and
+   useViewportHeight() overrides it with a measured pixel height. */
+.bl-screen { position: fixed; top: 0; height: 100vh; height: 100dvh; }
+
 .bl-orn { position: absolute; pointer-events: none; }
 /* Clip without becoming a scroll container — otherwise the scroll-driven
    reveals below would track the section instead of the screen. */

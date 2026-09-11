@@ -97,12 +97,22 @@ export function useMusic(url: string) {
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [playing, stop]);
 
-  // Switching URL (e.g. while editing in the Studio) stops the old source.
+  /* A changing URL means a new source: Studio edits, but also the published
+     config arriving from Sheets a moment after the page opened. That second case
+     used to silence the music — the guest tapped "buka undangan" while the URL
+     was still the default, and this effect then reset `playing` to false, which
+     stops the chime and unmounts the YouTube frame. Carry the intent over to the
+     new source instead, and leave the first run (mount) alone. */
+  const prevUrl = useRef(url);
   useEffect(() => {
-    setPlaying(false);
-    return () => { stopSynth(); audio.current?.pause(); };
-  }, [url]);
-  useEffect(() => () => { ctx.current?.close(); }, []);
+    if (prevUrl.current === url) return;
+    prevUrl.current = url;
+    stopSynth();
+    audio.current?.pause();
+    if (playing) start(); else setPlaying(false);
+  }, [url, playing, start]);
+
+  useEffect(() => () => { stopSynth(); audio.current?.pause(); ctx.current?.close(); }, []);
 
   const ytSrc = kind.kind === 'yt'
     ? 'https://www.youtube-nocookie.com/embed/' + kind.id + '?autoplay=1&loop=1&playlist=' + kind.id + '&controls=0&modestbranding=1&enablejsapi=1'
