@@ -55,7 +55,8 @@ html:has(.bl-root) body { background: #4A5343; }
 @supports (overflow: clip) { .bl-clip { overflow: clip; } }
 /* Sections clip sideways only: ornaments may cross into the next section. */
 .bl-sec { overflow-x: clip; }
-.bl-petal > img { filter: drop-shadow(0 1px 1.5px rgba(74, 83, 67, .28)); }
+.bl-petal { opacity: .7; }
+.bl-petal > img { filter: drop-shadow(0 1px 1.5px rgba(74, 83, 67, .24)); }
 .bl-orn > img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .bl-fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
@@ -95,6 +96,15 @@ textarea.bl-field { line-height: 1.6; resize: none; }
   transition: background .3s, color .3s;
 }
 .bl-dock-btn:hover { background: #4A5343; color: #FFFCF4; }
+
+/* Music / language: round chips stacked above the right end of the dock. */
+.bl-icon-btn {
+  width: 38px; height: 38px; display: grid; place-items: center; padding: 0;
+  background: #FFFCF4; border: 1px solid rgba(74, 83, 67, .16); border-radius: 50%;
+  box-shadow: 0 10px 26px rgba(51, 48, 42, .2); color: #4A5343; cursor: pointer;
+  transition: background .3s, color .3s, transform .2s;
+}
+.bl-icon-btn:active { transform: scale(.94); }
 
 .bl-msg { font: 300 11.5px/1.5 'Archivo', sans-serif; color: #A93227; text-align: center; }
 

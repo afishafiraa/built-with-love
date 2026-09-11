@@ -42,8 +42,7 @@ const GROUPS: { title: string; hint: string; isLang?: boolean; photos?: string[]
     { key: 'groomParents', label: 'Orang tua pria', wide: true },
     { key: 'brideParents', label: 'Orang tua wanita', wide: true },
     { key: 'groomInstagram', label: 'Instagram pria', ph: '@username', note: 'Tombol Instagram muncul di bawah nama. Kosongkan untuk menyembunyikan.' },
-    { key: 'brideInstagram', label: 'Instagram wanita', ph: '@username' },
-    { key: 'guestGreeting', label: 'Sapaan untuk tamu', wide: true, ph: 'Kepada Bapak/Ibu/Saudara/i', note: 'Kalimat pembuka di sampul, mis. "Kepada Bapak/Ibu/Saudara/i". Nama tiap tamu otomatis tampil di bawahnya dari tautan ?to=nama-tamu.' }
+    { key: 'brideInstagram', label: 'Instagram wanita', ph: '@username' }
   ] },
   { title: 'Tipografi & tagar', hint: 'Huruf & hashtag', fields: [
     { key: 'displayFont', label: 'Huruf judul & nama', options: DISPLAY_FONTS, note: 'Belista, Samantha & Poppy Shower adalah font berbayar — pilih "Font sendiri" lalu taruh file font berlisensi di app/public/fonts/display.woff2 (atau .otf / .ttf).' },

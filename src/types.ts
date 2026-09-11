@@ -12,7 +12,6 @@ export interface WeddingConfig {
   groomName: string; brideName: string;
   groomFull: string; brideFull: string;
   groomParents: string; brideParents: string;
-  guestGreeting: string;
   dateISO: string; dateLabel: string; dateLabelEn: string;
   akadTime: string; resepsiTime: string;
   venue: string; city: string; address: string; mapsQuery: string;

@@ -17,8 +17,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Allura&family=Archivo:wght@200;300;400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Great+Vibes&family=Parisienne&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
-    <link rel="preload" as="image" href="/assets/r1-corner.webp" />
-    <link rel="preload" as="image" href="/assets/r1-wreath.webp" />
+    <!-- Only what the closed cover actually paints (see orn-cover-* in src/config/slots.ts).
+         Preloading anything else just competes for bandwidth on the first screen. -->
+    <link rel="preload" as="image" href="/assets/mix-corner.webp" />
+    <link rel="preload" as="image" href="/assets/mix-wreath.webp" />
     <style>html,body{margin:0;background:#E7DFCC}</style>
   </head>
   <body>

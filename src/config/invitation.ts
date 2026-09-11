@@ -17,7 +17,6 @@ const TEMPLATE_CONFIG: WeddingConfig = {
   brideFull: "Ave Maria Larasati",
   groomParents: "Bapak Ahmad Wijaya & Ibu Siti Aminah",
   brideParents: "Bapak Joko Susilo & Ibu Dewi Lestari",
-  guestGreeting: "Fulan",
   dateISO: "2027-06-12T09:00:00+07:00",
   dateLabel: "Sabtu, 12 Juni 2027",
   dateLabelEn: "Saturday, June 12th, 2027",

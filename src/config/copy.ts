@@ -2,6 +2,7 @@ import type { Lang } from '../types';
 
 const id = {
   and: 'dan', weddingOf: 'Undangan Pernikahan', openInvite: 'Buka Undangan',
+  guestGreeting: 'Kepada Bapak/Ibu/Saudara/i',
   quoteSource: 'QS. Ar-Rum 21',
   quote: 'Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu dapat ketenangan hati.',
   quoteAlt: 'And among His signs is this, that He created for you mates from among yourselves, that you may dwell in tranquillity with them.',
@@ -17,7 +18,7 @@ const id = {
   sendRsvp: 'Kirim konfirmasi', thanks: 'Terima kasih,', change: 'Ubah jawaban',
   willAttend: 'Kami tunggu kehadiranmu bersama {n} orang.', wontAttend: 'Terima kasih sudah memberi kabar.',
   pickAttend: 'Pilih hadir atau tidak hadir dulu ya.', needName: 'Isi nama kamu dulu ya.', needWish: 'Tulis ucapanmu dulu ya.',
-  sending: 'Mengirim...', sendFailed: 'Gagal mengirim. Periksa koneksi lalu coba lagi.',
+  sending: 'Mengirim...', sendFailed: 'Gagal mengirim. Periksa koneksi lalu coba lagi.', retry: 'Coba lagi',
   qrTitle: 'QR check-in', qrNote: 'Tunjukkan QR ini di meja penerima tamu.',
   wishKicker: 'Ucapan & Doa', wishTitle: 'Kirim Doa untuk Kami', wishSub: 'Tanpa harus mengisi konfirmasi kehadiran.',
   wishPh: 'Tulis ucapan & doa', sendWish: 'Kirim ucapan', wishPending: 'Terkirim — tampil setelah disetujui mempelai.',
@@ -28,16 +29,17 @@ const id = {
   copy: 'Salin nomor', copyAddr: 'Salin alamat', copied: '✓ Tersalin', transfer: 'Transfer', addressKind: 'Alamat', holderPrefix: 'a.n. ',
   closing: 'Atas kehadiran dan doa restu Bapak/Ibu/Saudara/i, kami mengucapkan terima kasih yang sebesar-besarnya.',
   withFamily: 'Beserta keluarga',
-  watermark: 'Dibangun kami dengan ❤️',
+  watermark: 'Built by us with ❤️',
   musicOn: 'Matikan musik', musicOff: 'Putar musik',
   navEvents: 'Acara', navStory: 'Cerita', calendarTitle: 'Pernikahan ',
-  tagKicker: 'Abadikan momen dengan tagar', tagCopy: 'Salin tagar', tagSee: 'Lihat di Instagram'
+  tagKicker: 'Dengan cinta kami'
 };
 
 type Copy = typeof id;
 
 const en: Copy = {
   and: 'and', weddingOf: 'The Wedding Of', openInvite: 'Open Invitation',
+  guestGreeting: 'Dear Mr./Mrs./Ms.',
   quoteSource: 'QS. Ar-Rum 21',
   quote: 'And among His signs is this, that He created for you mates from among yourselves, that you may dwell in tranquillity with them.',
   quoteAlt: 'Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu dapat ketenangan hati.',
@@ -53,7 +55,7 @@ const en: Copy = {
   sendRsvp: 'Send RSVP', thanks: 'Thank you,', change: 'Change answer',
   willAttend: 'We look forward to seeing you and your party of {n}.', wontAttend: 'Thank you for letting us know.',
   pickAttend: 'Please choose attending or not attending first.', needName: 'Please fill in your name first.', needWish: 'Please write your wish first.',
-  sending: 'Sending...', sendFailed: 'Could not send. Check your connection and try again.',
+  sending: 'Sending...', sendFailed: 'Could not send. Check your connection and try again.', retry: 'Try again',
   qrTitle: 'Check-in QR', qrNote: 'Show this QR at the reception desk.',
   wishKicker: 'Wishes & Prayers', wishTitle: 'Send Us a Wish', wishSub: 'No RSVP required.',
   wishPh: 'Write your wishes', sendWish: 'Send wish', wishPending: 'Sent — it will appear once the couple approves it.',
@@ -67,7 +69,7 @@ const en: Copy = {
   watermark: 'Built by us with ❤️',
   musicOn: 'Mute music', musicOff: 'Play music',
   navEvents: 'Events', navStory: 'Story', calendarTitle: 'Wedding of ',
-  tagKicker: 'Share your moments with', tagCopy: 'Copy hashtag', tagSee: 'See on Instagram'
+  tagKicker: 'With love from us'
 };
 
 export const COPY: Record<Lang, Copy> = { id, en };

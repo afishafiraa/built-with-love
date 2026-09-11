@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { sheets } from '../lib/sheets';
+import { sheets, sheetsReady } from '../lib/sheets';
 import { downloadCsv } from '../lib/csv';
 import { guestLink } from '../lib/guest';
 import { waInviteText, waLink } from '../lib/whatsapp';
@@ -28,13 +28,18 @@ function DashboardInner() {
   const [tab, setTab] = useState<'guests' | 'wishes'>('guests');
   const [qrFor, setQrFor] = useState<Guest | null>(null);
   const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   async function refresh() {
+    if (!sheetsReady) return;
     setBusy(true);
     try {
       const [g, w] = await Promise.all([sheets.listGuests(), sheets.listWishes(true)]);
-      setGuests(g); setWishes(w);
-    } catch { /* Sheets not configured yet */ } finally { setBusy(false); }
+      setGuests(g); setWishes(w); setErr(null);
+    } catch (e) {
+      // Without this the dashboard just shows zeros and setup mistakes stay invisible.
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(false); }
   }
   useEffect(() => { refresh(); fetchPublished().then(setCfg).catch(() => {}); }, []);
 
@@ -69,6 +74,22 @@ function DashboardInner() {
         </div>
       </header>
 
+      {!sheetsReady && (
+        <Notice tone={sage} title="Belum tersambung ke Google Sheets">
+          Daftar tamu, RSVP dan ucapan disimpan di spreadsheet lewat Apps Script. Ikuti langkah
+          di <code>apps-script/Code.gs</code>, isi <code>VITE_SHEETS_ENDPOINT</code> dan{' '}
+          <code>VITE_SHEETS_TOKEN</code> di <code>.env</code>, jalankan <code>npm run check:sheets</code>,
+          lalu mulai ulang <code>npm run dev</code>.
+        </Notice>
+      )}
+      {sheetsReady && err && (
+        <Notice tone={red} title="Gagal memuat data">
+          {err === 'unauthorized'
+            ? <>Token ditolak — <code>VITE_SHEETS_TOKEN</code> di <code>.env</code> beda dengan SECRET di Script properties.</>
+            : err}
+        </Notice>
+      )}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))', gap: 10, margin: '22px 0' }}>
         {cards.map(([label, value]) => (
           <div key={label} style={{ padding: 16, background: paper, borderRadius: 14, border: '1px solid rgba(47,44,38,.1)' }}>
@@ -99,6 +120,15 @@ function DashboardInner() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function Notice({ tone, title, children }: { tone: string; title: string; children: ReactNode }) {
+  return (
+    <div style={{ margin: '22px 0 0', padding: '14px 16px', background: paper, border: '1px solid ' + tone + '55', borderLeft: '3px solid ' + tone, borderRadius: 12 }}>
+      <div style={{ font: '500 10px/1 system-ui', letterSpacing: '.16em', textTransform: 'uppercase', color: tone }}>{title}</div>
+      <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.75, opacity: .78 }}>{children}</div>
     </div>
   );
 }

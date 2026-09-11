@@ -21,9 +21,24 @@ export function waInviteText(guestName: string, link: string, c: WeddingConfig =
   ].join('\n');
 }
 
-export function waLink(phone: string, text: string) {
-  const p = phone.replace(/[^0-9]/g, '').replace(/^0/, '62');
-  return 'https://wa.me/' + p + '?text=' + encodeURIComponent(text);
+/**
+ * Any of 08xx, 8xx, +62 8xx, 0812-3456-7890 -> 628xx.
+ *
+ * The bare `8xx` case is not hypothetical: Sheets parses a phone typed as
+ * 085740894090 into the number 85740894090 and the leading zero is gone for good,
+ * so a number starting with 8 is treated as an Indonesian one missing its 0.
+ */
+export function waNumber(phone: string | number | null | undefined) {
+  const p = String(phone ?? '').replace(/[^0-9]/g, '');
+  if (!p) return '';
+  if (p.startsWith('62')) return p;
+  if (p.startsWith('0')) return '62' + p.slice(1);
+  if (p.startsWith('8')) return '62' + p;
+  return p;
+}
+
+export function waLink(phone: string | number | null | undefined, text: string) {
+  return 'https://wa.me/' + waNumber(phone) + '?text=' + encodeURIComponent(text);
 }
 
 /** Ping the couple when an RSVP lands (opens WA on the guest's device is intrusive —

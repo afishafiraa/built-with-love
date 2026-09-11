@@ -7,6 +7,18 @@ export function youtubeId(url: string): string | null {
   return m ? m[1] : null;
 }
 
+/** Background music sits at 30/100 — present, but never over the reading. */
+export const MUSIC_VOLUME = 0.3;
+
+/** The hidden YouTube player only takes a volume once it has loaded, and only
+    through the iframe API's postMessage channel (enablejsapi=1 in the src). */
+export function setYtVolume(frame: HTMLIFrameElement | null) {
+  frame?.contentWindow?.postMessage(
+    JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(MUSIC_VOLUME * 100)] }),
+    'https://www.youtube-nocookie.com'
+  );
+}
+
 type Kind = { kind: 'synth' } | { kind: 'yt'; id: string } | { kind: 'file'; url: string };
 
 function musicKind(url: string): Kind {
@@ -38,8 +50,8 @@ export function useMusic(url: string) {
         audio.current?.pause();
         audio.current = new Audio(k.url);
         audio.current.loop = true;
-        audio.current.volume = 0.5;
       }
+      audio.current.volume = MUSIC_VOLUME;
       audio.current.play().catch(() => setPlaying(false));
       return;
     }
@@ -59,7 +71,7 @@ export function useMusic(url: string) {
         osc.frequency.value = scale[pattern[i % 8]] * (i % 16 < 8 ? 1 : 1.5);
         i++;
         g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.06, t + 0.03);
+        g.gain.linearRampToValueAtTime(0.12 * MUSIC_VOLUME, t + 0.03);
         g.gain.exponentialRampToValueAtTime(0.0001, t + 2.2);
         osc.connect(g).connect(c.destination);
         osc.start(t); osc.stop(t + 2.3);
@@ -93,7 +105,7 @@ export function useMusic(url: string) {
   useEffect(() => () => { ctx.current?.close(); }, []);
 
   const ytSrc = kind.kind === 'yt'
-    ? 'https://www.youtube-nocookie.com/embed/' + kind.id + '?autoplay=1&loop=1&playlist=' + kind.id + '&controls=0&modestbranding=1'
+    ? 'https://www.youtube-nocookie.com/embed/' + kind.id + '?autoplay=1&loop=1&playlist=' + kind.id + '&controls=0&modestbranding=1&enablejsapi=1'
     : '';
 
   return { playing, start, stop, toggle, ytSrc: playing ? ytSrc : '' };
