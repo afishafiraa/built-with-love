@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.vercel
+tsconfig.tsbuildinfo
+
+# Real wedding content — local dev only, never commit (see invitation.local.example.ts)
+src/config/invitation.local.ts
