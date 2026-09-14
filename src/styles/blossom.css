@@ -6,14 +6,27 @@
 /* Invitation page only: no visible scrollbar, no white flash when the page
    bounces past its ends, content allowed under the notch (viewport-fit=cover). */
 html, body, #root { min-height: 100%; background: #F3EADB; }
-html.bl-document, html:has(.bl-root) { scrollbar-width: none; -ms-overflow-style: none; background: #747963; overscroll-behavior-y: none; }
-html.bl-document::-webkit-scrollbar, html.bl-document body::-webkit-scrollbar,
-html:has(.bl-root)::-webkit-scrollbar, html:has(.bl-root) body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-html.bl-document body, html:has(.bl-root) body { background: #747963; }
+/* Keep the fallback selector in its own rule. In older engines, one unknown
+   selector invalidates an entire comma-separated selector list. */
+html.bl-document { scrollbar-width: none; -ms-overflow-style: none; background: #747963; overscroll-behavior-y: none; }
+html.bl-document::-webkit-scrollbar, html.bl-document body::-webkit-scrollbar { display: none; width: 0; height: 0; }
+html.bl-document body { background: #747963; }
+@supports selector(html:has(*)) {
+  html:has(.bl-root) { scrollbar-width: none; background: #747963; overscroll-behavior-y: none; }
+  html:has(.bl-root)::-webkit-scrollbar, html:has(.bl-root) body::-webkit-scrollbar { display: none; width: 0; height: 0; }
+  html:has(.bl-root) body { background: #747963; }
+}
 
-.bl-root :where(a, button, input, textarea):focus-visible {
+.bl-root a:focus, .bl-root button:focus, .bl-root input:focus, .bl-root textarea:focus {
   outline: 3px solid rgba(201, 161, 93, .72);
   outline-offset: 3px;
+}
+@supports selector(:focus-visible) {
+  .bl-root a:focus, .bl-root button:focus, .bl-root input:focus, .bl-root textarea:focus { outline: none; }
+  .bl-root a:focus-visible, .bl-root button:focus-visible, .bl-root input:focus-visible, .bl-root textarea:focus-visible {
+    outline: 3px solid rgba(201, 161, 93, .72);
+    outline-offset: 3px;
+  }
 }
 .bl-root *::-webkit-scrollbar { width: 0; height: 0; }
 .bl-root * { scrollbar-width: none; }
@@ -34,11 +47,15 @@ html.bl-document body, html:has(.bl-root) body { background: #747963; }
   background: #F3EADB;
   -webkit-font-smoothing: antialiased;
 }
-.bl-root a { color: #747963; text-decoration: none; }
+.bl-root a { color: #5A604D; text-decoration: none; }
 .bl-root a:hover { color: #A06B5B; }
-:where(.bl-root) :is(input, textarea, button) { font: inherit; color: inherit; }
-:where(.bl-root) button { -webkit-tap-highlight-color: transparent; }
-:where(.bl-root) ::placeholder { color: rgba(62, 53, 44, .45); }
+.bl-root input, .bl-root textarea, .bl-root button { color: inherit; }
+/* `:where()` keeps this reset at zero specificity, so component typography
+   such as the compact dock and CTA buttons can override it. Older browsers
+   ignore this optional reset and use each control's explicit font instead. */
+:where(.bl-root) input, :where(.bl-root) textarea, :where(.bl-root) button { font: inherit; }
+.bl-root button { -webkit-tap-highlight-color: transparent; }
+.bl-root input::placeholder, .bl-root textarea::placeholder { color: rgba(62, 53, 44, .45); }
 
 /* The invitation is a phone-width column; on desktop it sits centred on sand. */
 .bl-page {
@@ -64,7 +81,7 @@ html.bl-document body, html:has(.bl-root) body { background: #747963; }
   .bl-page { box-shadow: 0 0 0 1px rgba(51, 48, 42, .06), 0 30px 80px rgba(51, 48, 42, .18); }
 }
 /* Fixed layers follow the column instead of the whole viewport. */
-.bl-col { left: 0; right: 0; margin-inline: auto; max-width: 480px; }
+.bl-col { left: 0; right: 0; margin-left: auto; margin-right: auto; max-width: 480px; }
 
 /* The cover fills the screen as a normal block, not as a fixed overlay.
    On iOS a `position: fixed` layer is laid out against a viewport that runs on
@@ -75,6 +92,8 @@ html.bl-document body, html:has(.bl-root) body { background: #747963; }
    and everything after it, never showed the bug. Nothing sits behind the cover
    in any case: the invitation only mounts once the guest opens it. */
 .bl-cover { position: relative; height: 100vh; height: 100svh; }
+.bl-hero { height: 100vh; }
+@supports (height: 100svh) { .bl-hero { height: 100svh; } }
 
 /* The opening flaps do have to overlay the invitation, for 1.25s. */
 .bl-screen { position: fixed; top: 0; height: 100vh; height: 100svh; }
@@ -90,9 +109,12 @@ html.bl-document body, html:has(.bl-root) body { background: #747963; }
 .bl-petal { opacity: .7; }
 .bl-petal > img { filter: drop-shadow(0 1px 1.5px rgba(75, 70, 55, .24)); }
 .bl-orn > img { width: 100%; height: 100%; object-fit: contain; display: block; }
+@supports not (aspect-ratio: 1 / 1) {
+  .bl-orn.bl-natural-ratio > img { height: auto; }
+}
 .bl-fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.bl-kicker { font: 600 9px/1 var(--f-ui); letter-spacing: .24em; text-transform: uppercase; color: #A06B5B; }
+.bl-kicker { font: 600 11px/1.1 var(--f-ui); letter-spacing: .18em; text-transform: uppercase; color: #8B594A; }
 .bl-serif { font-family: var(--f-serif); font-weight: 500; }
 .bl-batang { font-family: var(--f-body); font-weight: 400; }
 .bl-display { font-family: var(--f-display); font-weight: 400; letter-spacing: 0; text-wrap: balance; }
@@ -105,8 +127,8 @@ html.bl-document body, html:has(.bl-root) body { background: #747963; }
 .bl-hashtag { text-transform: none; }
 
 .bl-ig {
-  display: inline-flex; align-items: center; gap: 6px; width: max-content; margin-top: 10px; padding: 7px 12px;
-  border: 1px solid rgba(116, 121, 99, .3); border-radius: 999px; color: #747963 !important;
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; box-sizing: border-box; margin-top: 10px; padding: 7px 12px;
+  border: 1px solid rgba(116, 121, 99, .3); border-radius: 999px; color: #5A604D !important;
   font: 500 10px/1 var(--f-ui); letter-spacing: .04em; transition: background .25s, color .25s;
 }
 .bl-ig:hover { background: #747963; color: #FFF9EF !important; }
@@ -114,17 +136,18 @@ html.bl-document body, html:has(.bl-root) body { background: #747963; }
 .bl-center { text-align: center; }
 
 .bl-btn {
-  border: 0; cursor: pointer; border-radius: 999px;
+  min-height: 45px; border: 0; cursor: pointer; border-radius: 999px;
   font: 600 10px/1 var(--f-ui); letter-spacing: .16em; text-transform: uppercase;
   transition: transform .2s, box-shadow .2s, background .3s, color .3s, opacity .2s;
 }
 .bl-btn:active { transform: scale(.97); }
 .bl-btn:disabled { opacity: .6; cursor: default; }
+.bl-compact-btn { min-height: 40px; font-size: 9px; letter-spacing: .12em; }
 button:disabled { cursor: default !important; opacity: .45; }
 
 .bl-field {
   padding: 15px 16px; background: #FFF9EF; border: 1px solid rgba(116, 121, 99, .18);
-  border-radius: 11px; font: 500 14px var(--f-ui); outline: none; width: 100%; box-sizing: border-box;
+  border-radius: 11px; font: 500 16px var(--f-ui); outline: none; width: 100%; box-sizing: border-box;
   transition: border-color .2s;
 }
 .bl-field:focus { border-color: #A06B5B; box-shadow: 0 0 0 4px rgba(160,107,91,.12); }
@@ -139,7 +162,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 
 /* Music / language: round chips stacked above the right end of the dock. */
 .bl-icon-btn {
-  width: 38px; height: 38px; display: grid; place-items: center; padding: 0;
+  width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
   background: #FFF9EF; border: 1px solid rgba(116, 121, 99, .18); border-radius: 50%;
   box-shadow: 0 10px 26px rgba(62, 53, 44, .2); color: #747963; cursor: pointer;
   transition: background .3s, color .3s, transform .2s;
@@ -154,7 +177,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 }
 .bl-scroll-cue span {
   position: absolute; left: 50%; bottom: -3px; width: 6px; height: 6px;
-  translate: -50% 0; border-radius: 50%; background: #F4D68F;
+  margin-left: -3px; border-radius: 50%; background: #F4D68F;
   box-shadow: 0 0 6px #F4D68F, 0 0 15px rgba(244,214,143,.92), 0 0 28px rgba(201,161,93,.6);
   animation: vGoldenDot 1.8s 2.45s ease-in-out infinite;
 }
@@ -163,15 +186,36 @@ textarea.bl-field { line-height: 1.6; resize: none; }
    without relying on the scroll-timeline feature. */
 .bl-event-card { transition: transform .28s cubic-bezier(.2,.9,.25,1), background .28s, box-shadow .28s; animation: vCharm 5.5s ease-in-out infinite; }
 .bl-event-card:nth-child(3) { animation-delay: -2.1s; }
-.bl-event-save { transition: transform .24s, background .24s, color .24s; }
+.bl-calendar-actions { display: flex; justify-content: center; }
+.bl-event-save {
+  width: 100%; max-width: 190px; min-height: 40px; box-sizing: border-box; display: grid; place-items: center; padding: 3px 18px;
+  text-align: center; background: #FFF9EF; border: 1px solid #FFF9EF; color: #5A604D !important;
+  border-radius: 999px; box-shadow: 0 10px 24px rgba(62,53,44,.16);
+  font: 600 10px/1.25 var(--f-ui); letter-spacing: .08em; text-transform: uppercase;
+  transition: transform .24s, background .24s, color .24s;
+}
+
+/* Centering fallbacks for browsers that predate individual transform
+   properties. They avoid fighting the ornaments' transform animations. */
+@supports not (translate: 0) {
+  .bl-center-x { left: 0 !important; right: 0 !important; margin-left: auto; margin-right: auto; }
+  .bl-center-xy { inset: 0 !important; margin: auto; }
+  .bl-seam-left { transform: translateY(-50%); animation-name: vCornerSeam !important; }
+  .bl-seam-right { transform: translateY(-50%); animation-name: vCornerSeamR !important; }
+}
 @media (hover: hover) and (pointer: fine) {
   .bl-btn:hover, .bl-icon-btn:hover, .bl-dock-btn:hover, .bl-event-save:hover { transform: translateY(-3px); }
-  .bl-event-save:hover { background: #C9A15D; color: #5A604D !important; }
+  .bl-event-save:hover { background: #C9A15D; color: #3E352C !important; }
   .bl-event-card:hover { animation: none; transform: translateY(-6px) rotate(-.6deg); background: rgba(250,243,231,.16); box-shadow: 0 15px 26px rgba(90,96,77,.18); }
   .sv-wish:hover { transform: translateY(-4px) rotate(.25deg); box-shadow: 0 12px 24px rgba(90,96,77,.12); }
 }
 
-.bl-msg { font: 500 11.5px/1.5 var(--f-ui); color: #A06B5B; text-align: center; }
+.bl-msg { font: 500 11.5px/1.5 var(--f-ui); color: #8B594A; text-align: center; }
+
+.bl-hero-name { font-size: 68px; }
+@supports (font-size: clamp(1px, 2vw, 3px)) {
+  .bl-hero-name { font-size: clamp(68px, 19vw, 92px); }
+}
 
 /* Empty round photo: initial on cream instead of an editor placeholder. */
 .bl-initial {
@@ -220,6 +264,8 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 @keyframes vSwayS { 0%, 100% { transform: rotate(-3deg) scale(1) } 50% { transform: rotate(4deg) scale(1.03) } }
 @keyframes vCorner { 0%, 100% { transform: rotate(-2.2deg) } 50% { transform: rotate(2.2deg) } }
 @keyframes vCornerR { 0%, 100% { transform: rotate(2.2deg) } 50% { transform: rotate(-2.2deg) } }
+@keyframes vCornerSeam { 0%, 100% { transform: translateY(-50%) rotate(-2.2deg) } 50% { transform: translateY(-50%) rotate(2.2deg) } }
+@keyframes vCornerSeamR { 0%, 100% { transform: translateY(-50%) rotate(2.2deg) } 50% { transform: translateY(-50%) rotate(-2.2deg) } }
 @keyframes vFloat { 0%, 100% { transform: translateY(0) rotate(-2deg) } 50% { transform: translateY(-12px) rotate(2deg) } }
 @keyframes vSpin { to { transform: rotate(360deg) } }
 @keyframes vTicker { from { transform: translateX(0) } to { transform: translateX(-50%) } }

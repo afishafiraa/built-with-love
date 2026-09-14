@@ -51,8 +51,8 @@ export default function CheckIn() {
     : error || 'Gagal menyimpan. Coba lagi atau catat manual.';
 
   return (
-    <main style={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', background: '#747963', color: '#FFF9EF', fontFamily: 'system-ui', padding: 30, textAlign: 'center' }}>
-      <div style={{ width: 'min(390px,100%)', padding: '34px 26px', border: '1px solid rgba(255,249,239,.28)', borderRadius: 22, background: 'rgba(74,83,67,.42)', boxShadow: '0 24px 70px rgba(34,38,29,.2)' }}>
+    <main className="app-min-screen" style={{ display: 'grid', placeItems: 'center', background: '#747963', color: '#FFF9EF', fontFamily: 'system-ui', padding: 30, textAlign: 'center' }}>
+      <div style={{ boxSizing: 'border-box', width: '100%', maxWidth: 390, padding: '34px 26px', border: '1px solid rgba(255,249,239,.28)', borderRadius: 22, background: 'rgba(74,83,67,.42)', boxShadow: '0 24px 70px rgba(34,38,29,.2)' }}>
         <div style={{ font: '500 10px/1 system-ui', letterSpacing: '.3em', textTransform: 'uppercase', color: '#D8B873' }}>Check-in</div>
         <h1 style={{ margin: '17px 0 8px', fontSize: 32, fontWeight: 500, textTransform: 'capitalize' }}>{name || id.replace(/[-_]/g, ' ') || 'Tamu'}</h1>
         <p role={state === 'err' || state === 'missing' ? 'alert' : 'status'} style={{ margin: '0 auto', opacity: .82, fontSize: 14, lineHeight: 1.65 }}>{message}</p>

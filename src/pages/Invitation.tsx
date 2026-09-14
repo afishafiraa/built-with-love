@@ -24,7 +24,7 @@ const Assets = createContext<Record<string, string>>({});
 /* Ivory Blossom Garden: warm olive and taupe echo the dress, while muted gold
    supplies a little celebratory light without turning the invitation yellow. */
 const SAGE = '#747963', DEEP = '#5A604D', PAPER = '#F3EADB', CARD = '#FFF9EF';
-const INK = '#3E352C', RED = '#A06B5B', GOLD = '#C9A15D';
+const INK = '#3E352C', RED = '#A06B5B', RED_TEXT = '#8B594A', GOLD = '#C9A15D', GOLD_LIGHT = '#FFEAB0';
 
 /* ---------- small building blocks ---------- */
 
@@ -63,7 +63,7 @@ function CornerOrn({ slot, at, width, ratio = '900 / 719', inset = -8, opacity, 
   };
   style[c.x] = inset;
   style[c.y] = inset;
-  return <Orn slot={slot} flip={c.flip} style={style} />;
+  return <Orn slot={slot} className="bl-natural-ratio" flip={c.flip} style={style} />;
 }
 
 /* The cover and the invitation itself park their controls on the same spot, so
@@ -108,14 +108,14 @@ function Scallop({ color }: { color: string }) {
 
 /* Only the few boundaries marked `orn` also carry the mirrored bouquet — flowers
    at every seam made the scroll feel crowded. */
-const SEAM_W = 'min(34%, 150px)';
+const SEAM_W = '34%';
 function Seam({ from, offset = 0, orn = false }: { from: string; offset?: number; orn?: boolean }) {
   return (
     <div aria-hidden="true" style={{ position: 'relative', height: 0, zIndex: 5, top: offset }}>
       <Scallop color={from} />
       {orn && <>
-        <Orn slot="orn-seam" style={{ left: 0, top: 0, width: SEAM_W, aspectRatio: '822 / 560', translate: '0 -50%', transformOrigin: 'left center', opacity: .8, animation: 'vCorner 13s ease-in-out infinite' }} />
-        <Orn slot="orn-seam" flip="x" style={{ right: 0, top: 0, width: SEAM_W, aspectRatio: '822 / 560', translate: '0 -50%', transformOrigin: 'right center', opacity: .8, animation: 'vCornerR 13s ease-in-out infinite' }} />
+        <Orn slot="orn-seam" className="bl-natural-ratio bl-seam-left" style={{ left: 0, top: 0, width: SEAM_W, aspectRatio: '822 / 560', translate: '0 -50%', transformOrigin: 'left center', opacity: .8, animation: 'vCorner 13s ease-in-out infinite' }} />
+        <Orn slot="orn-seam" className="bl-natural-ratio bl-seam-right" flip="x" style={{ right: 0, top: 0, width: SEAM_W, aspectRatio: '822 / 560', translate: '0 -50%', transformOrigin: 'right center', opacity: .8, animation: 'vCornerR 13s ease-in-out infinite' }} />
       </>}
     </div>
   );
@@ -148,16 +148,16 @@ function IgButton({ handle, align }: { handle: string; align: 'left' | 'right' }
   );
 }
 
-function Photo({ slot, fallback, focus }: { slot: string; fallback?: ReactNode; focus?: string }) {
+function Photo({ slot, fallback, focus, alt = '' }: { slot: string; fallback?: ReactNode; focus?: string; alt?: string }) {
   const assets = useContext(Assets);
   const src = assets[slot];
   return src
-    ? <img className="bl-fill" src={src} alt="" decoding="async" referrerPolicy="no-referrer" style={focus ? { objectPosition: focus } : undefined} />
+    ? <img className="bl-fill" src={src} alt={alt} decoding="async" referrerPolicy="no-referrer" style={focus ? { objectPosition: focus } : undefined} />
     : <>{fallback ?? null}</>;
 }
 
 function Kicker({ children, color, style }: { children: ReactNode; color?: string; style?: CSSProperties }) {
-  return <div className="bl-kicker bl-reveal-kicker" style={{ color: color || RED, ...style }}>{children}</div>;
+  return <div className="bl-kicker bl-reveal-kicker" style={{ color: color || RED_TEXT, ...style }}>{children}</div>;
 }
 
 const letters = (word: string, base: number) =>
@@ -321,7 +321,7 @@ export default function Invitation() {
           <div className="bl-col" style={{ position: 'fixed', top: CTL_TOP, display: 'flex', justifyContent: 'flex-end', paddingRight: CTL_RIGHT, boxSizing: 'border-box', zIndex: 58, pointerEvents: 'none' }}>
             <div style={{ display: 'grid', gap: 8, pointerEvents: 'auto' }}>
               <button className="bl-icon-btn" onClick={toggleLang} title="Language" aria-label="Language">
-                <span style={{ font: "500 9px/1 var(--f-ui)", letterSpacing: '.12em' }}>{lang === 'id' ? 'EN' : 'ID'}</span>
+                <span style={{ font: "600 10px/1 var(--f-ui)", letterSpacing: '.1em' }}>{lang === 'id' ? 'EN' : 'ID'}</span>
               </button>
               <button className="bl-icon-btn" onClick={music.toggle} title={music.playing ? t.musicOn : t.musicOff} aria-label={music.playing ? t.musicOn : t.musicOff}
                 style={music.playing ? { background: RED, color: CARD, borderColor: 'transparent' } : undefined}>
@@ -390,30 +390,30 @@ function Cover({ t, dateLabel, coupleShort, guestName, langLabel, onOpen, onTogg
   const assets = useContext(Assets);
   return (
     <div className="bl-clip bl-cover bl-gilded" style={{ background: 'radial-gradient(circle at 50% 34%,rgba(255,249,239,.10),transparent 43%),' + SAGE, overscrollBehavior: 'contain' }}>
-      <Corners slot="orn-cover-corner" at={['bl', 'br']} width="min(42%, 24svh)" opacity={.82} />
+      <Corners slot="orn-cover-corner" at={['bl', 'br']} width="42%" opacity={.82} />
       <button className="bl-icon-btn" onClick={onToggleLang} title="Language" aria-label="Language"
         style={{ position: 'absolute', top: CTL_TOP, right: CTL_RIGHT, zIndex: 2, animation: 'vFade 1.2s 1.4s both' }}>
-        <span style={{ font: "500 9px/1 var(--f-ui)", letterSpacing: '.12em' }}>{langLabel}</span>
+        <span style={{ font: "600 10px/1 var(--f-ui)", letterSpacing: '.1em' }}>{langLabel}</span>
       </button>
       <div style={{ position: 'relative', height: '100%', display: 'grid', placeItems: 'center', textAlign: 'center', padding: '50px 30px', color: PAPER, boxSizing: 'border-box' }}>
         <div>
           <div style={{ position: 'relative', width: 148, height: 148, margin: '0 auto 40px' }}>
-            <Orn slot="orn-cover-ring" style={{ left: '50%', top: '50%', translate: '-50% -50%', width: 206, height: 206, opacity: .5, animation: 'vSpin 120s linear infinite' }} />
+            <Orn slot="orn-cover-ring" className="bl-center-xy" style={{ left: '50%', top: '50%', translate: '-50% -50%', width: 206, height: 206, opacity: .5, animation: 'vSpin 120s linear infinite' }} />
             <div className="bl-clip" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid rgba(201,161,93,.7)', animation: 'vPop 1.1s .1s both, vFloat 9s 1.2s ease-in-out infinite', background: 'rgba(90,96,77,.55)' }}>
-              <Photo slot="v-cover-round" focus="center 28%" fallback={
+              <Photo slot="v-cover-round" focus="center 28%" alt={'Foto ' + coupleShort} fallback={
                 <img src={slotSrc(assets, 'v-monogram')} alt="" style={{ position: 'absolute', inset: '22%', width: '56%', height: '56%', objectFit: 'contain', filter: 'invert(1)', opacity: .9 }} />
               } />
             </div>
           </div>
-          <div style={{ font: "300 9px/1 var(--f-ui)", letterSpacing: '.12em', textTransform: 'uppercase', opacity: .78, animation: 'vFade 1.2s .4s both' }}>{t.weddingOf}</div>
+          <div style={{ font: "400 11px/1 var(--f-ui)", letterSpacing: '.11em', textTransform: 'uppercase', opacity: .82, animation: 'vFade 1.2s .4s both' }}>{t.weddingOf}</div>
           <div className="bl-display bl-couple-name" style={{ margin: '12px 0 0', fontSize: 68, lineHeight: 1.05, animation: 'vRise 1.1s .55s both' }}>{coupleShort}</div>
           <div style={{ margin: '18px auto', display: 'inline-block', padding: '8px 18px', border: '1px solid rgba(250,243,231,.4)', borderRadius: 999, font: "400 10px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', animation: 'vPop 1s .9s both' }}>{dateLabel}</div>
           <div style={{ font: "400 12px/1.7 var(--f-body)", opacity: .82, animation: 'vFade 1.2s 1.1s both' }}>{t.guestGreeting}</div>
           {guestName && (
-            <div className="bl-display" style={{ marginTop: 4, fontSize: 36, lineHeight: 1.2, color: GOLD, animation: 'vFade 1.2s 1.2s both' }}>{guestName}</div>
+            <div className="bl-display" style={{ marginTop: 4, fontSize: 36, lineHeight: 1.2, color: GOLD_LIGHT, animation: 'vFade 1.2s 1.2s both' }}>{guestName}</div>
           )}
           <div style={{ marginTop: 24, animation: 'vPop 1s 1.3s both' }}>
-            <button className="bl-btn" onClick={onOpen} style={{ padding: '17px 30px', background: GOLD, color: DEEP, letterSpacing: '.08em', boxShadow: '0 14px 34px rgba(0,0,0,.32)' }}>{t.openInvite}</button>
+            <button className="bl-btn bl-compact-btn" onClick={onOpen} style={{ padding: '13px 24px', background: GOLD, color: INK, boxShadow: '0 12px 28px rgba(0,0,0,.28)' }}>{t.openInvite}</button>
           </div>
         </div>
       </div>
@@ -427,25 +427,25 @@ function Hero({ cfg, t, dateLabel }: S & { dateLabel: string }) {
     <span key={i} style={{ display: 'inline-block', animation: 'vLetter 1s cubic-bezier(.2,.9,.2,1) both', animationDelay: l.d }}>{l.c}</span>
   );
   return (
-    <section className="bl-sec bl-gilded" data-screen-label="Hero" style={{ position: 'relative', height: '100svh', minHeight: 600, background: SAGE }}>
+    <section className="bl-sec bl-gilded bl-hero" data-screen-label="Hero" style={{ position: 'relative', minHeight: 600, background: SAGE }}>
       <div className="bl-clip" style={{ position: 'absolute', inset: 0 }}>
         <div className="sv-para" style={{ position: 'absolute', inset: '-12% 0' }}><Photo slot="v-hero" /></div>
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(90,96,77,.57),rgba(90,96,77,.18) 42%,rgba(90,96,77,.88))' }} />
       </div>
-      <Corners slot="orn-hero-corner" at={['tl', 'tr']} width="min(42%, 24svh)" opacity={.7} />
+      <Corners slot="orn-hero-corner" at={['tl', 'tr']} width="42%" opacity={.7} />
       <div style={{ position: 'relative', height: '100%', display: 'grid', gridTemplateRows: '1fr auto', padding: '70px 26px 42px', color: PAPER, textAlign: 'center', boxSizing: 'border-box' }}>
         <div style={{ alignSelf: 'center' }}>
-          <div style={{ font: "300 9px/1 var(--f-ui)", letterSpacing: '.12em', textTransform: 'uppercase', opacity: .72, animation: 'vFade 1.2s .2s both' }}>{t.weddingOf}</div>
+          <div style={{ font: "400 11px/1 var(--f-ui)", letterSpacing: '.11em', textTransform: 'uppercase', opacity: .78, animation: 'vFade 1.2s .2s both' }}>{t.weddingOf}</div>
           <div style={{ position: 'relative', margin: '20px 0 0' }}>
-            <Orn slot="orn-hero-ring" style={{ left: '50%', top: '50%', translate: '-50% -50%', width: 296, height: 296, opacity: .16, animation: 'vSpin 150s linear infinite' }} />
+            <Orn slot="orn-hero-ring" className="bl-center-xy" style={{ left: '50%', top: '50%', translate: '-50% -50%', width: 296, height: 296, opacity: .16, animation: 'vSpin 150s linear infinite' }} />
             {/* Names intentionally return to their more ceremonial stacked form,
                 with a light "dan" bridge between them. */}
-            <h1 className="bl-display bl-couple-name" aria-label={`${cfg.groomName} ${t.and} ${cfg.brideName}`}
-              style={{ position: 'relative', margin: 0, fontSize: 'clamp(68px, 19vw, 92px)', lineHeight: .82 }}>
+            <h1 className="bl-display bl-couple-name bl-hero-name" aria-label={`${cfg.groomName} ${t.and} ${cfg.brideName}`}
+              style={{ position: 'relative', margin: 0, lineHeight: .82 }}>
               <span style={{ display: 'block' }}>{g.map(letter)}</span>
               <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, margin: '9px 0 7px' }}>
                 <span style={{ width: 38, height: 1, background: GOLD, transformOrigin: 'right', animation: 'vLine .8s .72s both' }} />
-                <span style={{ color: GOLD, font: "500 13px/1 var(--f-ui)", letterSpacing: '.08em', animation: 'vPop .8s .78s both' }}>{t.and}</span>
+                <span style={{ color: CARD, font: "600 13px/1 var(--f-ui)", letterSpacing: '.08em', animation: 'vPop .8s .78s both' }}>{t.and}</span>
                 <span style={{ width: 38, height: 1, background: GOLD, transformOrigin: 'left', animation: 'vLine .8s .72s both' }} />
               </span>
               <span style={{ display: 'block' }}>{b.map(letter)}</span>
@@ -486,7 +486,7 @@ function Ticker({ text }: { text: string }) {
 function Quote({ t }: { t: Copy }) {
   return (
     <section className="bl-sec" data-screen-label="Quote" style={{ position: 'relative', padding: '78px 28px', textAlign: 'center' }}>
-      <Orn slot="orn-quote-top" style={{ left: '50%', top: 6, translate: '-50% 0', width: 172, height: 93, opacity: .48, animation: 'vFloat 12s ease-in-out infinite' }} />
+      <Orn slot="orn-quote-top" className="bl-center-x" style={{ left: '50%', top: 6, translate: '-50% 0', width: 172, height: 93, opacity: .48, animation: 'vFloat 12s ease-in-out infinite' }} />
       <div style={{ position: 'relative', paddingTop: 52 }}>
         <Kicker>{t.quoteSource}</Kicker>
         <p className="bl-serif sv-mask" style={{ margin: '18px auto 0', maxWidth: 340, fontSize: 16, lineHeight: 1.85, textWrap: 'pretty' } as CSSProperties}>{t.quote}</p>
@@ -498,7 +498,7 @@ function Quote({ t }: { t: Copy }) {
 
 function Couple({ cfg, t }: S) {
   const card: CSSProperties = { position: 'relative', padding: 18, background: CARD, border: '1px solid rgba(116,121,99,.14)', boxShadow: '0 16px 38px rgba(90,96,77,.09)' };
-  const role: CSSProperties = { marginTop: 9, font: "400 9px/1 var(--f-ui)", letterSpacing: '.14em', textTransform: 'uppercase', color: RED };
+  const role: CSSProperties = { marginTop: 9, font: "500 11px/1 var(--f-ui)", letterSpacing: '.1em', textTransform: 'uppercase', color: RED };
   const parents: CSSProperties = { marginTop: 5, font: "400 12px/1.65 var(--f-body)", opacity: .78 };
   const initial = (name: string) => <div className="bl-initial" style={{ fontSize: 54 }}>{(name || '?').trim().charAt(0).toUpperCase()}</div>;
   return (
@@ -512,7 +512,7 @@ function Couple({ cfg, t }: S) {
           <Orn slot="orn-groom-top" style={{ right: -12, top: -38, width: 74, height: 121, opacity: .85, animation: 'vFloat 8s ease-in-out infinite' }} />
           <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '132px 1fr', gap: 18, alignItems: 'center' }}>
             <div style={{ position: 'relative', width: 132, height: 132 }}>
-              <div className="bl-clip" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid ' + GOLD }}><Photo slot="v-groom" focus="center 28%" fallback={initial(cfg.groomName)} /></div>
+              <div className="bl-clip" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid ' + GOLD }}><Photo slot="v-groom" focus="center 28%" alt={'Foto ' + cfg.groomFull} fallback={initial(cfg.groomName)} /></div>
             </div>
             <div>
               <div className="bl-full-name" style={{ fontSize: 23, lineHeight: 1.18 }}>{cfg.groomFull}</div>
@@ -535,7 +535,7 @@ function Couple({ cfg, t }: S) {
               <IgButton handle={cfg.brideInstagram} align="right" />
             </div>
             <div style={{ position: 'relative', width: 132, height: 132 }}>
-              <div className="bl-clip" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #9AA98A' }}><Photo slot="v-bride" focus="center 28%" fallback={initial(cfg.brideName)} /></div>
+              <div className="bl-clip" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #9AA98A' }}><Photo slot="v-bride" focus="center 28%" alt={'Foto ' + cfg.brideFull} fallback={initial(cfg.brideName)} /></div>
             </div>
           </div>
         </div>
@@ -562,8 +562,8 @@ function Countdown({ iso, t }: { iso: string; t: Copy }) {
     <div style={{ marginTop: 22, display: 'grid', gridTemplateColumns: 'repeat(4,1fr)' }} role="timer">
       {cells.map(([v, label, cls], i) => (
         <div key={label} className={cls} style={{ textAlign: 'center', padding: '0 2px', borderRight: i < 3 ? '1px solid rgba(250,243,231,.2)' : 0 }}>
-          <div className="bl-serif" style={{ fontSize: 34, lineHeight: 1, color: GOLD }}>{v}</div>
-          <div style={{ marginTop: 6, font: "300 8px/1 var(--f-ui)", letterSpacing: '.12em', textTransform: 'uppercase', opacity: .7 }}>{label}</div>
+          <div className="bl-serif" style={{ fontSize: 34, lineHeight: 1, color: GOLD_LIGHT }}>{v}</div>
+          <div style={{ marginTop: 6, font: "500 10px/1 var(--f-ui)", letterSpacing: '.09em', textTransform: 'uppercase', opacity: .76 }}>{label}</div>
         </div>
       ))}
     </div>
@@ -574,35 +574,51 @@ function Events({ cfg, t, dateLabel }: S & { dateLabel: string }) {
   const dt = safeDate(cfg.dateISO);
   const q = encodeURIComponent(cfg.mapsQuery || cfg.venue + ', ' + cfg.city);
   const cal = (d: Date) => d.getUTCFullYear() + two(d.getUTCMonth() + 1) + two(d.getUTCDate()) + 'T' + two(d.getUTCHours()) + two(d.getUTCMinutes()) + '00Z';
+  const title = t.calendarTitle + cfg.groomName + ' & ' + cfg.brideName;
+  const atCeremonyTime = (time: string) => {
+    const clock = time.match(/^(\d{1,2})[.:](\d{2})/);
+    const iso = cfg.dateISO.match(/^(\d{4}-\d{2}-\d{2})T\d{2}:\d{2}(?::\d{2})?([+-]\d{2}:\d{2}|Z)?$/);
+    if (!clock || !iso) return dt;
+    const candidate = new Date(`${iso[1]}T${two(Number(clock[1]))}:${clock[2]}:00${iso[2] || ''}`);
+    return isNaN(candidate.getTime()) ? dt : candidate;
+  };
+  const start = atCeremonyTime(cfg.akadTime);
+  const reception = atCeremonyTime(cfg.resepsiTime);
+  const end = new Date(Math.max(start.getTime() + 5 * 3600000, reception.getTime() + 3 * 3600000));
   const calendarHref = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' +
-    encodeURIComponent(t.calendarTitle + cfg.groomName + ' & ' + cfg.brideName) +
-    '&dates=' + cal(dt) + '/' + cal(new Date(dt.getTime() + 5 * 3600000)) + '&location=' + q;
+    encodeURIComponent(title) +
+    '&dates=' + cal(start) + '/' + cal(end) + '&location=' + q;
   const a = splitTime(cfg.akadTime), r = splitTime(cfg.resepsiTime);
   const ceremony = (label: string, name: string, time: { hour: string; zone: string }, accent: string) => (
     <div className="bl-event-card" style={{ padding: '19px 16px 17px', borderRadius: 16, background: 'rgba(250,243,231,.10)', border: '1px solid rgba(201,161,93,.3)' }}>
-      <div style={{ font: "400 8px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', color: GOLD }}>{label}</div>
+      <div style={{ font: "600 10.5px/1 var(--f-ui)", letterSpacing: '.06em', textTransform: 'uppercase', color: '#FFFFFF' }}>{label}</div>
       <div className="bl-display" style={{ marginTop: 7, fontSize: 34, lineHeight: 1.02 }}>{name}</div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginTop: 14, color: accent }}>
         <div className="bl-serif" style={{ fontSize: 31, lineHeight: 1 }}>{time.hour}</div>
-        {time.zone && <div style={{ font: "400 8px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase' }}>{time.zone}</div>}
+        {time.zone && <div style={{ font: "500 10px/1 var(--f-ui)", letterSpacing: '.07em', textTransform: 'uppercase' }}>{time.zone}</div>}
       </div>
     </div>
   );
 
   return (
     <section className="bl-sec bl-gilded" data-screen-label="Acara" style={{ position: 'relative', padding: '74px 26px 80px', background: SAGE, color: PAPER }}>
-      <Orn slot="orn-acara-ring" style={{ left: '50%', top: 24, translate: '-50% 0', width: 252, height: 252, opacity: .18, animation: 'vSpin 170s linear infinite' }} />
+      <Orn slot="orn-acara-ring" className="bl-center-x" style={{ left: '50%', top: 24, translate: '-50% 0', width: 252, height: 252, opacity: .18, animation: 'vSpin 170s linear infinite' }} />
       <div style={{ position: 'relative' }}>
-        <Kicker color={GOLD} style={{ letterSpacing: '.2em' }}>{t.eventKicker}</Kicker>
+        <Kicker color="#FFFFFF" style={{ letterSpacing: '.16em' }}>{t.eventKicker}</Kicker>
         <h2 className="bl-event-date" style={{ margin: '10px 0 0', fontSize: 33, lineHeight: 1.12 }}>{dateLabel}</h2>
         <div style={{ marginTop: 8, font: "400 13px/1.6 var(--f-body)", color: 'rgba(255,249,239,.86)' }}>{cfg.venue}</div>
         <Countdown iso={cfg.dateISO} t={t} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 12px 1fr', alignItems: 'stretch', gap: 10, marginTop: 30 }}>
-          {ceremony(t.akadLabel, t.akadName, a, GOLD)}
+          {ceremony(t.akadLabel, t.akadName, a, GOLD_LIGHT)}
           <div aria-hidden="true" style={{ display: 'grid', placeItems: 'center' }}><span style={{ width: 1, height: '72%', background: 'rgba(201,161,93,.55)' }} /></div>
-          {ceremony(t.resepsiLabel, t.resepsiName, r, GOLD)}
+          {ceremony(t.resepsiLabel, t.resepsiName, r, GOLD_LIGHT)}
         </div>
-        <a href={calendarHref} target="_blank" rel="noreferrer" className="bl-event-save" style={{ display: 'block', marginTop: 22, padding: 16, textAlign: 'center', background: CARD, border: '1px solid ' + CARD, color: DEEP, borderRadius: 999, boxShadow: '0 10px 24px rgba(62,53,44,.16)', font: "500 10px/1 var(--f-ui)", letterSpacing: '.14em', textTransform: 'uppercase' }}>{t.saveDate}</a>
+        <div style={{ marginTop: 22 }}>
+          <div style={{ marginBottom: 9, textAlign: 'center', font: "600 11px/1 var(--f-ui)", letterSpacing: '.09em', textTransform: 'uppercase', color: '#FFFFFF' }}>{t.saveDate}</div>
+          <div className="bl-calendar-actions">
+            <a href={calendarHref} target="_blank" rel="noreferrer" className="bl-event-save">{t.calendarGoogle}</a>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -634,7 +650,7 @@ function Story({ cfg, t, lang }: S & { lang: Lang }) {
       </div>
       <div style={{ position: 'relative', padding: '0 18px' }}>
         <div style={{ position: 'relative', display: 'grid', paddingTop: THREAD.top }}>
-          <img className="sv-draw" src={RIBBON} alt="" style={{ position: 'absolute', left: '50%', top: 0, translate: '-50% 0', width: THREAD.width, height: THREAD.top + THREAD.row * chapters.length, objectFit: 'fill', pointerEvents: 'none' }} />
+          <img className="sv-draw bl-center-x" src={RIBBON} alt="" style={{ position: 'absolute', left: '50%', top: 0, translate: '-50% 0', width: THREAD.width, height: THREAD.top + THREAD.row * chapters.length, objectFit: 'fill', pointerEvents: 'none' }} />
           {chapters.map((ch, i) => {
             const left = i % 2 === 0;
             const y = THREAD.top + THREAD.row * (i + .5);
@@ -642,14 +658,14 @@ function Story({ cfg, t, lang }: S & { lang: Lang }) {
             return (
               <div key={ch.n} style={{ height: THREAD.row, display: 'grid', gridTemplateColumns: '1fr 1fr', alignItems: 'center' }}>
                 <div className="sv-story bl-reveal-card" style={{ gridColumn: left ? 1 : 2, padding: left ? '0 40px 0 6px' : '0 6px 0 40px', textAlign: left ? 'right' : 'left' }}>
-                  {ch.year && <div style={{ display: 'inline-block', padding: '4px 10px', background: SAGE, color: PAPER, borderRadius: 999, font: "400 9px/1 var(--f-ui)", letterSpacing: '.12em' }}>{ch.year}</div>}
+                  {ch.year && <div style={{ display: 'inline-block', padding: '5px 10px', background: SAGE, color: PAPER, borderRadius: 999, font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.09em' }}>{ch.year}</div>}
                   <div className="bl-display" style={{ marginTop: 6, fontSize: 28, lineHeight: 1.1 }}>{ch.title}</div>
                   <div style={{ marginTop: 5, font: "400 11.5px/1.6 var(--f-body)", opacity: .74, textWrap: 'pretty' } as CSSProperties}>{ch.body}</div>
                   <div style={{ position: 'relative', width: 60, height: 40, margin: left ? '8px 0 0 auto' : '8px 0 0', opacity: .6, animation: 'vFlutter ' + flutter[i] + ' ease-in-out infinite' }}>
                     <Orn slot={orns[ch.n - 1]} style={{ inset: 0, width: '100%', height: '100%' }} />
                   </div>
                 </div>
-                <div className="sv-knot" style={{ position: 'absolute', left: 'calc(50% + ' + x + 'px)', translate: '-50% -50%', top: y, width: 15, height: 15, borderRadius: '50%', background: RED, boxShadow: '0 0 0 4px ' + PAPER + ',0 0 0 6px rgba(160,107,91,.3)' }} />
+                <div className="sv-knot" style={{ position: 'absolute', left: 'calc(50% + ' + x + 'px)', marginLeft: -7.5, marginTop: -7.5, top: y, width: 15, height: 15, borderRadius: '50%', background: RED, boxShadow: '0 0 0 4px ' + PAPER + ',0 0 0 6px rgba(160,107,91,.3)' }} />
               </div>
             );
           })}
@@ -744,16 +760,16 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
   };
 
   const choice = (on: boolean, bg: string, fg: string): CSSProperties => ({
-    padding: 15, border: '1px solid rgba(116,121,99,.16)', background: on ? bg : CARD, color: on ? fg : INK,
+    minHeight: 45, padding: 15, border: '1px solid rgba(116,121,99,.16)', background: on ? bg : CARD, color: on ? fg : INK,
     borderRadius: 11, font: "400 10px/1 var(--f-ui)", letterSpacing: '.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'background .25s, color .25s'
   });
-  const round: CSSProperties = { width: 34, height: 34, border: '1px solid rgba(116,121,99,.2)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "500 15px/1 var(--f-ui)" };
+  const round: CSSProperties = { width: 45, height: 45, border: '1px solid rgba(116,121,99,.2)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "500 15px/1 var(--f-ui)" };
 
   return (
     <section className="bl-sec bl-gilded" data-screen-label="RSVP" style={{ position: 'relative', padding: '74px 24px', background: SAGE, color: PAPER }}>
       <div style={{ position: 'relative' }}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <Kicker color={GOLD}>RSVP</Kicker>
+          <Kicker color="#FFFFFF">RSVP</Kicker>
           <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 43 }}>{t.rsvpTitle}</h2>
           <div style={{ marginTop: 6, font: "400 12px/1.7 var(--f-body)", opacity: .78 }}>{t.rsvpSub}</div>
         </div>
@@ -803,7 +819,7 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
                 <div style={{ marginTop: 8, maxWidth: 150, font: "400 10.5px/1.5 var(--f-body)", opacity: .7 }}>{t.qrNote}</div>
               </div>
             )}
-            <button className="bl-btn" onClick={() => setDone(false)} style={{ marginTop: 14, padding: '10px 20px', background: 'transparent', border: '1px solid rgba(116,121,99,.3)', font: "400 9px/1 var(--f-ui)", letterSpacing: '.12em' }}>{t.change}</button>
+            <button className="bl-btn" onClick={() => setDone(false)} style={{ marginTop: 14, padding: '10px 20px', background: 'transparent', border: '1px solid rgba(116,121,99,.3)', font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.1em' }}>{t.change}</button>
           </div>
         )}
       </div>
@@ -876,14 +892,14 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
           <input className="bl-field" value={name} onChange={e => setName(e.target.value)} placeholder={t.namePh} aria-label={t.namePh} />
           <textarea className="bl-field" value={text} onChange={e => setText(e.target.value)} rows={3} placeholder={t.wishPh} aria-label={t.wishPh} maxLength={600} />
           {note && <div className="bl-msg" style={{ color: note === t.wishPending ? SAGE : RED }}>{note}</div>}
-          <button className="bl-btn" onClick={submit} disabled={busy} style={{ padding: 16, background: RED, color: CARD, borderRadius: 11 }}>{busy ? t.sending : t.sendWish}</button>
+          <button className="bl-btn bl-compact-btn" onClick={submit} disabled={busy} style={{ padding: 12, background: RED, color: CARD, borderRadius: 11 }}>{busy ? t.sending : t.sendWish}</button>
         </div>
         <div style={{ marginTop: 22, display: 'grid', gap: 10 }}>
           {list.map(w => (
             <div key={w.id} className="sv-wish bl-reveal-card" style={{ padding: '16px 18px', background: CARD, border: '1px solid rgba(116,121,99,.1)', borderRadius: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
                 <span style={{ font: "400 11px/1 var(--f-ui)", letterSpacing: '.12em', color: RED }}>{w.name}</span>
-                <span style={{ font: "400 9px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', opacity: .45 }}>{fmtWhen(w.createdAt, t)}</span>
+                <span style={{ font: "400 10px/1 var(--f-ui)", letterSpacing: '.06em', textTransform: 'uppercase', opacity: .52 }}>{fmtWhen(w.createdAt, t)}</span>
               </div>
               <div className="bl-batang" style={{ marginTop: 7, fontSize: 13.5, lineHeight: 1.75, opacity: .86, textWrap: 'pretty', whiteSpace: 'pre-line' } as CSSProperties}>{w.text}</div>
             </div>
@@ -897,7 +913,7 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
 function giftCards(cfg: WeddingConfig, t: Copy, lang: Lang) {
   const cards: { key: string; slot: string; label: string; kind: string; value: string; holder: string; bg: string; fg: string; btnBg: string; btnFg: string; size: number; copyLabel: string }[] = [];
   if (cfg.bank1Acct) cards.push({ key: 'b1', slot: 'orn-gift-1', label: cfg.bank1Name || 'Bank', kind: t.transfer, value: cfg.bank1Acct, holder: cfg.bank1Holder ? t.holderPrefix + cfg.bank1Holder : '', bg: 'linear-gradient(155deg,' + SAGE + ',' + DEEP + ')', fg: PAPER, btnBg: GOLD, btnFg: DEEP, size: 27, copyLabel: t.copy });
-  if (cfg.bank2Acct) cards.push({ key: 'b2', slot: 'orn-gift-2', label: cfg.bank2Name || 'Bank', kind: t.transfer, value: cfg.bank2Acct, holder: cfg.bank2Holder ? t.holderPrefix + cfg.bank2Holder : '', bg: GOLD, fg: '#3B3730', btnBg: SAGE, btnFg: PAPER, size: 27, copyLabel: t.copy });
+  if (cfg.bank2Acct) cards.push({ key: 'b2', slot: 'orn-gift-2', label: cfg.bank2Name || 'Bank', kind: t.transfer, value: cfg.bank2Acct, holder: cfg.bank2Holder ? t.holderPrefix + cfg.bank2Holder : '', bg: 'linear-gradient(155deg,#B88974,' + RED + ')', fg: CARD, btnBg: CARD, btnFg: RED, size: 27, copyLabel: t.copy });
   if (cfg.giftAddress) cards.push({ key: 'addr', slot: 'orn-gift-3', label: cfg.giftAddressLabel || (lang === 'en' ? 'Send a Gift' : 'Kirim Hadiah'), kind: t.addressKind, value: cfg.giftAddress, holder: cfg.giftAddressHolder, bg: CARD, fg: INK, btnBg: RED, btnFg: CARD, size: 17, copyLabel: t.copyAddr });
   return cards;
 }
@@ -906,12 +922,12 @@ function GiftSection({ cfg, t, onOpen }: S & { onOpen: () => void }) {
   if (!cfg.bank1Acct && !cfg.bank2Acct && !cfg.giftAddress) return null;
   return (
     <section className="bl-sec" data-screen-label="Amplop" style={{ position: 'relative', padding: '74px 24px' }}>
-      <Orn slot="orn-amplop" style={{ left: '50%', top: 24, translate: '-50% 0', width: 190, height: 107, opacity: .42, animation: 'vFloat 11s ease-in-out infinite' }} />
+      <Orn slot="orn-amplop" className="bl-center-x" style={{ left: '50%', top: 24, translate: '-50% 0', width: 190, height: 107, opacity: .42, animation: 'vFloat 11s ease-in-out infinite' }} />
       <div style={{ position: 'relative', textAlign: 'center', paddingTop: 24 }}>
         <Kicker>{t.giftKicker}</Kicker>
         <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 43 }}>{t.giftTitle}</h2>
         <p style={{ maxWidth: 310, margin: '12px auto 0', font: "400 12.5px/1.8 var(--f-body)", opacity: .74, textWrap: 'pretty' } as CSSProperties}>{t.giftBody}</p>
-        <button className="bl-btn" onClick={onOpen} style={{ marginTop: 22, padding: '16px 30px', background: SAGE, color: PAPER, boxShadow: '0 12px 28px rgba(90,96,77,.24)', animation: 'vBeat 5s 2s ease-in-out infinite' }}>{t.giftOpen}</button>
+        <button className="bl-btn bl-compact-btn" onClick={onOpen} style={{ marginTop: 22, padding: '12px 24px', background: SAGE, color: PAPER, boxShadow: '0 10px 24px rgba(90,96,77,.22)', animation: 'vBeat 5s 2s ease-in-out infinite' }}>{t.giftOpen}</button>
       </div>
     </section>
   );
@@ -937,18 +953,18 @@ function GiftSheet({ cfg, t, lang, onClose }: S & { lang: Lang; onClose: () => v
         <div style={{ width: 42, height: 4, borderRadius: 2, background: 'rgba(51,48,42,.18)', margin: '0 auto 16px' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
           <div>
-            <div style={{ font: "400 9px/1 var(--f-ui)", letterSpacing: '.1em', textTransform: 'uppercase', color: RED }}>{t.giftKicker}</div>
+            <div style={{ font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', color: RED }}>{t.giftKicker}</div>
             <div className="bl-display" style={{ marginTop: 2, fontSize: 36, lineHeight: 1.1 }}>{t.giftTitle}</div>
           </div>
-          <button onClick={onClose} aria-label="Tutup" style={{ width: 32, height: 32, border: '1px solid rgba(51,48,42,.18)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "300 15px/1 var(--f-ui)" }}>&times;</button>
+          <button onClick={onClose} aria-label="Tutup" style={{ width: 44, height: 44, border: '1px solid rgba(51,48,42,.18)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "300 15px/1 var(--f-ui)" }}>&times;</button>
         </div>
         <div style={{ marginTop: 18, display: 'grid', gap: 12 }}>
           {giftCards(cfg, t, lang).map(g => (
             <div className="bl-clip" key={g.key} style={{ position: 'relative', padding: 20, background: g.bg, color: g.fg, borderRadius: 18 }}>
               <Orn slot={g.slot} style={{ right: -24, bottom: -20, width: 104, height: 104, opacity: .22 }} />
               <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                <span style={{ font: "400 9px/1 var(--f-ui)", letterSpacing: '.14em', textTransform: 'uppercase', opacity: .85 }}>{g.label}</span>
-                <span style={{ font: "300 9px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', opacity: .6 }}>{g.kind}</span>
+                <span style={{ font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.1em', textTransform: 'uppercase', opacity: .9 }}>{g.label}</span>
+                <span style={{ font: "400 10px/1 var(--f-ui)", letterSpacing: '.06em', textTransform: 'uppercase', opacity: .72 }}>{g.kind}</span>
               </div>
               <div className="bl-serif" style={{ position: 'relative', marginTop: 12, fontSize: g.size, lineHeight: 1.25, letterSpacing: '.02em', whiteSpace: 'pre-line' }}>{g.value.trim()}</div>
               {g.holder && <div style={{ position: 'relative', marginTop: 6, font: "400 12px/1.6 var(--f-body)", opacity: .8 }}>{g.holder}</div>}
@@ -970,8 +986,8 @@ function Hashtag({ tag, t }: { tag: string; t: Copy }) {
   const shown = clean.startsWith('#') ? clean : '#' + clean;
   return (
     <div style={{ margin: '0 auto 30px', display: 'grid', justifyItems: 'center', gap: 10 }}>
-      <div style={{ font: "400 9px/1.4 var(--f-ui)", letterSpacing: '.1em', textTransform: 'uppercase', color: GOLD, opacity: .9 }}>{t.tagKicker}</div>
-      <div className="bl-hashtag" style={{ fontSize: 30, lineHeight: 1.2, color: GOLD, overflowWrap: 'anywhere', maxWidth: '100%' }}>{shown}</div>
+      <div style={{ font: "600 10.5px/1.4 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', color: '#FFFFFF', opacity: .92 }}>{t.tagKicker}</div>
+      <div className="bl-hashtag" style={{ fontSize: 30, lineHeight: 1.2, color: GOLD_LIGHT, overflowWrap: 'anywhere', maxWidth: '100%' }}>{shown}</div>
     </div>
   );
 }
@@ -980,8 +996,8 @@ function Closing({ cfg, t, coupleShort }: S & { coupleShort: string }) {
   const year = String(safeDate(cfg.dateISO).getFullYear());
   return (
     <section className="bl-sec bl-gilded" data-screen-label="Penutup" style={{ position: 'relative', padding: '80px 26px 34px', background: SAGE, color: PAPER, textAlign: 'center' }}>
-      <CornerOrn slot="orn-penutup-l" at="bl" width="min(40%, 186px)" inset={0} opacity={.55} secs={14} />
-      <CornerOrn slot="orn-penutup-l" at="br" width="min(40%, 186px)" inset={0} opacity={.55} secs={14} />
+      <CornerOrn slot="orn-penutup-l" at="bl" width="40%" inset={0} opacity={.55} secs={14} />
+      <CornerOrn slot="orn-penutup-l" at="br" width="40%" inset={0} opacity={.55} secs={14} />
       <div style={{ position: 'relative' }}>
         <div style={{ position: 'relative', width: 120, height: 106, margin: '0 auto 18px', filter: 'invert(1)', animation: 'vFloat 7s ease-in-out infinite' }}>
           <Orn slot="v-monogram" style={{ inset: 0, width: '100%', height: '100%' }} />
@@ -989,7 +1005,7 @@ function Closing({ cfg, t, coupleShort }: S & { coupleShort: string }) {
         <Hashtag tag={cfg.hashtag} t={t} />
         <p style={{ maxWidth: 290, margin: '0 auto', font: "400 12.5px/1.9 var(--f-body)", opacity: .84, textWrap: 'pretty' } as CSSProperties}>{t.closing}</p>
         <div className="bl-display bl-couple-name" style={{ marginTop: 18, fontSize: 56, lineHeight: 1.1 }}>{coupleShort}</div>
-        <div style={{ marginTop: 8, font: "300 9px/1 var(--f-ui)", letterSpacing: '.12em', textTransform: 'uppercase', opacity: .65 }}>{t.withFamily}</div>
+        <div style={{ marginTop: 8, font: "400 10.5px/1 var(--f-ui)", letterSpacing: '.09em', textTransform: 'uppercase', opacity: .72 }}>{t.withFamily}</div>
       </div>
       <div style={{ position: 'relative', marginTop: 46, padding: '16px 0 78px', borderTop: '1px solid rgba(250,243,231,.2)', display: 'grid', gap: 6, justifyItems: 'center' }}>
         <div style={{ font: "300 9px/1.6 var(--f-ui)", letterSpacing: '.14em', textTransform: 'uppercase', opacity: .62 }}>{t.watermark}</div>

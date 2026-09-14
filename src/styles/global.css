@@ -1,0 +1,28 @@
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html, body, #root { min-height: 100%; margin: 0; }
+body { min-width: 280px; }
+button, a, input, textarea, select { touch-action: manipulation; }
+
+/* `vh` works on old browsers; supported browsers override it with the dynamic
+   viewport so mobile address bars and keyboards do not crop full-screen UI. */
+.app-min-screen { min-height: 100vh; }
+.app-screen { height: 100vh; }
+.app-dashboard { padding: 28px 18px 60px; }
+@supports (min-height: 100dvh) { .app-min-screen { min-height: 100dvh; } }
+@supports (height: 100dvh) { .app-screen { height: 100dvh; } }
+@supports (padding: max(0px)) {
+  .app-dashboard {
+    padding: 28px max(18px, env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+}
+
+@media (max-width: 640px) {
+  /* iOS zooms the viewport when focusing controls smaller than 16px. */
+  input, textarea, select { font-size: 16px !important; }
+}

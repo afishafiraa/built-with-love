@@ -12,10 +12,10 @@ import type { Guest, WeddingConfig, Wish } from '../types';
 
 const ink = '#2F2C26', sage = '#4A5343', red = '#A93227', paper = '#FBF8F0';
 
-const btn: CSSProperties = { padding: '10px 15px', background: 'transparent', border: '1px solid rgba(47,44,38,.22)', borderRadius: 999, font: '400 10px/1 system-ui', letterSpacing: '.14em', textTransform: 'uppercase', cursor: 'pointer' };
+const btn: CSSProperties = { minHeight: 44, padding: '10px 15px', background: 'transparent', border: '1px solid rgba(47,44,38,.22)', borderRadius: 999, font: '500 10.5px/1 system-ui', letterSpacing: '.11em', textTransform: 'uppercase', cursor: 'pointer' };
 const th: CSSProperties = { padding: '6px 8px', fontWeight: 400 };
 const td: CSSProperties = { padding: '10px 8px', verticalAlign: 'top' };
-const mini: CSSProperties = { marginRight: 6, padding: '6px 10px', border: '1px solid rgba(47,44,38,.2)', background: 'transparent', borderRadius: 7, fontSize: 11, cursor: 'pointer' };
+const mini: CSSProperties = { minHeight: 44, marginRight: 6, padding: '7px 10px', border: '1px solid rgba(47,44,38,.2)', background: 'transparent', borderRadius: 7, fontSize: 11, cursor: 'pointer' };
 const waBtn: CSSProperties = { ...mini, display: 'inline-block', textDecoration: 'none', color: ink };
 const dangerMini: CSSProperties = { ...mini, marginRight: 0, borderColor: 'rgba(169,50,39,.35)', color: red };
 
@@ -63,7 +63,7 @@ function DashboardInner() {
   ];
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#EDEADF', color: ink, fontFamily: 'system-ui', padding: '28px 24px 60px' }}>
+    <div className="app-min-screen app-dashboard" style={{ background: '#EDEADF', color: ink, fontFamily: 'system-ui' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
         <div>
           <div style={{ font: '500 10px/1 system-ui', letterSpacing: '.3em', textTransform: 'uppercase', color: red }}>Dashboard</div>
@@ -96,7 +96,7 @@ function DashboardInner() {
         {cards.map(([label, value]) => (
           <div key={label} style={{ padding: 16, background: paper, borderRadius: 14, border: '1px solid rgba(47,44,38,.1)' }}>
             <div style={{ fontSize: 28, fontWeight: 500 }}>{value}</div>
-            <div style={{ marginTop: 4, font: '400 9px/1 system-ui', letterSpacing: '.18em', textTransform: 'uppercase', opacity: .55 }}>{label}</div>
+            <div style={{ marginTop: 4, font: '500 10.5px/1 system-ui', letterSpacing: '.12em', textTransform: 'uppercase', opacity: .62 }}>{label}</div>
           </div>
         ))}
       </div>
@@ -154,10 +154,34 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const [waBusy, setWaBusy] = useState(false);
   const [waError, setWaError] = useState('');
   const [waNotice, setWaNotice] = useState('');
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'pending-rsvp' | 'attending' | 'not-attending' | 'pending-wa' | 'checked-in'>('all');
   const hasValidPhone = (g: Guest) => isValidWaNumber(g.phone);
   const pendingWa = guests.filter(g => hasValidPhone(g) && !g.waSentAt);
   const missingPhone = guests.filter(g => !hasValidPhone(g)).length;
   const currentWa = waQueue[waIndex] || null;
+  const visibleGuests = useMemo(() => {
+    const needle = query.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
+    return guests.filter(g => {
+      const haystack = [g.name, g.phone, g.id].join(' ').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+      const matchesQuery = !needle || haystack.includes(needle);
+      const matchesFilter = filter === 'all'
+        || (filter === 'pending-rsvp' && !g.rsvp)
+        || (filter === 'attending' && g.rsvp === 'yes')
+        || (filter === 'not-attending' && g.rsvp === 'no')
+        || (filter === 'pending-wa' && isValidWaNumber(g.phone) && !g.waSentAt)
+        || (filter === 'checked-in' && !!g.checkedInAt);
+      return matchesQuery && matchesFilter;
+    });
+  }, [filter, guests, query]);
+  const filters = [
+    ['all', 'Semua'],
+    ['pending-rsvp', 'Belum RSVP'],
+    ['attending', 'Hadir'],
+    ['not-attending', 'Tidak hadir'],
+    ['pending-wa', 'Belum WA'],
+    ['checked-in', 'Check-in']
+  ] as const;
 
   const startWaQueue = (items: Guest[]) => {
     if (!items.length) return;
@@ -297,6 +321,24 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
         </button>
       </div>
       {(waError || waNotice) && <div role="status" style={{ margin: '0 0 12px', color: waError ? red : sage, fontSize: 12 }}>{waError || waNotice}</div>}
+      <div style={{ display: 'grid', gap: 10, margin: '2px 0 14px' }}>
+        <label style={{ position: 'relative', display: 'block' }}>
+          <span style={{ position: 'absolute', left: 13, top: '50%', marginTop: -9, opacity: .45, pointerEvents: 'none' }} aria-hidden="true">⌕</span>
+          <input value={query} onChange={e => setQuery(e.target.value)} type="search" placeholder="Cari nama, nomor HP, atau ID tamu…" aria-label="Cari tamu"
+            style={{ boxSizing: 'border-box', width: '100%', minHeight: 44, padding: '11px 38px', border: '1px solid rgba(47,44,38,.18)', borderRadius: 12, background: '#fff', color: ink }} />
+          {query && <button type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian"
+            style={{ position: 'absolute', right: 2, top: '50%', marginTop: -22, width: 44, height: 44, border: 0, borderRadius: '50%', background: 'transparent', cursor: 'pointer' }}>&times;</button>}
+        </label>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }} aria-label="Filter daftar tamu">
+          {filters.map(([key, text]) => (
+            <button key={key} type="button" onClick={() => setFilter(key)} aria-pressed={filter === key}
+              style={{ ...mini, flex: '0 0 auto', borderRadius: 999, background: filter === key ? ink : 'transparent', color: filter === key ? paper : ink }}>
+              {text}
+            </button>
+          ))}
+        </div>
+        <div role="status" style={{ fontSize: 11, opacity: .58 }}>{visibleGuests.length} dari {guests.length} tamu ditampilkan</div>
+      </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
           <tr style={{ textAlign: 'left', opacity: .55, fontSize: 10, letterSpacing: '.14em', textTransform: 'uppercase' }}>
@@ -305,7 +347,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
           </tr>
         </thead>
         <tbody>
-          {guests.map(g => {
+          {visibleGuests.map(g => {
             const link = guestLink(location.origin, g.id);
             return (
               <tr key={g.id} style={{ borderTop: '1px solid rgba(47,44,38,.1)' }}>
@@ -342,6 +384,9 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
               </tr>
             );
           })}
+          {!visibleGuests.length && (
+            <tr><td colSpan={8} style={{ padding: '28px 12px', textAlign: 'center', opacity: .58 }}>Tidak ada tamu yang cocok dengan pencarian atau filter ini.</td></tr>
+          )}
         </tbody>
       </table>
 
@@ -350,14 +395,14 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
           style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'rgba(33,36,28,.68)', display: 'grid', placeItems: 'center', padding: 20 }}>
           <form onSubmit={e => { e.preventDefault(); void saveEdit(); }} onClick={e => e.stopPropagation()}
             role="dialog" aria-modal="true" aria-labelledby="edit-guest-title"
-            style={{ width: 'min(440px,100%)', background: paper, borderRadius: 18, padding: 22, boxShadow: '0 24px 80px rgba(0,0,0,.32)' }}>
+            style={{ boxSizing: 'border-box', width: '100%', maxWidth: 440, background: paper, borderRadius: 18, padding: 22, boxShadow: '0 24px 80px rgba(0,0,0,.32)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
               <div>
                 <div style={{ font: '500 10px/1 system-ui', letterSpacing: '.14em', textTransform: 'uppercase', color: sage }}>Edit tamu</div>
                 <h2 id="edit-guest-title" style={{ margin: '7px 0 0', fontSize: 22 }}>Nama &amp; nomor HP</h2>
               </div>
               <button type="button" onClick={() => setEditing(null)} disabled={editBusy} aria-label="Tutup edit tamu"
-                style={{ width: 32, height: 32, border: '1px solid rgba(47,44,38,.18)', background: 'transparent', borderRadius: '50%', cursor: editBusy ? 'default' : 'pointer' }}>&times;</button>
+                style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.18)', background: 'transparent', borderRadius: '50%', cursor: editBusy ? 'default' : 'pointer' }}>&times;</button>
             </div>
             <label style={{ display: 'block', marginTop: 18, fontSize: 12, fontWeight: 600 }}>
               Nama tamu
@@ -386,7 +431,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
 
       {currentWa && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(33,36,28,.68)', display: 'grid', placeItems: 'center', padding: 20 }}>
-          <div role="dialog" aria-modal="true" aria-label="Antrean WhatsApp" style={{ width: 'min(520px,100%)', maxHeight: '88dvh', overflowY: 'auto', background: paper, borderRadius: 18, padding: 22, boxShadow: '0 24px 80px rgba(0,0,0,.32)' }}>
+          <div role="dialog" aria-modal="true" aria-label="Antrean WhatsApp" style={{ boxSizing: 'border-box', width: '100%', maxWidth: 520, maxHeight: '88vh', overflowY: 'auto', background: paper, borderRadius: 18, padding: 22, boxShadow: '0 24px 80px rgba(0,0,0,.32)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
               <div>
                 <div style={{ font: '500 10px/1 system-ui', letterSpacing: '.14em', textTransform: 'uppercase', color: sage }}>WhatsApp {waIndex + 1} dari {waQueue.length}</div>
@@ -394,7 +439,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
                 <div style={{ marginTop: 3, fontSize: 12, opacity: .6 }}>+{waNumber(currentWa.phone)}</div>
               </div>
               <button type="button" onClick={() => { setWaQueue([]); setWaError(''); }} aria-label="Tutup antrean"
-                style={{ width: 32, height: 32, border: '1px solid rgba(47,44,38,.18)', background: 'transparent', borderRadius: '50%', cursor: 'pointer' }}>&times;</button>
+                style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.18)', background: 'transparent', borderRadius: '50%', cursor: 'pointer' }}>&times;</button>
             </div>
             <div style={{ marginTop: 16, padding: 14, maxHeight: 210, overflowY: 'auto', whiteSpace: 'pre-wrap', background: '#F3EFE5', border: '1px solid rgba(47,44,38,.1)', borderRadius: 10, fontSize: 12.5, lineHeight: 1.6 }}>
               {waInviteText(currentWa.name, guestLink(location.origin, currentWa.id), cfg)}
@@ -441,7 +486,7 @@ function WishList({ wishes, onModerate }: { wishes: Wish[]; onModerate: (id: str
         <div key={w.id} style={{ background: paper, border: '1px solid rgba(47,44,38,.1)', borderRadius: 14, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
             <strong style={{ fontSize: 13 }}>{w.name}</strong>
-            <span style={{ padding: '4px 7px', borderRadius: 999, background: w.status === 'hidden' ? '#F5E0DC' : '#E3E8DC', color: w.status === 'hidden' ? red : sage, fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase' }}>
+            <span style={{ padding: '5px 8px', borderRadius: 999, background: w.status === 'hidden' ? '#F5E0DC' : '#E3E8DC', color: w.status === 'hidden' ? red : sage, fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase' }}>
               {w.status === 'hidden' ? 'Disembunyikan' : 'Tampil publik'}
             </span>
           </div>

@@ -25,10 +25,10 @@ import type { WeddingConfig } from '../types';
 
 const INK = '#2F2C26', PAPER = '#FBF8F0', SAGE = '#4A5343', RED = '#A93227', BG = '#EDEADF', PANEL = '#E3DFD2';
 
-const pill: CSSProperties = { padding: '11px 16px', background: 'transparent', border: '1px solid rgba(47,44,38,.24)', borderRadius: 999, font: "400 10px/1 'Archivo'", letterSpacing: '.16em', textTransform: 'uppercase', cursor: 'pointer', color: INK, whiteSpace: 'nowrap' };
-const label: CSSProperties = { font: "400 9px/1 'Archivo'", letterSpacing: '.2em', textTransform: 'uppercase', opacity: .55 };
-const input: CSSProperties = { padding: '12px 13px', background: '#FFFFFF', border: '1px solid rgba(47,44,38,.16)', borderRadius: 10, font: "300 13.5px 'Archivo'", outline: 'none', width: '100%', boxSizing: 'border-box', color: INK };
-const linkBtn: CSSProperties = { padding: 0, border: 0, background: 'none', cursor: 'pointer', font: "400 9px/1 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase', color: SAGE };
+const pill: CSSProperties = { minHeight: 44, padding: '11px 16px', background: 'transparent', border: '1px solid rgba(47,44,38,.24)', borderRadius: 999, font: "500 10.5px/1 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase', cursor: 'pointer', color: INK, whiteSpace: 'nowrap' };
+const label: CSSProperties = { font: "500 11px/1.15 'Archivo'", letterSpacing: '.14em', textTransform: 'uppercase', opacity: .62 };
+const input: CSSProperties = { minHeight: 44, padding: '12px 13px', background: '#FFFFFF', border: '1px solid rgba(47,44,38,.16)', borderRadius: 10, font: "300 16px 'Archivo'", width: '100%', boxSizing: 'border-box', color: INK };
+const linkBtn: CSSProperties = { minHeight: 44, padding: '0 6px', border: 0, background: 'none', cursor: 'pointer', font: "500 10.5px/1 'Archivo'", letterSpacing: '.09em', textTransform: 'uppercase', color: SAGE };
 const card: CSSProperties = { background: PAPER, border: '1px solid rgba(47,44,38,.1)', borderRadius: 18, padding: '22px 22px 24px' };
 
 type Key = Exclude<keyof WeddingConfig, 'assets' | 'template' | 'lang'>;
@@ -120,6 +120,15 @@ function StudioInner() {
   }, []);
 
   const dirty = JSON.stringify(cfg) !== publishedJson;
+  const englishKeys: (keyof WeddingConfig)[] = [
+    'dateLabelEn',
+    'story1TitleEn', 'story1BodyEn',
+    'story2TitleEn', 'story2BodyEn',
+    'story3TitleEn', 'story3BodyEn',
+    'story4TitleEn', 'story4BodyEn'
+  ];
+  const englishFilled = englishKeys.filter(key => String(cfg[key] || '').trim()).length;
+  const englishComplete = englishFilled === englishKeys.length;
 
   const update = (next: WeddingConfig) => {
     touched.current = true;
@@ -168,13 +177,13 @@ function StudioInner() {
     <div style={{ borderLeft: narrow ? 0 : '1px solid rgba(47,44,38,.12)', background: PANEL, display: 'grid', gridTemplateRows: 'auto auto 1fr', minHeight: 0, height: '100%' }}>
       <div style={{ padding: '18px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid rgba(47,44,38,.12)' }}>
         <div>
-          <div style={{ font: "500 9px/1 'Archivo'", letterSpacing: '.26em', textTransform: 'uppercase', opacity: .5 }}>Pratinjau langsung</div>
+          <div style={{ font: "500 10.5px/1 'Archivo'", letterSpacing: '.18em', textTransform: 'uppercase', opacity: .58 }}>Pratinjau langsung</div>
           <div style={{ marginTop: 5, fontFamily: "'Bodoni Moda', serif", fontSize: 17 }}>{coupleShort}</div>
         </div>
         <div style={{ display: 'flex', gap: 7 }}>
-          <button onClick={() => setPreviewKey(k => k + 1)} title="Muat ulang" aria-label="Muat ulang pratinjau" style={{ width: 34, height: 34, border: '1px solid rgba(47,44,38,.2)', background: PAPER, borderRadius: '50%', cursor: 'pointer', font: "400 13px/1 'Archivo'", color: INK }}>&#8635;</button>
-          <a href={previewSrc} target="_blank" rel="noreferrer" style={{ display: 'grid', placeItems: 'center', padding: '0 14px', height: 34, border: '1px solid rgba(47,44,38,.2)', background: PAPER, borderRadius: 999, font: "400 9px/1 'Archivo'", letterSpacing: '.16em', textTransform: 'uppercase', textDecoration: 'none', color: INK }}>Buka</a>
-          {narrow && <button onClick={() => setShowPreview(false)} aria-label="Tutup pratinjau" style={{ width: 34, height: 34, border: '1px solid rgba(47,44,38,.2)', background: PAPER, borderRadius: '50%', cursor: 'pointer', font: "300 16px/1 'Archivo'", color: INK }}>&times;</button>}
+          <button onClick={() => setPreviewKey(k => k + 1)} title="Muat ulang" aria-label="Muat ulang pratinjau" style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.2)', background: PAPER, borderRadius: '50%', cursor: 'pointer', font: "400 15px/1 'Archivo'", color: INK }}>&#8635;</button>
+          <a href={previewSrc} target="_blank" rel="noreferrer" style={{ display: 'grid', placeItems: 'center', padding: '0 14px', height: 44, border: '1px solid rgba(47,44,38,.2)', background: PAPER, borderRadius: 999, font: "500 10.5px/1 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase', textDecoration: 'none', color: INK }}>Buka</a>
+          {narrow && <button onClick={() => setShowPreview(false)} aria-label="Tutup pratinjau" style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.2)', background: PAPER, borderRadius: '50%', cursor: 'pointer', font: "300 18px/1 'Archivo'", color: INK }}>&times;</button>}
         </div>
       </div>
       <div style={{ padding: '12px 22px', borderBottom: '1px solid rgba(47,44,38,.12)', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -191,13 +200,13 @@ function StudioInner() {
   );
 
   return (
-    <div style={{ height: '100dvh', display: 'grid', gridTemplateColumns: narrow ? 'minmax(0,1fr)' : 'minmax(0,1fr) 470px', background: BG, color: INK, fontFamily: "'Archivo', system-ui, sans-serif", overflow: 'hidden' }}>
+    <div className="app-screen" style={{ display: 'grid', gridTemplateColumns: narrow ? 'minmax(0,1fr)' : 'minmax(0,1fr) 470px', background: BG, color: INK, fontFamily: "'Archivo', system-ui, sans-serif", overflow: 'hidden' }}>
       <div style={{ minWidth: 0, overflowY: 'auto', padding: narrow ? '26px 18px 110px' : '34px 36px 90px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
           <div>
             <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-              <div style={{ font: "500 9px/1 'Archivo'", letterSpacing: '.4em', textTransform: 'uppercase', color: RED }}>Studio Undangan</div>
-              <a href="/dashboard" style={{ font: "400 9px/1 'Archivo'", letterSpacing: '.2em', textTransform: 'uppercase', color: INK, opacity: .55 }}>Dashboard &rarr;</a>
+              <div style={{ font: "600 10.5px/1 'Archivo'", letterSpacing: '.22em', textTransform: 'uppercase', color: RED }}>Studio Undangan</div>
+              <a href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', minHeight: 44, font: "500 10.5px/1 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase', color: INK, opacity: .65 }}>Dashboard &rarr;</a>
             </div>
             <h1 style={{ margin: '10px 0 0', fontFamily: "'Bodoni Moda', serif", fontWeight: 400, fontSize: narrow ? 32 : 40, lineHeight: 1.05 }}>Atur isi undangan</h1>
             <p style={{ margin: '8px 0 0', maxWidth: 540, font: "200 13px/1.7 'Archivo'", opacity: .7, textWrap: 'pretty' } as CSSProperties}>
@@ -218,7 +227,7 @@ function StudioInner() {
 
         <div style={{ display: 'flex', gap: 6, margin: '22px 0 22px', padding: 5, background: PANEL, borderRadius: 999, width: 'max-content' }}>
           {(['content', 'assets'] as const).map(k => (
-            <button key={k} onClick={() => setTab(k)} style={{ padding: '10px 20px', border: 0, borderRadius: 999, cursor: 'pointer', background: tab === k ? INK : 'transparent', color: tab === k ? PAPER : INK, font: "500 10px/1 'Archivo'", letterSpacing: '.18em', textTransform: 'uppercase' }}>
+            <button key={k} onClick={() => setTab(k)} style={{ minHeight: 44, padding: '10px 20px', border: 0, borderRadius: 999, cursor: 'pointer', background: tab === k ? INK : 'transparent', color: tab === k ? PAPER : INK, font: "500 10.5px/1 'Archivo'", letterSpacing: '.14em', textTransform: 'uppercase' }}>
               {k === 'content' ? 'Konten' : 'Aset gambar'}
             </button>
           ))}
@@ -226,6 +235,15 @@ function StudioInner() {
 
         {tab === 'content' ? (
           <div style={{ display: 'grid', gap: 22 }}>
+            <div role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', padding: '14px 16px', border: '1px solid ' + (englishComplete ? 'rgba(74,83,67,.22)' : 'rgba(138,90,18,.24)'), borderRadius: 14, background: englishComplete ? '#E3E8DC' : '#F5E7D8' }}>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 600, color: englishComplete ? SAGE : '#8A5A12' }}>{englishComplete ? 'Terjemahan English lengkap' : 'Terjemahan English belum lengkap'}</div>
+                <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.55, opacity: .68 }}>
+                  {englishFilled}/{englishKeys.length} field tanggal dan cerita English terisi. Field kosong akan memakai versi Indonesia.
+                </div>
+              </div>
+              <span style={{ minWidth: 50, padding: '7px 10px', borderRadius: 999, background: PAPER, textAlign: 'center', fontSize: 11, fontWeight: 600 }}>{Math.round(englishFilled / englishKeys.length * 100)}%</span>
+            </div>
             {GROUPS.map(g => (
               <div key={g.title} style={card}>
                 <GroupHead title={g.title} hint={g.hint} />
@@ -258,7 +276,7 @@ function StudioInner() {
                 {g.isLang && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                     {(['id', 'en'] as const).map(l => (
-                      <button key={l} onClick={() => update({ ...cfg, lang: l })} style={{ padding: '11px 20px', border: '1px solid rgba(47,44,38,.16)', borderRadius: 999, cursor: 'pointer', background: cfg.lang === l ? SAGE : 'transparent', color: cfg.lang === l ? PAPER : INK, font: "400 10px/1 'Archivo'", letterSpacing: '.16em', textTransform: 'uppercase' }}>
+                      <button key={l} onClick={() => update({ ...cfg, lang: l })} style={{ minHeight: 44, padding: '11px 20px', border: '1px solid rgba(47,44,38,.16)', borderRadius: 999, cursor: 'pointer', background: cfg.lang === l ? SAGE : 'transparent', color: cfg.lang === l ? PAPER : INK, font: "500 10.5px/1 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase' }}>
                         {l === 'id' ? 'Bahasa Indonesia' : 'English'}
                       </button>
                     ))}
@@ -274,7 +292,7 @@ function StudioInner() {
 
       {!narrow && previewPanel}
       {narrow && !showPreview && (
-        <button onClick={() => setShowPreview(true)} style={{ position: 'fixed', right: 18, bottom: 18, zIndex: 20, padding: '15px 22px', background: INK, color: PAPER, border: 0, borderRadius: 999, boxShadow: '0 14px 34px rgba(47,44,38,.3)', font: "400 10px/1 'Archivo'", letterSpacing: '.18em', textTransform: 'uppercase', cursor: 'pointer' }}>
+        <button onClick={() => setShowPreview(true)} style={{ position: 'fixed', right: 18, bottom: 18, zIndex: 20, minHeight: 44, padding: '15px 22px', background: INK, color: PAPER, border: 0, borderRadius: 999, boxShadow: '0 14px 34px rgba(47,44,38,.3)', font: "500 10.5px/1 'Archivo'", letterSpacing: '.14em', textTransform: 'uppercase', cursor: 'pointer' }}>
           Lihat pratinjau
         </button>
       )}
@@ -289,7 +307,7 @@ function GroupHead({ title, hint }: { title: string; hint: string }) {
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
       <div style={{ fontFamily: "'Bodoni Moda', serif", fontSize: 21, whiteSpace: 'nowrap' }}>{title}</div>
       <div style={{ flex: 1, height: 1, background: 'rgba(47,44,38,.12)' }} />
-      <div style={{ font: "400 9px/1.3 'Archivo'", letterSpacing: '.2em', textTransform: 'uppercase', opacity: .45, textAlign: 'right' }}>{hint}</div>
+      <div style={{ font: "500 10.5px/1.3 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase', opacity: .55, textAlign: 'right' }}>{hint}</div>
     </div>
   );
 }
@@ -330,13 +348,13 @@ function LibraryPicker({ def, current, onPick, onClose }: { def: SlotDef; curren
   return (
     <div role="dialog" aria-modal="true" aria-label={'Koleksi untuk ' + def.label} style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'grid', placeItems: 'center', padding: 18 }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(33,36,28,.5)' }} />
-      <div style={{ position: 'relative', width: 'min(760px, 100%)', maxHeight: '86dvh', overflowY: 'auto', background: PAPER, borderRadius: 20, padding: '22px 22px 26px', boxShadow: '0 30px 80px rgba(33,36,28,.35)' }}>
+      <div style={{ position: 'relative', boxSizing: 'border-box', width: '100%', maxWidth: 760, maxHeight: '86vh', overflowY: 'auto', background: PAPER, borderRadius: 20, padding: '22px 22px 26px', boxShadow: '0 30px 80px rgba(33,36,28,.35)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
           <div>
             <div style={label}>Koleksi ornamen</div>
             <div style={{ marginTop: 6, fontFamily: "'Bodoni Moda', serif", fontSize: 22 }}>{def.label}</div>
           </div>
-          <button onClick={onClose} aria-label="Tutup" style={{ width: 34, height: 34, border: '1px solid rgba(47,44,38,.2)', background: 'transparent', borderRadius: '50%', cursor: 'pointer', font: "300 16px/1 'Archivo'", color: INK }}>&times;</button>
+          <button onClick={onClose} aria-label="Tutup" style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.2)', background: 'transparent', borderRadius: '50%', cursor: 'pointer', font: "300 18px/1 'Archivo'", color: INK }}>&times;</button>
         </div>
         {LIBRARY.map(g => (
           <div key={g.group} style={{ marginTop: 18 }}>
@@ -348,7 +366,7 @@ function LibraryPicker({ def, current, onPick, onClose }: { def: SlotDef; curren
                   <button key={it.src} onClick={() => onPick(it.src)} title={it.label}
                     style={{ display: 'grid', gap: 6, padding: 8, background: '#4A5343', border: on ? '2px solid ' + RED : '2px solid transparent', borderRadius: 12, cursor: 'pointer' }}>
                     <img src={it.src} alt="" loading="lazy" style={{ width: '100%', aspectRatio: '1', objectFit: 'contain' }} />
-                    <span style={{ font: "400 9px/1.2 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase', color: PAPER }}>{on ? '✓ ' : ''}{it.label}</span>
+                    <span style={{ font: "500 10px/1.2 'Archivo'", letterSpacing: '.08em', textTransform: 'uppercase', color: PAPER }}>{on ? '✓ ' : ''}{it.label}</span>
                   </button>
                 );
               })}
@@ -385,13 +403,13 @@ function SlotCard({ def, url, onSet, onPick }: { def: SlotDef; url: string; onSe
         {src
           ? <img src={src} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: def.kind === 'photo' ? 'cover' : 'contain', padding: def.kind === 'photo' ? 0 : 8, boxSizing: 'border-box' }} />
           : <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', padding: 10, font: "300 10.5px/1.4 'Archivo'", color: 'rgba(47,44,38,.5)', textAlign: 'center' }}>+ {def.label}</span>}
-        {busy && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(251,248,240,.8)', font: "400 9px/1 'Archivo'", letterSpacing: '.18em', textTransform: 'uppercase' }}>Mengunggah…</span>}
-        {url && !busy && <span style={{ position: 'absolute', top: 6, left: 6, padding: '3px 7px', background: SAGE, color: PAPER, borderRadius: 999, font: "400 8px/1 'Archivo'", letterSpacing: '.14em', textTransform: 'uppercase' }}>Kustom</span>}
+        {busy && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(251,248,240,.8)', font: "500 10px/1 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase' }}>Mengunggah…</span>}
+        {url && !busy && <span style={{ position: 'absolute', top: 6, left: 6, padding: '4px 7px', background: SAGE, color: PAPER, borderRadius: 999, font: "500 10px/1 'Archivo'", letterSpacing: '.08em', textTransform: 'uppercase' }}>Kustom</span>}
       </button>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={e => { take(e.target.files?.[0]); e.target.value = ''; }} />
       <div style={{ font: "300 11px/1.4 'Archivo'", opacity: .75, textWrap: 'pretty' } as CSSProperties}>{def.label}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <span style={{ font: "200 9px/1 'Archivo'", letterSpacing: '.14em', textTransform: 'uppercase', opacity: .38, marginRight: 'auto' }}>{kindLabel}</span>
+        <span style={{ font: "400 10px/1 'Archivo'", letterSpacing: '.09em', textTransform: 'uppercase', opacity: .5, marginRight: 'auto' }}>{kindLabel}</span>
         {def.kind !== 'photo' && <button type="button" onClick={onPick} style={linkBtn}>Koleksi</button>}
         {url && <button type="button" onClick={() => onSet('')} style={{ ...linkBtn, color: RED }}>{def.kind === 'photo' ? 'Hapus' : 'Default'}</button>}
       </div>
