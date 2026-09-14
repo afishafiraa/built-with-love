@@ -17,7 +17,6 @@ const TEMPLATE_CONFIG: WeddingConfig = {
   brideFull: "Ave Maria Larasati",
   groomParents: "Bapak Ahmad Wijaya & Ibu Siti Aminah",
   brideParents: "Bapak Joko Susilo & Ibu Dewi Lestari",
-  guestGreeting: "Fulan",
   dateISO: "2027-06-12T09:00:00+07:00",
   dateLabel: "Sabtu, 12 Juni 2027",
   dateLabelEn: "Saturday, June 12th, 2027",
@@ -30,15 +29,23 @@ const TEMPLATE_CONFIG: WeddingConfig = {
   story1Year: "2018",
   story1Title: "Pertemuan Pertama",
   story1Body: "Satu proyek kampus, dua orang yang belum tahu ini awal dari segalanya.",
+  story1TitleEn: "",
+  story1BodyEn: "",
   story2Year: "2021",
   story2Title: "Melangkah Bersama",
   story2Body: "Dua kota mengajarkan kami arti menunggu dan memilih dengan sadar.",
+  story2TitleEn: "",
+  story2BodyEn: "",
   story3Year: "2026",
   story3Title: "Lamaran",
   story3Body: "Di halaman rumah yang penuh bunga, satu pertanyaan dijawab dengan satu kata.",
+  story3TitleEn: "",
+  story3BodyEn: "",
   story4Year: "2027",
   story4Title: "Hari Bahagia",
   story4Body: "Pita yang sama, kini mengikat dua keluarga menjadi satu.",
+  story4TitleEn: "",
+  story4BodyEn: "",
   bank1Name: "Bank Mandiri",
   bank1Acct: "1234 5678 9012",
   bank1Holder: "Pablo Andreas Wijaya",
@@ -50,8 +57,8 @@ const TEMPLATE_CONFIG: WeddingConfig = {
   giftAddressHolder: "Ave · 0812 3456 7890",
   musicUrl: "",
   musicTitle: "",
-  displayFont: "Great Vibes",
-  bodyFont: "Playfair Display",
+  displayFont: "Cookie",
+  bodyFont: "Quicksand",
   hashtag: "#PabloAveWedding",
   groomInstagram: "",
   brideInstagram: "",
@@ -78,6 +85,14 @@ function merge(base: WeddingConfig, partial: Partial<WeddingConfig> | null | und
     if (k === 'assets') { if (typeof v === 'object') out.assets = { ...(v as Record<string, string>) }; continue; }
     if (k in base) (out as unknown as Record<string, unknown>)[k] = v;
   }
+  /* The visual system now uses one friendly handwriting face and one rounded
+     text face. Migrate previously published font values automatically so an
+     old Sheets/Studio setting cannot silently restore the formal typography. */
+  if (out.displayFont !== 'custom') out.displayFont = 'Cookie';
+  out.bodyFont = 'Quicksand';
+  // The cover is now intentionally colour + gilding only. Discard the legacy
+  // full-bleed photo slot so old published drafts cannot bring it back.
+  delete out.assets['v-cover'];
   return out;
 }
 

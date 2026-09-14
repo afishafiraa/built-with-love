@@ -3,6 +3,8 @@
 Vite + React SPA, deploy ke Vercel, data di Google Sheets lewat Apps Script.
 Desain: **Blossom Garden** + **Studio Undangan** dari Claude Design (handoff).
 
+Dokumentasi audit desain, fitur, arsitektur, keamanan, roadmap, dan QA tersedia di [`docs/`](docs/README.md).
+
 ## Jalankan
 ```bash
 cd app
@@ -37,7 +39,7 @@ bukan lewat berkas ini.
 ## Struktur
 | Path | Isi |
 | --- | --- |
-| `src/pages/Invitation.tsx` | Port penuh Blossom Garden v2: sampul amplop, nama per huruf, pita berjalan, countdown, love story berpita, peta, RSVP, ucapan, amplop digital, dock, musik, kelopak |
+| `src/pages/Invitation.tsx` | Port penuh Blossom Garden v2: sampul amplop, nama per huruf, pita berjalan, countdown, love story berpita, peta, RSVP (maks. 2 tamu), ucapan, amplop digital, dock, musik, kelopak |
 | `src/pages/Studio.tsx` | Port Studio Undangan: tab Konten & Aset gambar, pratinjau, Salin JSON, Reset, Terbitkan |
 | `src/styles/blossom.css` | Keyframes & animasi scroll (`animation-timeline: view()`), dengan fallback & reduced-motion |
 | `src/config/invitation.ts` | Konten contoh (bentuk sama dengan JSON dari Studio) + penggabungan override lokal |
@@ -59,15 +61,16 @@ bukan lewat berkas ini.
 
 Ornamen sudut sampul & hero cukup satu gambar (versi pojok kanan bawah); undangan mencerminkannya ke keempat sudut.
 
-Foto kosong tidak menampilkan placeholder ke tamu: foto bulat di sampul memakai monogram,
-foto mempelai memakai inisial, latar sampul/hero tetap hijau sage.
+Foto kosong tidak menampilkan placeholder ke tamu: foto bulat di sampul memakai monogram
+dan foto mempelai memakai inisial. Background memakai cream bertekstur, ivory, sage,
+taupe, dan aksen gold sesuai tema Ivory Blossom Garden.
 
 ## Fitur & statusnya
 - [x] Port penuh visual + animasi Blossom Garden v2
 - [x] Studio: edit konten, unggah aset per posisi, pratinjau langsung, terbitkan ke Sheets
 - [x] Link per tamu `?to=` + sapaan personal
 - [x] RSVP ke Sheets (+ QR check-in pribadi untuk tamu yang hadir)
-- [x] Ucapan ke Sheets, tampil setelah dimoderasi
+- [x] Ucapan langsung tampil publik; dashboard dapat menyembunyikan atau menampilkan kembali
 - [x] Rekap RSVP, daftar tamu, export CSV, QR check-in hari H
 - [x] Kirim undangan via WhatsApp per tamu
 - [x] Bahasa ID / EN, musik latar, tampilan desktop (kolom HP di tengah)

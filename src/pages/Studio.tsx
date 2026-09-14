@@ -13,6 +13,7 @@ import { BODY_FONTS, DISPLAY_FONTS } from '../config/fonts';
 import type { SlotDef } from '../config/slots';
 import { fetchPublished, loadCached, loadDraft, publish, saveDraft } from '../lib/config';
 import { sheetsReady } from '../lib/sheets';
+import { copyText } from '../lib/clipboard';
 import { uploadAsset, uploadMode } from '../lib/upload';
 import { slug } from '../lib/guest';
 import type { WeddingConfig } from '../types';
@@ -42,11 +43,10 @@ const GROUPS: { title: string; hint: string; isLang?: boolean; photos?: string[]
     { key: 'groomParents', label: 'Orang tua pria', wide: true },
     { key: 'brideParents', label: 'Orang tua wanita', wide: true },
     { key: 'groomInstagram', label: 'Instagram pria', ph: '@username', note: 'Tombol Instagram muncul di bawah nama. Kosongkan untuk menyembunyikan.' },
-    { key: 'brideInstagram', label: 'Instagram wanita', ph: '@username' },
-    { key: 'guestGreeting', label: 'Sapaan untuk tamu', wide: true, ph: 'Kepada Bapak/Ibu/Saudara/i', note: 'Kalimat pembuka di sampul, mis. "Kepada Bapak/Ibu/Saudara/i". Nama tiap tamu otomatis tampil di bawahnya dari tautan ?to=nama-tamu.' }
+    { key: 'brideInstagram', label: 'Instagram wanita', ph: '@username' }
   ] },
   { title: 'Tipografi & tagar', hint: 'Huruf & hashtag', fields: [
-    { key: 'displayFont', label: 'Huruf judul & nama', options: DISPLAY_FONTS, note: 'Belista, Samantha & Poppy Shower adalah font berbayar — pilih "Font sendiri" lalu taruh file font berlisensi di app/public/fonts/display.woff2 (atau .otf / .ttf).' },
+    { key: 'displayFont', label: 'Huruf handwriting untuk judul & nama', options: DISPLAY_FONTS, note: 'Cookie adalah pilihan desain utama. Pilih "Font sendiri" hanya jika ingin memakai file font berlisensi di app/public/fonts/display.woff2 (atau .otf / .ttf).' },
     { key: 'bodyFont', label: 'Huruf teks', options: BODY_FONTS },
     { key: 'hashtag', label: 'Hashtag pernikahan', wide: true, ph: '#NamaKitaWedding', note: 'Tampil di penutup, di bawah logo, dengan tombol salin & lihat di Instagram.' }
   ] },
@@ -63,10 +63,13 @@ const GROUPS: { title: string; hint: string; isLang?: boolean; photos?: string[]
     { key: 'address', label: 'Alamat lengkap', area: true, wide: true },
     { key: 'mapsQuery', label: 'Kata kunci Google Maps', wide: true, note: 'Yang dicari di peta, mis. "Gedung Serbaguna Melati, Yogyakarta".' }
   ] },
-  { title: 'Love story', hint: 'Empat babak · kosongkan untuk menyembunyikan', fields: [1, 2, 3, 4].flatMap(n => [
+  { title: 'Love story', hint: 'Indonesia & English · kosongkan untuk menyembunyikan', fields: [1, 2, 3, 4].flatMap(n => [
     { key: ('story' + n + 'Year') as Key, label: 'Babak ' + n + ' — tahun' },
-    { key: ('story' + n + 'Title') as Key, label: 'Babak ' + n + ' — judul' },
-    { key: ('story' + n + 'Body') as Key, label: 'Babak ' + n + ' — cerita', area: true, wide: true }
+    { key: ('story' + n + 'Title') as Key, label: 'Babak ' + n + ' — judul Indonesia' },
+    { key: ('story' + n + 'Body') as Key, label: 'Babak ' + n + ' — cerita Indonesia', area: true, wide: true },
+    { key: ('story' + n + 'TitleEn') as Key, label: 'Chapter ' + n + ' — English title', ph: 'English version' },
+    { key: ('story' + n + 'BodyEn') as Key, label: 'Chapter ' + n + ' — English story', ph: 'English version', area: true, wide: true,
+      note: 'Jika dikosongkan, versi Indonesia tetap ditampilkan saat undangan memakai English.' }
   ]) },
   { title: 'Amplop digital', hint: 'Kosongkan untuk menyembunyikan kartu', fields: [
     { key: 'bank1Name', label: 'Bank 1 — nama' }, { key: 'bank1Acct', label: 'Bank 1 — nomor rekening' },
@@ -146,8 +149,8 @@ function StudioInner() {
     setPreviewKey(k => k + 1);
   };
 
-  const onCopyJson = () => {
-    navigator.clipboard?.writeText(JSON.stringify(cfg, null, 2)).catch(() => {});
+  const onCopyJson = async () => {
+    if (!await copyText(JSON.stringify(cfg, null, 2))) return;
     setJsonCopied(true);
     window.setTimeout(() => setJsonCopied(false), 1800);
   };
@@ -402,8 +405,12 @@ function useNarrow(px: number) {
   const [narrow, setNarrow] = useState(q.matches);
   useEffect(() => {
     const on = () => setNarrow(q.matches);
-    q.addEventListener('change', on);
-    return () => q.removeEventListener('change', on);
+    if (q.addEventListener) {
+      q.addEventListener('change', on);
+      return () => q.removeEventListener('change', on);
+    }
+    q.addListener(on);
+    return () => q.removeListener(on);
   }, [q]);
   return narrow;
 }

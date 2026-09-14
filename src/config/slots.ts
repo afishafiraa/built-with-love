@@ -18,10 +18,8 @@ export const SLOT_SRC: Record<string, string> = {
   'orn-ticker-b': A + 'wf-2.webp',
   'orn-quote-top': A + 'mix-arch.webp',
   'orn-groom-top': A + 'r4-spray.webp',
-  'orn-groom-side': A + 'wf-2.webp',
   'orn-divider': A + 'mix-divider.webp',
   'orn-bride-top': A + 'r4-spray.webp',
-  'orn-bride-side': A + 'wf-2.webp',
   'orn-acara-ring': A + 'mix-wreath.webp',
   'orn-story-1': A + 'w-blossom.webp',
   'orn-story-2': A + 'wf-1.webp',
@@ -38,8 +36,7 @@ export const SLOT_SRC: Record<string, string> = {
   'petal-b': A + 'petal-w2.webp',
   'petal-c': A + 'petal-w3.webp',
   'petal-d': A + 'petal-w4.webp',
-  'petal-e': A + 'petal-w2.webp',
-  'petal-f': A + 'petal-3.webp'
+  'petal-e': A + 'petal-w2.webp'
 };
 
 /** Built-in artwork the Studio offers per slot ("Koleksi"), grouped by source set. */
@@ -93,8 +90,7 @@ export const THREAD = { width: 180, height: 980, top: 140, row: 210 };
 
 export const SLOTS: { group: string; items: SlotDef[] }[] = [
   { group: 'Sampul (cover)', items: [
-    { slot: 'v-cover', label: 'Foto latar sampul', kind: 'photo', ratio: '3/4' },
-    { slot: 'v-cover-round', label: 'Foto bulat tengah', kind: 'photo', ratio: '1/1' },
+    { slot: 'v-cover-round', label: 'Foto bulat tengah (opsional)', kind: 'photo', ratio: '1/1' },
     { slot: 'orn-cover-ring', label: 'Lingkaran bunga di belakang foto', kind: 'orn', ratio: '1/1' },
     { slot: 'orn-cover-corner', label: 'Sudut — dipakai di 4 sudut (dicerminkan)', kind: 'orn', ratio: '5/4' }
   ] },
@@ -104,7 +100,7 @@ export const SLOTS: { group: string; items: SlotDef[] }[] = [
     { slot: 'orn-hero-corner', label: 'Sudut — dipakai di 4 sudut (dicerminkan)', kind: 'orn', ratio: '5/4' }
   ] },
   { group: 'Sambungan antar bagian', items: [
-    { slot: 'orn-seam', label: 'Buket sambungan — sisi kiri, dicerminkan ke kanan di tiap perpindahan bagian', kind: 'orn', ratio: '3/2' }
+    { slot: 'orn-seam', label: 'Buket sambungan — sisi kiri, dicerminkan ke kanan (dipakai di perpindahan besar saja)', kind: 'orn', ratio: '3/2' }
   ] },
   { group: 'Pita berjalan & kutipan', items: [
     { slot: 'orn-ticker-a', label: 'Ikon pita berjalan 1', kind: 'orn', ratio: '1/1' },
@@ -115,10 +111,8 @@ export const SLOTS: { group: string; items: SlotDef[] }[] = [
     { slot: 'v-groom', label: 'Foto mempelai pria', kind: 'photo', ratio: '1/1' },
     { slot: 'v-bride', label: 'Foto mempelai wanita', kind: 'photo', ratio: '1/1' },
     { slot: 'orn-groom-top', label: 'Ornamen atas kartu pria', kind: 'orn', ratio: '1/1' },
-    { slot: 'orn-groom-side', label: 'Ornamen samping foto pria', kind: 'orn', ratio: '1/1' },
     { slot: 'orn-divider', label: 'Pembatas antar mempelai', kind: 'orn', ratio: '3/1' },
-    { slot: 'orn-bride-top', label: 'Ornamen atas kartu wanita', kind: 'orn', ratio: '1/1' },
-    { slot: 'orn-bride-side', label: 'Ornamen samping foto wanita', kind: 'orn', ratio: '1/1' }
+    { slot: 'orn-bride-top', label: 'Ornamen atas kartu wanita', kind: 'orn', ratio: '1/1' }
   ] },
   { group: 'Acara', items: [
     { slot: 'orn-acara-ring', label: 'Lingkaran di atas countdown', kind: 'orn', ratio: '1/1' }
@@ -147,8 +141,7 @@ export const SLOTS: { group: string; items: SlotDef[] }[] = [
     { slot: 'petal-b', label: 'Kelopak 2', kind: 'petal', ratio: '1/1' },
     { slot: 'petal-c', label: 'Kelopak 3', kind: 'petal', ratio: '1/1' },
     { slot: 'petal-d', label: 'Kelopak 4', kind: 'petal', ratio: '1/1' },
-    { slot: 'petal-e', label: 'Kelopak 5', kind: 'petal', ratio: '1/1' },
-    { slot: 'petal-f', label: 'Kelopak 6', kind: 'petal', ratio: '1/1' }
+    { slot: 'petal-e', label: 'Kelopak 5', kind: 'petal', ratio: '1/1' }
   ] }
 ];
 

@@ -10,7 +10,7 @@ export function readGuestParam() {
   const raw = new URLSearchParams(location.search).get('to') || '';
   const id = raw.trim();
   const name = id
-    ? decodeURIComponent(id).replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    ? id.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : '';
   return { id, name };
 }

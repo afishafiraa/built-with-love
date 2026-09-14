@@ -1,13 +1,20 @@
 /* Blossom Garden v2 — ported from the Claude Design handoff
    (Undangan Blossom Garden v2.dc.html). Palette:
-   sage #4A5343 · deep sage #3B4235 · paper #FBF6EC · card #FFFCF4 · sand #EFEADC
-   ink #33302A · red #A93227 · gold #F0C98A · amber #D9922E · peach #E9B98C */
+   warm sage #747963 · deep olive #5A604D · sand #F3EADB · ivory #FFF9EF
+   ink #3E352C · rose taupe #A06B5B · gold #C9A15D */
 
 /* Invitation page only: no visible scrollbar, no white flash when the page
    bounces past its ends, content allowed under the notch (viewport-fit=cover). */
-html:has(.bl-root) { scrollbar-width: none; -ms-overflow-style: none; background: #4A5343; overscroll-behavior-y: none; }
+html, body, #root { min-height: 100%; background: #F3EADB; }
+html.bl-document, html:has(.bl-root) { scrollbar-width: none; -ms-overflow-style: none; background: #747963; overscroll-behavior-y: none; }
+html.bl-document::-webkit-scrollbar, html.bl-document body::-webkit-scrollbar,
 html:has(.bl-root)::-webkit-scrollbar, html:has(.bl-root) body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-html:has(.bl-root) body { background: #4A5343; }
+html.bl-document body, html:has(.bl-root) body { background: #747963; }
+
+.bl-root :where(a, button, input, textarea):focus-visible {
+  outline: 3px solid rgba(201, 161, 93, .72);
+  outline-offset: 3px;
+}
 .bl-root *::-webkit-scrollbar { width: 0; height: 0; }
 .bl-root * { scrollbar-width: none; }
 
@@ -18,35 +25,59 @@ html:has(.bl-root) body { background: #4A5343; }
 }
 
 .bl-root {
-  --f-display: 'Great Vibes', cursive;
-  --f-serif: 'Playfair Display', Georgia, serif;
-  --f-body: 'Playfair Display', Georgia, serif;
+  --f-display: 'Cookie', cursive;
+  --f-serif: 'Quicksand', ui-rounded, system-ui, sans-serif;
+  --f-body: 'Quicksand', 'Archivo', sans-serif;
+  --f-ui: 'Quicksand', 'Archivo', sans-serif;
+  min-height: 100vh;
   min-height: 100dvh;
-  background: #E7DFCC;
+  background: #F3EADB;
   -webkit-font-smoothing: antialiased;
 }
-.bl-root a { color: #4A5343; text-decoration: none; }
-.bl-root a:hover { color: #A93227; }
+.bl-root a { color: #747963; text-decoration: none; }
+.bl-root a:hover { color: #A06B5B; }
 :where(.bl-root) :is(input, textarea, button) { font: inherit; color: inherit; }
 :where(.bl-root) button { -webkit-tap-highlight-color: transparent; }
-:where(.bl-root) ::placeholder { color: rgba(51, 48, 42, .45); }
+:where(.bl-root) ::placeholder { color: rgba(62, 53, 44, .45); }
 
 /* The invitation is a phone-width column; on desktop it sits centred on sand. */
 .bl-page {
   position: relative;
   max-width: 480px;
   margin: 0 auto;
-  overflow-x: clip;
-  background: #FBF6EC url(/assets/paper-texture.webp);
-  background-size: 320px;
-  color: #33302A;
+  overflow-x: hidden;
+  /* The opaque tint keeps the grain soft, while sparse gold flecks add warmth.
+     Scallops use the same base, grain and fleck recipe in their SVG pattern. */
+  background-color: #F3EADB;
+  background-image:
+    radial-gradient(circle at 14% 18%, rgba(201,161,93,.32) 0 .75px, transparent 1.5px),
+    radial-gradient(circle at 78% 62%, rgba(201,161,93,.22) 0 .65px, transparent 1.4px),
+    linear-gradient(rgba(243,234,219,.90), rgba(243,234,219,.90)),
+    url(/assets/paper-texture.webp);
+  background-size: 176px 208px, 226px 248px, auto, 320px 320px;
+  background-blend-mode: normal, normal, normal, multiply;
+  color: #3E352C;
   font-family: var(--f-body);
 }
+@supports (overflow: clip) { .bl-page { overflow-x: clip; } }
 @media (min-width: 560px) {
   .bl-page { box-shadow: 0 0 0 1px rgba(51, 48, 42, .06), 0 30px 80px rgba(51, 48, 42, .18); }
 }
 /* Fixed layers follow the column instead of the whole viewport. */
 .bl-col { left: 0; right: 0; margin-inline: auto; max-width: 480px; }
+
+/* The cover fills the screen as a normal block, not as a fixed overlay.
+   On iOS a `position: fixed` layer is laid out against a viewport that runs on
+   underneath the browser toolbars: the cover's top slid behind the URL bar while
+   JS reported top:0 and every height agreeing (766 = the visible height), and a
+   fixed probe panel was clipped at the top in exactly the same way. Content in
+   the normal flow honours the browser's insets — which is why the hero below,
+   and everything after it, never showed the bug. Nothing sits behind the cover
+   in any case: the invitation only mounts once the guest opens it. */
+.bl-cover { position: relative; height: 100vh; height: 100svh; }
+
+/* The opening flaps do have to overlay the invitation, for 1.25s. */
+.bl-screen { position: fixed; top: 0; height: 100vh; height: 100svh; }
 
 .bl-orn { position: absolute; pointer-events: none; }
 /* Clip without becoming a scroll container — otherwise the scroll-driven
@@ -54,55 +85,126 @@ html:has(.bl-root) body { background: #4A5343; }
 .bl-clip { overflow: hidden; }
 @supports (overflow: clip) { .bl-clip { overflow: clip; } }
 /* Sections clip sideways only: ornaments may cross into the next section. */
-.bl-sec { overflow-x: clip; }
-.bl-petal > img { filter: drop-shadow(0 1px 1.5px rgba(74, 83, 67, .28)); }
+.bl-sec { overflow-x: hidden; }
+@supports (overflow: clip) { .bl-sec { overflow-x: clip; } }
+.bl-petal { opacity: .7; }
+.bl-petal > img { filter: drop-shadow(0 1px 1.5px rgba(75, 70, 55, .24)); }
 .bl-orn > img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .bl-fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.bl-kicker { font: 400 9px/1 'Archivo', sans-serif; letter-spacing: .42em; text-transform: uppercase; color: #A93227; }
-.bl-serif { font-family: var(--f-serif); font-weight: 400; }
-.bl-batang { font-family: var(--f-serif); }
+.bl-kicker { font: 600 9px/1 var(--f-ui); letter-spacing: .24em; text-transform: uppercase; color: #A06B5B; }
+.bl-serif { font-family: var(--f-serif); font-weight: 500; }
+.bl-batang { font-family: var(--f-body); font-weight: 400; }
 .bl-display { font-family: var(--f-display); font-weight: 400; letter-spacing: 0; text-wrap: balance; }
+/* Cookie carries the romantic display moments; full legal names receive a
+   separate warm serif so they stand apart from general interface copy. */
+.bl-couple-name { font-family: var(--f-display); font-weight: 400; letter-spacing: 0; }
+.bl-full-name { font-family: 'Fraunces', Georgia, serif; font-weight: 600; letter-spacing: -.018em; text-wrap: balance; }
+.bl-place-name, .bl-event-date, .bl-hashtag { font-family: var(--f-body); font-weight: 600; letter-spacing: 0; text-wrap: balance; }
+.bl-event-date { color: #FFF9EF; }
+.bl-hashtag { text-transform: none; }
 
 .bl-ig {
   display: inline-flex; align-items: center; gap: 6px; width: max-content; margin-top: 10px; padding: 7px 12px;
-  border: 1px solid rgba(74, 83, 67, .28); border-radius: 999px; color: #4A5343 !important;
-  font: 400 10px/1 'Archivo', sans-serif; letter-spacing: .06em; transition: background .25s, color .25s;
+  border: 1px solid rgba(116, 121, 99, .3); border-radius: 999px; color: #747963 !important;
+  font: 500 10px/1 var(--f-ui); letter-spacing: .04em; transition: background .25s, color .25s;
 }
-.bl-ig:hover { background: #4A5343; color: #FFFCF4 !important; }
-.bl-body { font: 200 12px/1.7 'Archivo', sans-serif; }
+.bl-ig:hover { background: #747963; color: #FFF9EF !important; }
+.bl-body { font: 400 12px/1.7 var(--f-body); }
 .bl-center { text-align: center; }
 
 .bl-btn {
   border: 0; cursor: pointer; border-radius: 999px;
-  font: 400 10px/1 'Archivo', sans-serif; letter-spacing: .26em; text-transform: uppercase;
+  font: 600 10px/1 var(--f-ui); letter-spacing: .16em; text-transform: uppercase;
   transition: transform .2s, box-shadow .2s, background .3s, color .3s, opacity .2s;
 }
 .bl-btn:active { transform: scale(.97); }
 .bl-btn:disabled { opacity: .6; cursor: default; }
+button:disabled { cursor: default !important; opacity: .45; }
 
 .bl-field {
-  padding: 15px 16px; background: #FBF6EC; border: 1px solid rgba(74, 83, 67, .16);
-  border-radius: 11px; font: 300 14px 'Archivo', sans-serif; outline: none; width: 100%; box-sizing: border-box;
+  padding: 15px 16px; background: #FFF9EF; border: 1px solid rgba(116, 121, 99, .18);
+  border-radius: 11px; font: 500 14px var(--f-ui); outline: none; width: 100%; box-sizing: border-box;
   transition: border-color .2s;
 }
-.bl-field:focus { border-color: #A93227; }
+.bl-field:focus { border-color: #A06B5B; box-shadow: 0 0 0 4px rgba(160,107,91,.12); }
 textarea.bl-field { line-height: 1.6; resize: none; }
 
 .bl-dock-btn {
   height: 34px; padding: 0 11px; border: 0; background: transparent; border-radius: 999px; cursor: pointer;
-  color: #4A5343; font: 400 9px/1 'Archivo', sans-serif; letter-spacing: .14em; text-transform: uppercase;
+  color: #747963; font: 600 9px/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase;
   transition: background .3s, color .3s;
 }
-.bl-dock-btn:hover { background: #4A5343; color: #FFFCF4; }
+.bl-dock-btn:hover { background: #747963; color: #FFF9EF; }
 
-.bl-msg { font: 300 11.5px/1.5 'Archivo', sans-serif; color: #A93227; text-align: center; }
+/* Music / language: round chips stacked above the right end of the dock. */
+.bl-icon-btn {
+  width: 38px; height: 38px; display: grid; place-items: center; padding: 0;
+  background: #FFF9EF; border: 1px solid rgba(116, 121, 99, .18); border-radius: 50%;
+  box-shadow: 0 10px 26px rgba(62, 53, 44, .2); color: #747963; cursor: pointer;
+  transition: background .3s, color .3s, transform .2s;
+}
+.bl-icon-btn:active { transform: scale(.94); }
+
+/* A clean scroll cue: the small sunlit dot travels at the tip of a growing line. */
+.bl-scroll-cue {
+  position: relative; width: 1px; height: 42px; margin: 17px auto 0;
+  background: linear-gradient(to bottom, rgba(201,161,93,.12), #C9A15D);
+  transform-origin: top; animation: vCueLine 1.2s 1.85s cubic-bezier(.2,.9,.25,1) both;
+}
+.bl-scroll-cue span {
+  position: absolute; left: 50%; bottom: -3px; width: 6px; height: 6px;
+  translate: -50% 0; border-radius: 50%; background: #F4D68F;
+  box-shadow: 0 0 6px #F4D68F, 0 0 15px rgba(244,214,143,.92), 0 0 28px rgba(201,161,93,.6);
+  animation: vGoldenDot 1.8s 2.45s ease-in-out infinite;
+}
+
+/* Tactile details make the invitation feel responsive on both touch and mouse
+   without relying on the scroll-timeline feature. */
+.bl-event-card { transition: transform .28s cubic-bezier(.2,.9,.25,1), background .28s, box-shadow .28s; animation: vCharm 5.5s ease-in-out infinite; }
+.bl-event-card:nth-child(3) { animation-delay: -2.1s; }
+.bl-event-save { transition: transform .24s, background .24s, color .24s; }
+@media (hover: hover) and (pointer: fine) {
+  .bl-btn:hover, .bl-icon-btn:hover, .bl-dock-btn:hover, .bl-event-save:hover { transform: translateY(-3px); }
+  .bl-event-save:hover { background: #C9A15D; color: #5A604D !important; }
+  .bl-event-card:hover { animation: none; transform: translateY(-6px) rotate(-.6deg); background: rgba(250,243,231,.16); box-shadow: 0 15px 26px rgba(90,96,77,.18); }
+  .sv-wish:hover { transform: translateY(-4px) rotate(.25deg); box-shadow: 0 12px 24px rgba(90,96,77,.12); }
+}
+
+.bl-msg { font: 500 11.5px/1.5 var(--f-ui); color: #A06B5B; text-align: center; }
 
 /* Empty round photo: initial on cream instead of an editor placeholder. */
 .bl-initial {
   position: absolute; inset: 0; display: grid; place-items: center;
-  background: radial-gradient(circle at 35% 30%, #FFFCF4, #EFE6D2);
-  font-family: 'Bodoni Moda', serif; color: #4A5343;
+  background: radial-gradient(circle at 35% 30%, #FFF9EF, #E4D4BB);
+  font-family: var(--f-display); font-weight: 600; color: #747963;
+}
+
+/* A sparse, static gilding: it enriches the olive-taupe panels without
+   competing with the florals or creating another animated background. */
+.bl-gilded::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .48;
+  background-image:
+    radial-gradient(circle at 11% 18%, rgba(255,238,181,.95) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 83% 24%, rgba(201,161,93,.8) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 68% 72%, rgba(255,238,181,.72) 0 .8px, transparent 1.7px),
+    radial-gradient(circle at 24% 84%, rgba(201,161,93,.72) 0 1px, transparent 1.8px);
+  background-size: 148px 168px, 198px 224px, 176px 202px, 232px 248px;
+  background-position: 0 0, 38px 64px, 22px 24px, 76px 4px;
+}
+
+/* The cover has no full-bleed photograph. A second, very sparse layer makes
+   the gold dust catch the light while the round portrait remains optional. */
+.bl-cover.bl-gilded::before { opacity: .66; }
+.bl-cover::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(circle at 18% 28%, #FFEAB0 0 1.2px, transparent 2.4px),
+    radial-gradient(circle at 82% 18%, #C9A15D 0 1px, transparent 2.2px),
+    radial-gradient(circle at 74% 67%, #FFEAB0 0 1.15px, transparent 2.3px),
+    radial-gradient(circle at 24% 76%, #C9A15D 0 .9px, transparent 2px);
+  background-size: 184px 216px, 238px 264px, 206px 246px, 270px 292px;
+  animation: vCoverGlitter 4.8s ease-in-out infinite;
 }
 
 @keyframes vRise { from { opacity: 0; transform: translateY(38px) } to { opacity: 1; transform: none } }
@@ -127,12 +229,38 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 @keyframes vFlapTop { to { transform: translateY(-102%) rotate(-3deg) } }
 @keyframes vFlapBot { to { transform: translateY(102%) rotate(3deg) } }
 @keyframes vBeat { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.08) } }
-@keyframes vCue { 0%, 100% { transform: translateY(0); opacity: .4 } 50% { transform: translateY(10px); opacity: 1 } }
+@keyframes vCueLine { from { opacity: 0; transform: scaleY(0) } to { opacity: 1; transform: scaleY(1) } }
+@keyframes vGoldenDot { 0%, 100% { transform: scale(.75); opacity: .62 } 50% { transform: scale(1.45); opacity: 1 } }
+@keyframes vCoverGlitter { 0%, 100% { opacity: .26 } 48% { opacity: .72 } 68% { opacity: .42 } }
 @keyframes vDraw { from { clip-path: inset(0 0 100% 0) } to { clip-path: inset(0 0 0 0) } }
 @keyframes vKnot { from { opacity: 0; transform: scale(0) rotate(-40deg) } to { opacity: 1; transform: scale(1) rotate(0) } }
 @keyframes vFlutter { 0%, 100% { transform: rotate(-6deg) } 50% { transform: rotate(5deg) } }
 @keyframes vSheet { from { transform: translateY(102%) } to { transform: translateY(0) } }
 @keyframes vScrim { from { opacity: 0 } to { opacity: 1 } }
+@keyframes vCharm { 0%,100% { transform: translateY(0) rotate(0) } 50% { transform: translateY(-4px) rotate(.4deg) } }
+@keyframes vKickerPop { 0% { opacity: 0; transform: translateY(18px) rotate(-5deg) scale(.75) } 65% { opacity: 1; transform: translateY(-3px) rotate(1.5deg) scale(1.06) } 100% { opacity: 1; transform: none } }
+@keyframes vTitlePlay { 0% { opacity: 0; transform: translateY(34px) rotate(2.5deg) scale(.82) } 58% { opacity: 1; transform: translateY(-6px) rotate(-1deg) scale(1.04) } 78% { transform: translateY(2px) rotate(.4deg) scale(.99) } 100% { opacity: 1; transform: none } }
+@keyframes vTextPlay { 0% { opacity: 0; transform: translateY(20px) scale(.94) } 72% { opacity: 1; transform: translateY(-3px) scale(1.02) } 100% { opacity: 1; transform: none } }
+@keyframes vCardPlay { 0% { opacity: 0; transform: translateY(32px) rotate(-2.5deg) scale(.88) } 55% { opacity: 1; transform: translateY(-7px) rotate(1deg) scale(1.03) } 78% { transform: translateY(3px) rotate(-.25deg) scale(.995) } 100% { opacity: 1; transform: none } }
+
+/* IntersectionObserver supplies this entrance in browsers without view()
+   timelines (including older Samsung Internet builds). */
+@media (prefers-reduced-motion: no-preference) {
+  .bl-will-reveal { opacity: 0; transform: translateY(24px) scale(.985); }
+  .bl-will-reveal.bl-revealed { opacity: 1; transform: none; transition: opacity .68s ease var(--reveal-delay, 0ms), transform .72s cubic-bezier(.2,.9,.25,1) var(--reveal-delay, 0ms); }
+  /* The staging is intentionally springy, rather than a nearly invisible
+     fade, so each text group and card feels like it has arrived to celebrate. */
+  .bl-will-reveal:not(.bl-revealed) .bl-reveal-kicker,
+  .bl-will-reveal:not(.bl-revealed) .bl-display,
+  .bl-will-reveal:not(.bl-revealed) .bl-serif,
+  .bl-will-reveal:not(.bl-revealed) .bl-batang,
+  .bl-will-reveal:not(.bl-revealed) .bl-reveal-card { opacity: 0; }
+  .bl-will-reveal.bl-revealed .bl-reveal-kicker { animation: vKickerPop .58s cubic-bezier(.2,1.35,.4,1) .08s both; }
+  .bl-will-reveal.bl-revealed .bl-display { animation: vTitlePlay .82s cubic-bezier(.16,1.12,.33,1) .16s both; }
+  .bl-will-reveal.bl-revealed .bl-serif,
+  .bl-will-reveal.bl-revealed .bl-batang { animation: vTextPlay .62s cubic-bezier(.2,.9,.3,1) .27s both; }
+  .bl-will-reveal.bl-revealed .bl-reveal-card { animation: vCardPlay .78s cubic-bezier(.16,1.12,.33,1) .34s both; }
+}
 
 /* Scroll-driven reveals. Browsers without view timelines simply show the
    content as-is (no half-played animations). */
