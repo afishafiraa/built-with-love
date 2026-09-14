@@ -19,6 +19,10 @@ export interface WeddingConfig {
   story2Year: string; story2Title: string; story2Body: string;
   story3Year: string; story3Title: string; story3Body: string;
   story4Year: string; story4Title: string; story4Body: string;
+  story1TitleEn: string; story1BodyEn: string;
+  story2TitleEn: string; story2BodyEn: string;
+  story3TitleEn: string; story3BodyEn: string;
+  story4TitleEn: string; story4BodyEn: string;
   bank1Name: string; bank1Acct: string; bank1Holder: string;
   bank2Name: string; bank2Acct: string; bank2Holder: string;
   giftAddressLabel: string; giftAddress: string; giftAddressHolder: string;
@@ -42,9 +46,12 @@ export interface Guest {
   rsvp?: 'yes' | 'no' | '';
   guests?: number;
   checkedInAt?: string;
+  /** Manually confirmed after the personal WhatsApp chat has been sent. */
+  waSentAt?: string;
 }
 
 export interface Wish {
   id: string; name: string; text: string; createdAt: string;
-  status: 'pending' | 'approved' | 'hidden';
+  /** `approved` means visible to everyone. Kept for compatibility with existing Sheets rows. */
+  status: 'approved' | 'hidden';
 }

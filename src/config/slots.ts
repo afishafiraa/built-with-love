@@ -90,8 +90,7 @@ export const THREAD = { width: 180, height: 980, top: 140, row: 210 };
 
 export const SLOTS: { group: string; items: SlotDef[] }[] = [
   { group: 'Sampul (cover)', items: [
-    { slot: 'v-cover', label: 'Foto latar sampul', kind: 'photo', ratio: '3/4' },
-    { slot: 'v-cover-round', label: 'Foto bulat tengah', kind: 'photo', ratio: '1/1' },
+    { slot: 'v-cover-round', label: 'Foto bulat tengah (opsional)', kind: 'photo', ratio: '1/1' },
     { slot: 'orn-cover-ring', label: 'Lingkaran bunga di belakang foto', kind: 'orn', ratio: '1/1' },
     { slot: 'orn-cover-corner', label: 'Sudut — dipakai di 4 sudut (dicerminkan)', kind: 'orn', ratio: '5/4' }
   ] },

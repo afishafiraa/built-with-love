@@ -68,7 +68,8 @@ function toGuest(raw: Record<string, unknown>): Guest {
     opened: str(raw.opened),
     rsvp: rsvp === 'yes' || rsvp === 'no' ? rsvp : '',
     guests: Number(raw.guests) || 0,
-    checkedInAt: str(raw.checkedInAt)
+    checkedInAt: str(raw.checkedInAt),
+    waSentAt: str(raw.waSentAt)
   };
 }
 
@@ -79,7 +80,8 @@ function toWish(raw: Record<string, unknown>): Wish {
     name: str(raw.name),
     text: str(raw.text),
     createdAt: str(raw.createdAt),
-    status: status === 'approved' || status === 'hidden' ? status : 'pending'
+    // Legacy "pending" rows are public now; only an explicit hide removes one.
+    status: status === 'hidden' ? 'hidden' : 'approved'
   };
 }
 
@@ -90,8 +92,11 @@ export const sheets = {
   /** Stores an image in the couple's Google Drive and returns a public URL. */
   uploadImage: (p: { data: string; mime: string; name: string }) => call<{ url: string }>('uploadImage', p),
   upsertGuest: (g: Partial<Guest>) => call<void>('upsertGuest', { guest: g }),
+  deleteGuest: (id: string) => call<boolean>('deleteGuest', { id }),
+  markGuestWaSent: (id: string, sent = true) => call<string>('markGuestWaSent', { id, sent }),
   rsvp: (p: { guestId: string; name: string; rsvp: 'yes' | 'no'; guests: number }) => call<void>('rsvp', p),
-  checkIn: (guestId: string) => call<void>('checkIn', { guestId }),
+  // New backend returns false for an unknown ID. `null` keeps older deployments compatible.
+  checkIn: (guestId: string) => call<boolean | null>('checkIn', { guestId }),
   listWishes: async (all = false) => (await call<Record<string, unknown>[]>('listWishes', { all })).map(toWish),
   addWish: (p: { name: string; text: string; guestId?: string }) => call<void>('addWish', p),
   moderateWish: (id: string, status: 'approved' | 'hidden') => call<void>('moderateWish', { id, status }),

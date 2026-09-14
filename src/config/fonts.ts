@@ -2,30 +2,24 @@
    except "custom": drop your own licensed file (e.g. Belista, Samantha, Poppy
    Shower) into public/fonts/ as display.woff2 / display.otf / display.ttf. */
 export const DISPLAY_FONTS: { value: string; label: string }[] = [
-  { value: 'Great Vibes', label: 'Great Vibes — kaligrafi mengalir (nuansa Samantha)' },
-  { value: 'Parisienne', label: 'Parisienne — ramping & elegan (nuansa Belista)' },
-  { value: 'Allura', label: 'Allura — tulisan tangan lembut (nuansa Poppy Shower)' },
-  { value: 'Pinyon Script', label: 'Pinyon Script — kaligrafi formal' },
-  { value: 'Alex Brush', label: 'Alex Brush — kuas tebal' },
+  { value: 'Cookie', label: 'Cookie — formal, romantis & tetap terbaca' },
   { value: 'custom', label: 'Font sendiri — public/fonts/display.woff2 / .otf / .ttf' }
 ];
 
 export const BODY_FONTS: { value: string; label: string }[] = [
-  { value: 'Playfair Display', label: 'Playfair Display — serif klasik' },
-  { value: 'Cormorant Garamond', label: 'Cormorant Garamond — serif halus' },
-  { value: 'Archivo', label: 'Archivo — sans modern (sebelumnya)' }
+  { value: 'Quicksand', label: 'Quicksand — rounded, santai & mudah dibaca' }
 ];
 
 const q = (f: string) => "'" + f + "'";
 
 /** CSS custom properties consumed by blossom.css / the invitation. */
 export function fontVars(display: string, body: string): Record<string, string> {
-  const d = display === 'custom' ? "'Custom Display'" : q(display || 'Great Vibes');
-  const b = q(body || 'Playfair Display');
-  const serif = body === 'Archivo' || !body ? "'Playfair Display'" : b;
+  const d = display === 'custom' ? "'Custom Display'" : q(display || 'Cookie');
+  const b = q(body || 'Quicksand');
   return {
-    '--f-display': d + ", 'Great Vibes', cursive",
-    '--f-serif': serif + ', Georgia, serif',
-    '--f-body': b + (body === 'Archivo' ? ', system-ui, sans-serif' : ', Georgia, serif')
+    '--f-display': d + ", 'Cookie', cursive",
+    '--f-serif': b + ', ui-rounded, system-ui, sans-serif',
+    '--f-body': b + ', ui-rounded, system-ui, sans-serif',
+    '--f-ui': b + ', ui-rounded, system-ui, sans-serif'
   };
 }

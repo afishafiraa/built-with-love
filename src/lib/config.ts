@@ -14,7 +14,10 @@ function read(key: string): Partial<WeddingConfig> | null {
   try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch { return null; }
 }
 function write(key: string, cfg: WeddingConfig | null) {
-  try { cfg ? localStorage.setItem(key, JSON.stringify(cfg)) : localStorage.removeItem(key); } catch { /* private mode */ }
+  try {
+    if (cfg) localStorage.setItem(key, JSON.stringify(cfg));
+    else localStorage.removeItem(key);
+  } catch { /* private mode */ }
 }
 
 export const isPreview = () => new URLSearchParams(location.search).has('preview');

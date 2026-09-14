@@ -38,7 +38,7 @@ function ss_() {
 }
 
 var TABS = {
-  Guests: ['id', 'name', 'category', 'phone', 'invited', 'opened', 'rsvp', 'guests', 'checkedInAt'],
+  Guests: ['id', 'name', 'category', 'phone', 'invited', 'opened', 'rsvp', 'guests', 'checkedInAt', 'waSentAt'],
   Wishes: ['id', 'name', 'text', 'createdAt', 'status'],
   Events: ['at', 'guestId', 'event'],
   Config: ['key', 'value']
@@ -50,14 +50,14 @@ function secret_() {
 }
 
 /**
- * Run once from the editor. Safe to re-run: existing tabs, headers and an
- * existing SECRET are left alone.
+ * Run once from the editor. Safe to re-run: existing tabs and SECRET are left
+ * alone, while newly introduced columns are appended when missing.
  */
 function setup() {
   var ss = ss_();
   Object.keys(TABS).forEach(function (name) {
     var sh = ss.getSheetByName(name) || ss.insertSheet(name);
-    if (sh.getLastRow() === 0) sh.appendRow(TABS[name]);
+    ensureHeaders_(name);
     sh.setFrozenRows(1);
   });
 
@@ -93,6 +93,23 @@ function setup() {
 }
 
 function sheet_(name) { return ss_().getSheetByName(name); }
+
+/** Add schema columns without moving or overwriting existing guest data. */
+function ensureHeaders_(name) {
+  var sh = sheet_(name);
+  var expected = TABS[name] || [];
+  if (sh.getLastRow() === 0 || sh.getLastColumn() === 0) {
+    sh.getRange(1, 1, 1, expected.length).setValues([expected]);
+    return;
+  }
+  var actual = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  expected.forEach(function (header) {
+    if (actual.indexOf(header) < 0) {
+      actual.push(header);
+      sh.getRange(1, actual.length).setValue(header);
+    }
+  });
+}
 
 function rows_(name) {
   var sh = sheet_(name);
@@ -143,7 +160,9 @@ function doPost(e) {
     var secret = secret_();
     if (!secret) return json_({ error: 'SECRET belum diatur di Script properties — jalankan setup() dari editor Apps Script' });
     if (body.token !== secret) return json_({ error: 'unauthorized' });
-    if (!sheet_('Guests')) return json_({ error: 'tab Guests/Wishes/Events belum ada — jalankan setup()' });
+    if (!sheet_('Guests') || !sheet_('Wishes') || !sheet_('Events')) {
+      return json_({ error: 'tab Guests/Wishes/Events belum ada — jalankan setup()' });
+    }
     var now = new Date().toISOString();
 
     // Serialise writes so two RSVPs arriving together can't overwrite each other.
@@ -185,43 +204,87 @@ function handle_(body, now) {
 
     case 'upsertGuest': {
       var g = body.guest || {};
-      var row = findRow_('Guests', 'id', g.id);
+      var guestId = String(g.id || '').trim().slice(0, 100);
+      var guestName = String(g.name || '').trim().slice(0, 80);
+      if (!guestId) return json_({ error: 'guest id required' });
+      if (!guestName) return json_({ error: 'guest name required' });
+      var guestPhone = String(g.phone || '').trim().slice(0, 30);
+      var guestCategory = String(g.category || '').trim().slice(0, 50);
+      var invited = Math.min(2, Math.max(1, Number(g.invited) || 1));
+      var row = findRow_('Guests', 'id', guestId);
       if (row < 0) {
-        sheet_('Guests').appendRow([String(g.id || ''), g.name, g.category || '', String(g.phone || ''), g.invited || 1, '', '', '', '']);
+        sheet_('Guests').appendRow([guestId, guestName, guestCategory, guestPhone, invited, '', '', '', '', '']);
       } else {
-        ['name', 'category', 'phone', 'invited'].forEach(function (k) {
-          if (g[k] !== undefined) setCell_('Guests', row, k, g[k]);
-        });
+        setCell_('Guests', row, 'name', guestName);
+        if (g.category !== undefined) setCell_('Guests', row, 'category', guestCategory);
+        if (g.phone !== undefined) setCell_('Guests', row, 'phone', guestPhone);
+        if (g.invited !== undefined) setCell_('Guests', row, 'invited', invited);
       }
       return json_({ data: null });
     }
 
+    case 'deleteGuest': {
+      var guestId = String(body.id || '').trim();
+      if (!guestId) return json_({ error: 'guest id required' });
+      var guestRow = findRow_('Guests', 'id', guestId);
+      if (guestRow < 0) return json_({ data: false });
+      sheet_('Guests').deleteRow(guestRow);
+      return json_({ data: true });
+    }
+
+    case 'markGuestWaSent': {
+      var waGuestId = String(body.id || '').trim();
+      if (!waGuestId) return json_({ error: 'guest id required' });
+      ensureHeaders_('Guests');
+      var waGuestRow = findRow_('Guests', 'id', waGuestId);
+      if (waGuestRow < 0) return json_({ error: 'guest not found' });
+      var waSentAt = body.sent === false ? '' : now;
+      setCell_('Guests', waGuestRow, 'waSentAt', waSentAt);
+      return json_({ data: waSentAt });
+    }
+
     case 'rsvp': {
-      var r = findRow_('Guests', 'id', body.guestId);
-      if (r < 0) { sheet_('Guests').appendRow([body.guestId || body.name, body.name, '', '', body.guests, now, body.rsvp, body.guests, '']); }
+      if (body.rsvp !== 'yes' && body.rsvp !== 'no') return json_({ error: 'invalid rsvp' });
+      var rsvpGuestId = String(body.guestId || '').trim().slice(0, 100);
+      var rsvpName = String(body.name || '').trim().slice(0, 80);
+      if (!rsvpGuestId || !rsvpName) return json_({ error: 'guest id and name required' });
+      // Enforce the same max-two rule server-side: altered browser requests
+      // cannot overbook seats.
+      var party = body.rsvp === 'yes' ? Math.min(2, Math.max(1, Number(body.guests) || 1)) : 0;
+      var r = findRow_('Guests', 'id', rsvpGuestId);
+      if (r < 0) { sheet_('Guests').appendRow([rsvpGuestId, rsvpName, '', '', 2, now, body.rsvp, party, '', '']); }
       else {
         setCell_('Guests', r, 'rsvp', body.rsvp);
-        setCell_('Guests', r, 'guests', body.guests);
+        setCell_('Guests', r, 'guests', party);
         if (!sheet_('Guests').getRange(r, 6).getValue()) setCell_('Guests', r, 'opened', now);
       }
       return json_({ data: null });
     }
 
     case 'checkIn': {
-      var cr = findRow_('Guests', 'id', body.guestId);
-      if (cr > 0) setCell_('Guests', cr, 'checkedInAt', now);
-      return json_({ data: null });
+      var checkInId = String(body.guestId || '').trim().slice(0, 100);
+      if (!checkInId) return json_({ error: 'guest id required' });
+      var cr = findRow_('Guests', 'id', checkInId);
+      if (cr < 0) return json_({ data: false });
+      setCell_('Guests', cr, 'checkedInAt', now);
+      return json_({ data: true });
     }
 
     case 'listWishes': {
       var all = !!body.all;
-      var list = rows_('Wishes').filter(function (w) { return all || w.status === 'approved'; });
+      // Wishes are public immediately. Legacy "pending" rows remain public;
+      // only an intentional hide action removes one from the wall.
+      var list = rows_('Wishes').filter(function (w) { return all || w.status !== 'hidden'; });
       return json_({ data: list.reverse() });
     }
 
-    case 'addWish':
-      sheet_('Wishes').appendRow([Utilities.getUuid(), String(body.name || '').slice(0, 80), String(body.text || '').slice(0, 600), now, 'pending']);
+    case 'addWish': {
+      var wishName = String(body.name || '').trim().slice(0, 80);
+      var wishText = String(body.text || '').trim().slice(0, 600);
+      if (!wishName || !wishText) return json_({ error: 'wish name and text required' });
+      sheet_('Wishes').appendRow([Utilities.getUuid(), wishName, wishText, now, 'approved']);
       return json_({ data: null });
+    }
 
     case 'getConfig': {
       var cv = configSheet_().getDataRange().getValues();
@@ -241,6 +304,7 @@ function handle_(body, now) {
     }
 
     case 'moderateWish': {
+      if (body.status !== 'approved' && body.status !== 'hidden') return json_({ error: 'invalid wish status' });
       var wr = findRow_('Wishes', 'id', body.id);
       if (wr > 0) setCell_('Wishes', wr, 'status', body.status);
       return json_({ data: null });

@@ -13,10 +13,11 @@ export const MUSIC_VOLUME = 0.3;
 /** The hidden YouTube player only takes a volume once it has loaded, and only
     through the iframe API's postMessage channel (enablejsapi=1 in the src). */
 export function setYtVolume(frame: HTMLIFrameElement | null) {
-  frame?.contentWindow?.postMessage(
-    JSON.stringify({ event: 'command', func: 'setVolume', args: [Math.round(MUSIC_VOLUME * 100)] }),
-    'https://www.youtube-nocookie.com'
-  );
+  sendYtCommand(frame, 'setVolume', [Math.round(MUSIC_VOLUME * 100)]);
+}
+
+function sendYtCommand(frame: HTMLIFrameElement | null, func: string, args: unknown[] = []) {
+  frame?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), 'https://www.youtube-nocookie.com');
 }
 
 type Kind = { kind: 'synth' } | { kind: 'yt'; id: string } | { kind: 'file'; url: string };
@@ -37,6 +38,8 @@ export function useMusic(url: string) {
   const audio = useRef<HTMLAudioElement | null>(null);
   const ctx = useRef<AudioContext | null>(null);
   const timer = useRef<number | undefined>(undefined);
+  const ytFrame = useRef<HTMLIFrameElement | null>(null);
+  const wantYt = useRef(false);
   const kind = musicKind(url);
 
   const stopSynth = () => { window.clearInterval(timer.current); timer.current = undefined; };
@@ -44,7 +47,14 @@ export function useMusic(url: string) {
   const start = useCallback(() => {
     const k = musicKind(url);
     setPlaying(true);
-    if (k.kind === 'yt') return;
+    if (k.kind === 'yt') {
+      // The iframe is mounted while the cover is visible. Sending playVideo
+      // directly from this click/tap is accepted far more consistently by
+      // iOS Safari, Chrome iOS and Samsung Internet than iframe autoplay.
+      wantYt.current = true;
+      sendYtCommand(ytFrame.current, 'playVideo');
+      return;
+    }
     if (k.kind === 'file') {
       if (!audio.current || audio.current.src !== new URL(k.url, location.href).href) {
         audio.current?.pause();
@@ -85,6 +95,8 @@ export function useMusic(url: string) {
   const stop = useCallback(() => {
     stopSynth();
     audio.current?.pause();
+    wantYt.current = false;
+    sendYtCommand(ytFrame.current, 'pauseVideo');
     setPlaying(false);
   }, []);
 
@@ -114,9 +126,25 @@ export function useMusic(url: string) {
 
   useEffect(() => () => { stopSynth(); audio.current?.pause(); ctx.current?.close(); }, []);
 
+  const onYtLoad = useCallback((frame: HTMLIFrameElement) => {
+    ytFrame.current = frame;
+    setYtVolume(frame);
+    // If a guest opened the card before a slow iframe finished loading, honour
+    // that request as soon as the player becomes available. The music control
+    // remains a second explicit user-tap fallback on restrictive browsers.
+    if (wantYt.current) sendYtCommand(frame, 'playVideo');
+    window.setTimeout(() => {
+      setYtVolume(frame);
+      if (wantYt.current) sendYtCommand(frame, 'playVideo');
+    }, 900);
+  }, []);
+
+  const setYtFrame = useCallback((frame: HTMLIFrameElement | null) => { ytFrame.current = frame; }, []);
   const ytSrc = kind.kind === 'yt'
-    ? 'https://www.youtube-nocookie.com/embed/' + kind.id + '?autoplay=1&loop=1&playlist=' + kind.id + '&controls=0&modestbranding=1&enablejsapi=1'
+    ? 'https://www.youtube-nocookie.com/embed/' + kind.id + '?loop=1&playlist=' + kind.id + '&controls=0&modestbranding=1&playsinline=1&enablejsapi=1'
     : '';
 
-  return { playing, start, stop, toggle, ytSrc: playing ? ytSrc : '' };
+  // Keep the player mounted before the opening tap; mounting it only after the
+  // tap is the root cause of autoplay failures on several mobile browsers.
+  return { playing, start, stop, toggle, ytSrc, setYtFrame, onYtLoad };
 }
