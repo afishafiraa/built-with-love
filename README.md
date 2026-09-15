@@ -11,8 +11,11 @@ cd app
 cp .env.example .env      # isi server credential; jangan gunakan prefix VITE_
 npm install
 npm run dev               # review UI; gunakan VITE_DEMO_MODE=true
+npm run dev:full          # full-stack: Vite + /api auth/proxy melalui Vercel CLI
 ```
-Untuk alur API/session penuh, gunakan Vercel Preview atau `npx vercel dev`. Panduan lengkap ada di [migrasi keamanan](docs/security-deployment.md).
+`npm run dev` memang tidak menjalankan route server `/api/*`. Untuk login lokal,
+Dashboard, Studio, check-in, dan Sheets gunakan `npm run dev:full`. Panduan lengkap
+ada di [migrasi keamanan](docs/security-deployment.md).
 
 ## Konten asli vs konten contoh
 Yang ada di repo ini **konten contoh** (Pablo & Ave) — nama, tanggal, alamat, dan

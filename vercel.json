@@ -13,9 +13,8 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/dashboard/:path*", "destination": "/index.html" },
+    { "source": "/studio/:path*", "destination": "/index.html" },
+    { "source": "/checkin/:path*", "destination": "/index.html" }
   ]
 }

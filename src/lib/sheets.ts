@@ -16,8 +16,8 @@ const ADMIN_ACTIONS = new Set([
   'markGuestWaSent', 'checkIn', 'moderateWish', 'saveConfig'
 ]);
 
-const ATTEMPTS: Record<string, number> = { rsvp: 5, addWish: 1, track: 1 };
-const DEFAULT_ATTEMPTS = 3;
+const ATTEMPTS: Record<string, number> = { bootstrap: 1, dashboardData: 1, rsvp: 5, addWish: 1, track: 1 };
+const DEFAULT_ATTEMPTS = 1;
 const bootstrapRequests = new Map<string, Promise<PublicBootstrap>>();
 
 function cookie(name: string) {

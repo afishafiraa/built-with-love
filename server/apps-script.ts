@@ -1,7 +1,5 @@
 import { ApiResponse, send } from './http.js';
 
-const NO_RETRY = new Set(['addWish', 'track', 'uploadImage']);
-
 export function backendConfigured() {
   return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(process.env.SHEETS_ENDPOINT || '')
     && !!process.env.SHEETS_TOKEN;
@@ -12,13 +10,17 @@ export async function callAppsScript(action: string, payload: Record<string, unk
   const token = process.env.SHEETS_TOKEN || '';
   if (!backendConfigured()) throw new Error('backend_not_configured');
 
-  const attempts = NO_RETRY.has(action) ? 1 : 3;
+  // The browser already owns retry/outbox behaviour. Retrying again here made
+  // one slow bootstrap expand to roughly a minute (3 client × 3 proxy tries).
+  const attempts = 1;
   let lastError = 'backend_unavailable';
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
-    // Apps Script has noticeable cold starts. A longer single attempt avoids the
-    // false-failure pattern where the write completes after the browser gave up.
-    const timer = setTimeout(() => controller.abort(), 20_000);
+    const timeoutMs = action === 'bootstrap' ? 7_000
+      : ['getConfig', 'getGuest', 'listWishes'].includes(action) ? 9_000
+      : action === 'dashboardData' ? 12_000
+      : 15_000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const response = await fetch(endpoint, {
         method: 'POST',

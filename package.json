@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:full": "npx vercel dev",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check:sheets": "node scripts/check-sheets.mjs",

@@ -272,7 +272,9 @@ export default function Invitation() {
   };
 
   if (!preview && (!configReady || guest.status === 'loading')) {
-    return <InvitationState title="Menyiapkan undangan" body="Mohon tunggu sebentar…" />;
+    // Never expose committed placeholder names while the private published
+    // config is still crossing the network.
+    return <InvitationLoading cfg={cfg} coupleShort="Hanif & Afi" />;
   }
   if (!preview && guest.supplied && guest.status === 'invalid') {
     return <InvitationState title="Link undangan tidak valid" body="Periksa kembali link yang dikirimkan kepadamu. Token tamu mungkin salah atau sudah tidak aktif." />;
@@ -366,6 +368,22 @@ export default function Invitation() {
         </div>
       </div>
     </Assets.Provider>
+  );
+}
+
+function InvitationLoading({ cfg, coupleShort }: { cfg: WeddingConfig; coupleShort: string }) {
+  return (
+    <main className="app-min-screen bl-root bl-wedding-loader bl-gilded" role="status" aria-label="Menyiapkan undangan"
+      style={fontVars(cfg.displayFont, cfg.bodyFont) as CSSProperties}>
+      <div className="bl-loader-halo" aria-hidden="true"><span /></div>
+      <div className="bl-loader-copy">
+        <div className="bl-loader-kicker">The Wedding of</div>
+        <div className="bl-display bl-loader-names">{coupleShort}</div>
+        <div className="bl-loader-dots" aria-hidden="true">
+          {[0, 1, 2, 3].map(index => <span key={index} style={{ animationDelay: index * 140 + 'ms' }} />)}
+        </div>
+      </div>
+    </main>
   );
 }
 
