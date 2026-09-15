@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
-import { ApiRequest, ApiResponse, header } from './http';
+import { ApiRequest, ApiResponse, header } from './http.js';
 
 const SESSION_COOKIE = 'wedding_session';
 const CSRF_COOKIE = 'wedding_csrf';

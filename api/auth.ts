@@ -1,5 +1,5 @@
-import { authConfigured, clearSessionCookies, createSession, readSession, setSessionCookies, validCsrf, verifyPassword } from '../server/auth';
-import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http';
+import { authConfigured, clearSessionCookies, createSession, readSession, setSessionCookies, validCsrf, verifyPassword } from '../server/auth.js';
+import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http.js';
 
 export default function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method === 'GET') {

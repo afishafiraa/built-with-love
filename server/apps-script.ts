@@ -1,4 +1,4 @@
-import { ApiResponse, send } from './http';
+import { ApiResponse, send } from './http.js';
 
 const NO_RETRY = new Set(['addWish', 'track', 'uploadImage']);
 

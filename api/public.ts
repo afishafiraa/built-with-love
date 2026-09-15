@@ -1,6 +1,6 @@
-import { callAppsScript, sendBackendError } from '../server/apps-script';
-import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http';
-import { actionName, invitationKey, optionalText, text } from '../server/validation';
+import { callAppsScript, sendBackendError } from '../server/apps-script.js';
+import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http.js';
+import { actionName, invitationKey, optionalText, text } from '../server/validation.js';
 
 const LIMITS: Record<string, [number, number]> = {
   getConfig: [120, 60_000], getGuest: [120, 60_000], listWishes: [120, 60_000],

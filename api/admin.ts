@@ -1,7 +1,7 @@
-import { callAppsScript, sendBackendError } from '../server/apps-script';
-import { readSession, validCsrf } from '../server/auth';
-import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http';
-import { actionName, guestId, optionalText, text } from '../server/validation';
+import { callAppsScript, sendBackendError } from '../server/apps-script.js';
+import { readSession, validCsrf } from '../server/auth.js';
+import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http.js';
+import { actionName, guestId, optionalText, text } from '../server/validation.js';
 
 const ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
