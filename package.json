@@ -9,10 +9,12 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "check:sheets": "node scripts/check-sheets.mjs",
+    "check:contracts": "node scripts/check-contracts.mjs",
     "security:generate": "node scripts/generate-secrets.mjs",
     "security:check": "node scripts/check-security.mjs",
     "typecheck:server": "tsc -p tsconfig.server.json",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "preflight": "npm run lint && npm run typecheck:server && npm run check:contracts && npm run build && npm run security:check"
   },
   "dependencies": {
     "@zxing/browser": "0.1.5",

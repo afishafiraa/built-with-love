@@ -71,6 +71,8 @@ async function call(action, payload = {}, tries = 3) {
 }
 
 let failed = 0;
+let guestRows = [];
+let wishRows = [];
 async function step(label, fn) {
   try { ok(label + ' — ' + (await fn())); }
   catch (e) {
@@ -90,20 +92,63 @@ async function step(label, fn) {
 }
 
 await step('listGuests', async () => {
-  const g = await call('listGuests');
-  return (g?.length ?? 0) + ' tamu';
+  guestRows = await call('listGuests');
+  return (guestRows?.length ?? 0) + ' tamu';
 });
 await step('listWishes', async () => {
-  const w = await call('listWishes', { all: true });
-  return (w?.length ?? 0) + ' ucapan';
+  wishRows = await call('listWishes', { all: true });
+  return (wishRows?.length ?? 0) + ' ucapan';
 });
 await step('getConfig', async () => {
   const c = await call('getConfig');
   return c ? 'konten sudah diterbitkan dari /studio' : 'belum ada (normal sebelum Terbitkan)';
 });
+await step('dashboardData', async () => {
+  const data = await call('dashboardData');
+  if (!data || !Array.isArray(data.guests) || !Array.isArray(data.wishes) || !('config' in data)) {
+    throw new Error('contract dashboard tidak lengkap — deploy Code.gs versi terbaru');
+  }
+  return 'contract dashboard lengkap';
+});
+await step('schema Guests', async () => {
+  if (!guestRows.length) return 'belum ada baris; header periksa manual';
+  if (!guestRows.every(g => Object.prototype.hasOwnProperty.call(g, 'inviteToken') && /^\d{8}$/.test(String(g.inviteToken)))) {
+    throw new Error('inviteToken hilang/tidak 8 digit — jalankan setup()');
+  }
+  return 'inviteToken seluruh tamu valid';
+});
+await step('schema Wishes', async () => {
+  if (!wishRows.length) return 'belum ada baris; header periksa manual';
+  if (!wishRows.every(w => Object.prototype.hasOwnProperty.call(w, 'requestId'))) {
+    throw new Error('kolom requestId belum ada — jalankan setup()');
+  }
+  return 'kolom requestId tersedia';
+});
+
+const sampleGuest = guestRows.find(g => g && g.id && /^\d{8}$/.test(String(g.inviteToken)));
+if (sampleGuest) {
+  const validKey = String(sampleGuest.id) + '-' + String(sampleGuest.inviteToken);
+  await step('bootstrap token valid', async () => {
+    const data = await call('bootstrap', { inviteKey: validKey });
+    if (!data?.guest || String(data.guest.id) !== String(sampleGuest.id) || !('config' in data)) {
+      throw new Error('tamu/config tidak cocok');
+    }
+    return 'tamu terverifikasi';
+  });
+  await step('bootstrap token salah', async () => {
+    const last = Number(validKey.slice(-1));
+    const invalidKey = validKey.slice(0, -1) + String((last + 1) % 10);
+    const data = await call('bootstrap', { inviteKey: invalidKey });
+    if (data?.guest) throw new Error('token yang diubah masih diterima');
+    return 'ditolak dengan benar';
+  });
+} else {
+  bad('bootstrap token — tidak ada tamu bertoken untuk diuji');
+  failed++;
+}
 
 if (failed) {
   console.log('\n  \x1b[31m' + failed + ' cek gagal.\x1b[0m Perbaiki lalu jalankan lagi.\n');
   process.exit(1);
 }
-console.log('\n  \x1b[32mBackend siap.\x1b[0m Buka http://localhost:5173/dashboard\n');
+console.log('\n  \x1b[32mBackend siap.\x1b[0m Jalankan `npm run dev:full`, lalu buka URL /dashboard yang dicetak terminal.\n');

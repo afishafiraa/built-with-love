@@ -13,7 +13,7 @@ export const sheetsReady = import.meta.env.VITE_DEMO_MODE !== 'true';
 
 const ADMIN_ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'moderateWish', 'saveConfig'
+  'markGuestWaSent', 'checkIn', 'moderateWish', 'saveConfig', 'dashboardData'
 ]);
 
 const ATTEMPTS: Record<string, number> = { bootstrap: 1, dashboardData: 1, rsvp: 5, addWish: 1, track: 1 };
