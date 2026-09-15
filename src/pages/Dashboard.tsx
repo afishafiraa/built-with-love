@@ -77,18 +77,14 @@ function DashboardInner() {
       </header>
 
       {!sheetsReady && (
-        <Notice tone={sage} title="Belum tersambung ke Google Sheets">
-          Daftar tamu, RSVP dan ucapan disimpan di spreadsheet lewat Apps Script. Ikuti langkah
-          di <code>apps-script/Code.gs</code>, isi <code>VITE_SHEETS_ENDPOINT</code> dan{' '}
-          <code>VITE_SHEETS_TOKEN</code> di <code>.env</code>, jalankan <code>npm run check:sheets</code>,
-          lalu mulai ulang <code>npm run dev</code>.
+        <Notice tone={sage} title="Mode demo aktif">
+          Backend sengaja dimatikan melalui <code>VITE_DEMO_MODE=true</code>. Jalankan lewat
+          Vercel Preview dengan server environment yang lengkap untuk mengelola data asli.
         </Notice>
       )}
       {sheetsReady && err && (
         <Notice tone={red} title="Gagal memuat data">
-          {err === 'unauthorized'
-            ? <>Token ditolak — <code>VITE_SHEETS_TOKEN</code> di <code>.env</code> beda dengan SECRET di Script properties.</>
-            : err}
+          {err}
         </Notice>
       )}
 
@@ -116,7 +112,7 @@ function DashboardInner() {
         <div onClick={() => setQrFor(null)}
           style={{ position: 'fixed', inset: 0, background: 'rgba(33,36,28,.6)', display: 'grid', placeItems: 'center', zIndex: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: paper, padding: 26, borderRadius: 18, textAlign: 'center' }}>
-            <QRCodeCanvas value={location.origin + '/checkin?g=' + qrFor.id} size={220} marginSize={2} />
+            <QRCodeCanvas value={location.origin + '/checkin?g=' + encodeURIComponent(qrFor.id)} size={220} marginSize={2} />
             <div style={{ marginTop: 12, fontWeight: 500 }}>{qrFor.name}</div>
             <div style={{ marginTop: 4, fontSize: 12, opacity: .6 }}>Tunjukkan di meja penerima tamu</div>
           </div>
@@ -157,13 +153,15 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending-rsvp' | 'attending' | 'not-attending' | 'pending-wa' | 'checked-in'>('all');
   const hasValidPhone = (g: Guest) => isValidWaNumber(g.phone);
-  const pendingWa = guests.filter(g => hasValidPhone(g) && !g.waSentAt);
+  const hasInviteLink = (g: Guest) => /^\d{8}$/.test(g.inviteToken);
+  const pendingWa = guests.filter(g => hasValidPhone(g) && hasInviteLink(g) && !g.waSentAt);
   const missingPhone = guests.filter(g => !hasValidPhone(g)).length;
+  const missingToken = guests.filter(g => !hasInviteLink(g)).length;
   const currentWa = waQueue[waIndex] || null;
   const visibleGuests = useMemo(() => {
     const needle = query.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
     return guests.filter(g => {
-      const haystack = [g.name, g.phone, g.id].join(' ').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+      const haystack = [g.name, g.phone, g.id, g.inviteToken].join(' ').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
       const matchesQuery = !needle || haystack.includes(needle);
       const matchesFilter = filter === 'all'
         || (filter === 'pending-rsvp' && !g.rsvp)
@@ -312,7 +310,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
         <div>
           <div style={{ fontSize: 13, fontWeight: 600 }}>Antrean WhatsApp pribadi</div>
           <div style={{ marginTop: 3, fontSize: 11, opacity: .62 }}>
-            {pendingWa.length} belum dikirim{missingPhone ? ` · ${missingPhone} tanpa nomor valid` : ''}
+            {pendingWa.length} belum dikirim{missingPhone ? ` · ${missingPhone} tanpa nomor valid` : ''}{missingToken ? ` · ${missingToken} tanpa invite token` : ''}
           </div>
         </div>
         <button type="button" onClick={() => startWaQueue(pendingWa)} disabled={!pendingWa.length || waBusy}
@@ -348,10 +346,10 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
         </thead>
         <tbody>
           {visibleGuests.map(g => {
-            const link = guestLink(location.origin, g.id);
+            const link = guestLink(location.origin, g.id, g.inviteToken);
             return (
               <tr key={g.id} style={{ borderTop: '1px solid rgba(47,44,38,.1)' }}>
-                <td style={td}>{g.name}<div style={{ fontSize: 11, opacity: .5 }}>{g.id}</div></td>
+                <td style={td}>{g.name}<div style={{ fontSize: 11, opacity: .5 }}>{g.id}-{g.inviteToken || 'token-belum-dibuat'}</div></td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>{g.phone || '-'}</td>
                 <td style={td}>{g.opened ? 'ya' : '-'}</td>
                 <td style={td}>{g.rsvp === 'yes' ? 'Hadir' : g.rsvp === 'no' ? 'Tidak' : '-'}</td>
@@ -362,14 +360,15 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
                     ? <><div style={{ color: sage, fontWeight: 600 }}>Terkirim</div><div style={{ marginTop: 2, fontSize: 10, opacity: .55 }}>{new Date(g.waSentAt).toLocaleString('id-ID')}</div></>
                     : <>
                         <div style={{ color: hasValidPhone(g) ? red : ink, opacity: hasValidPhone(g) ? 1 : .45 }}>{hasValidPhone(g) ? 'Belum' : 'Tanpa nomor'}</div>
-                        {hasValidPhone(g) && <button type="button" onClick={() => markExistingWa(g)} disabled={waBusy}
+                        {hasValidPhone(g) && hasInviteLink(g) && <button type="button" onClick={() => markExistingWa(g)} disabled={waBusy}
                           style={{ marginTop: 4, padding: 0, border: 0, background: 'transparent', color: sage, fontSize: 10, textDecoration: 'underline', cursor: waBusy ? 'default' : 'pointer' }}>Tandai sudah WA</button>}
                       </>}
                 </td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                  {hasValidPhone(g) && !g.waSentAt && <button type="button" onClick={() => startWaQueue([g])} style={waBtn}>WhatsApp</button>}
+                  {hasValidPhone(g) && hasInviteLink(g) && !g.waSentAt && <button type="button" onClick={() => startWaQueue([g])} style={waBtn}>WhatsApp</button>}
                   {g.waSentAt && <button type="button" onClick={() => resetWaSent(g)} disabled={waBusy} style={mini}>Batalkan tanda WA</button>}
-                  <button onClick={async () => {
+                  <button disabled={!link} onClick={async () => {
+                    if (!link) return;
                     if (!await copyText(link)) return;
                     setCopiedGuest(g.id);
                     window.setTimeout(() => setCopiedGuest(current => current === g.id ? null : current), 1600);
@@ -442,11 +441,11 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
                 style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.18)', background: 'transparent', borderRadius: '50%', cursor: 'pointer' }}>&times;</button>
             </div>
             <div style={{ marginTop: 16, padding: 14, maxHeight: 210, overflowY: 'auto', whiteSpace: 'pre-wrap', background: '#F3EFE5', border: '1px solid rgba(47,44,38,.1)', borderRadius: 10, fontSize: 12.5, lineHeight: 1.6 }}>
-              {waInviteText(currentWa.name, guestLink(location.origin, currentWa.id), cfg)}
+              {waInviteText(currentWa.name, guestLink(location.origin, currentWa.id, currentWa.inviteToken), cfg)}
             </div>
             {waError && <div role="alert" style={{ marginTop: 10, color: red, fontSize: 12 }}>{waError}</div>}
             <button type="button" onClick={() => {
-              const popup = window.open(waLink(currentWa.phone || '', waInviteText(currentWa.name, guestLink(location.origin, currentWa.id), cfg)), '_blank');
+              const popup = window.open(waLink(currentWa.phone || '', waInviteText(currentWa.name, guestLink(location.origin, currentWa.id, currentWa.inviteToken), cfg)), '_blank');
               if (popup) {
                 popup.opener = null;
                 setWaOpened(true);

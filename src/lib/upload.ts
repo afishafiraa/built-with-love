@@ -1,16 +1,11 @@
-/* Image upload for the Studio. Three routes, picked automatically:
-   1. Cloudinary (unsigned preset) when VITE_CLOUDINARY_* is set
-   2. Google Drive through the Sheets Apps Script when VITE_SHEETS_* is set
-   3. Otherwise the image is kept in this browser only (for trying things out)
+/* Image upload for the Studio. Two routes, picked automatically:
+   1. Google Drive through the authenticated same-origin API proxy
+   2. In explicit VITE_DEMO_MODE, the image stays in this browser only
    Photos are resized in the browser first, so phone pictures upload quickly. */
 import { sheets, sheetsReady } from './sheets';
 
-const cloud = (import.meta.env.VITE_CLOUDINARY_CLOUD as string) || '';
-const preset = (import.meta.env.VITE_CLOUDINARY_PRESET as string) || '';
-const cloudinaryReady = !!cloud && !!preset && cloud !== 'your-cloud';
-
-export type UploadMode = 'cloudinary' | 'drive' | 'local';
-export const uploadMode: UploadMode = cloudinaryReady ? 'cloudinary' : sheetsReady ? 'drive' : 'local';
+export type UploadMode = 'drive' | 'local';
+export const uploadMode: UploadMode = sheetsReady ? 'drive' : 'local';
 /** Kept for older imports — uploads now always work (local mode as the fallback). */
 export const uploadReady = true;
 
@@ -52,17 +47,6 @@ export async function uploadAsset(file: File, kind: 'photo' | 'orn' | 'petal' = 
   if (file.size > 25 * 1024 * 1024) throw new Error('Maksimal 25 MB per gambar.');
   const keepAlpha = kind !== 'photo' || file.type === 'image/png';
   const blob = await resizeImage(file, uploadMode === 'local' ? 900 : 1600, keepAlpha);
-
-  if (uploadMode === 'cloudinary') {
-    const body = new FormData();
-    body.append('file', blob, file.name);
-    body.append('upload_preset', preset);
-    body.append('folder', 'wedding');
-    const res = await fetch('https://api.cloudinary.com/v1_1/' + cloud + '/image/upload', { method: 'POST', body });
-    if (!res.ok) throw new Error('Upload gagal (' + res.status + ').');
-    const json = await res.json();
-    return String(json.secure_url).replace('/upload/', '/upload/f_auto,q_auto,w_1600,c_limit/');
-  }
 
   const dataUrl = await toDataUrl(blob);
   if (uploadMode === 'drive') {

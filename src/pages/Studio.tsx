@@ -4,7 +4,6 @@ import AdminGate from '../components/AdminGate';
 import { DEFAULT_CONFIG, mergeConfig } from '../config/invitation';
 import { LIBRARY, SLOTS, SLOT_SRC } from '../config/slots';
 const UPLOAD_NOTE = {
-  cloudinary: 'Gambar diunggah ke Cloudinary.',
   drive: 'Gambar disimpan di Google Drive kamu (folder "Undangan Assets").',
   local: 'Mode lokal: gambar hanya tersimpan di browser ini — atur Sheets di .env supaya foto ikut terbit ke tamu.'
 };

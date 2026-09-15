@@ -1,107 +1,92 @@
-/* Google Sheets backend through an Apps Script Web App.
-   No OAuth, no server: the Web App writes straight into the spreadsheet.
-   POSTs use text/plain to dodge the CORS preflight Apps Script cannot answer. */
+/* Same-origin API client. Apps Script credentials never enter the browser bundle:
+   Vercel Functions validate the request, enforce public/admin capabilities, then
+   attach the server-only token before forwarding to Apps Script. */
 import type { Guest, WeddingConfig, Wish } from '../types';
 
-const ENDPOINT = (import.meta.env.VITE_SHEETS_ENDPOINT as string) || '';
-const TOKEN = (import.meta.env.VITE_SHEETS_TOKEN as string) || '';
+/** Explicit demo mode is useful for visual-only Vite development without APIs. */
+export const sheetsReady = import.meta.env.VITE_DEMO_MODE !== 'true';
 
-/** False while .env still has the placeholder — the UI then runs in demo mode. */
-export const sheetsReady = /^https:\/\/script\.google\.com\//.test(ENDPOINT) && !ENDPOINT.includes('XXXX');
+const ADMIN_ACTIONS = new Set([
+  'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
+  'markGuestWaSent', 'checkIn', 'moderateWish', 'saveConfig'
+]);
 
-/* Apps Script answers a POST with a 302 to script.googleusercontent.com, which the
-   browser re-issues as a GET. That second hop is occasionally flaky — it can 404, or
-   land back on /exec and run doGet, whose reply carries no `data`. Both look like a
-   dead backend, so retry the actions that are safe to repeat.
-
-   addWish and track append rows, so a retry could duplicate them: they get one shot. */
-const ATTEMPTS: Record<string, number> = {
-  // A guest's RSVP is the one thing that must not be dropped on the day, so it is
-  // given the most room: 5 tries spread over roughly 6 seconds.
-  rsvp: 5,
-  addWish: 1,
-  track: 1
-};
+const ATTEMPTS: Record<string, number> = { rsvp: 5, addWish: 1, track: 1 };
 const DEFAULT_ATTEMPTS = 3;
 
-async function call<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
-  if (!sheetsReady) throw new Error('VITE_SHEETS_ENDPOINT belum diatur');
-  const tries = ATTEMPTS[action] ?? DEFAULT_ATTEMPTS;
-  let last = 'sheets tidak menjawab';
+function cookie(name: string) {
+  try {
+    const prefix = `${name}=`;
+    const part = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith(prefix));
+    return part ? decodeURIComponent(part.slice(prefix.length)) : '';
+  } catch { return ''; }
+}
 
-  for (let i = 1; i <= tries; i++) {
-    if (i > 1) await new Promise(r => setTimeout(r, Math.min(3000, 500 * 2 ** (i - 2))));
-    let json: Record<string, unknown>;
+async function call<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
+  if (!sheetsReady) throw new Error('Backend dinonaktifkan oleh VITE_DEMO_MODE');
+  const admin = ADMIN_ACTIONS.has(action) || (action === 'listWishes' && payload.all === true);
+  const tries = ATTEMPTS[action] ?? DEFAULT_ATTEMPTS;
+  let last = 'server tidak menjawab';
+
+  for (let attempt = 1; attempt <= tries; attempt += 1) {
+    if (attempt > 1) await new Promise(resolve => setTimeout(resolve, Math.min(3000, 500 * 2 ** (attempt - 2))));
     try {
-      const res = await fetch(ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action, token: TOKEN, ...payload })
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (admin) headers['X-CSRF-Token'] = cookie('wedding_csrf');
+      const response = await fetch(admin ? '/api/admin' : '/api/public', {
+        method: 'POST', credentials: 'same-origin', headers,
+        body: JSON.stringify({ action, ...payload })
       });
-      if (!res.ok) { last = 'sheets ' + res.status; continue; }
-      json = await res.json();
-    } catch {
-      last = 'jaringan terputus';
-      continue;
+      const json = await response.json().catch(() => ({})) as Record<string, unknown>;
+      if (response.status === 401) {
+        window.dispatchEvent(new Event('wedding-auth-required'));
+        throw new Error('Sesi admin berakhir. Silakan masuk lagi.');
+      }
+      if (!response.ok || json.error) throw new Error(String(json.error || `server ${response.status}`));
+      if (!Object.prototype.hasOwnProperty.call(json, 'data')) throw new Error('Respons server tidak valid');
+      return json.data as T;
+    } catch (error) {
+      last = error instanceof Error ? error.message : 'jaringan terputus';
+      if (/ditolak|tidak valid|invalid|required|salah|berakhir|terlalu banyak/i.test(last)) break;
     }
-    // A real answer from the script — an error here is permanent, do not retry it.
-    if (json.error) throw new Error(String(json.error));
-    if (!('data' in json)) { last = 'respons tanpa data (permintaan berubah jadi GET)'; continue; }
-    return json.data as T;
   }
   throw new Error(last);
 }
 
-/* Sheets hands back typed cells, not strings: a phone typed as 085740894090 arrives
-   as the number 85740894090, and "invited" as a number. Normalise on the way in so
-   the rest of the app can trust the Guest / Wish types instead of guessing. */
-const str = (v: unknown) => (v === null || v === undefined ? '' : String(v));
+const str = (value: unknown) => value === null || value === undefined ? '' : String(value);
 
 function toGuest(raw: Record<string, unknown>): Guest {
   const rsvp = str(raw.rsvp);
   return {
-    id: str(raw.id),
-    name: str(raw.name),
-    category: str(raw.category),
-    phone: str(raw.phone),
-    invited: Number(raw.invited) || 0,
-    opened: str(raw.opened),
-    rsvp: rsvp === 'yes' || rsvp === 'no' ? rsvp : '',
-    guests: Number(raw.guests) || 0,
-    checkedInAt: str(raw.checkedInAt),
-    waSentAt: str(raw.waSentAt)
+    id: str(raw.id), inviteToken: str(raw.inviteToken), name: str(raw.name),
+    category: str(raw.category), phone: str(raw.phone), invited: Number(raw.invited) || 0,
+    opened: str(raw.opened), rsvp: rsvp === 'yes' || rsvp === 'no' ? rsvp : '',
+    guests: Number(raw.guests) || 0, checkedInAt: str(raw.checkedInAt), waSentAt: str(raw.waSentAt)
   };
 }
 
 function toWish(raw: Record<string, unknown>): Wish {
-  const status = str(raw.status);
   return {
-    id: str(raw.id),
-    name: str(raw.name),
-    text: str(raw.text),
-    createdAt: str(raw.createdAt),
-    // Legacy "pending" rows are public now; only an explicit hide removes one.
-    status: status === 'hidden' ? 'hidden' : 'approved'
+    id: str(raw.id), name: str(raw.name), text: str(raw.text), createdAt: str(raw.createdAt),
+    status: str(raw.status) === 'hidden' ? 'hidden' : 'approved'
   };
 }
 
 export const sheets = {
   listGuests: async () => (await call<Record<string, unknown>[]>('listGuests')).map(toGuest),
-  /** Just the display name for one invitation link (no guest list exposed). */
-  getGuest: (id: string) => call<{ name: string } | null>('getGuest', { id }),
-  /** Stores an image in the couple's Google Drive and returns a public URL. */
-  uploadImage: (p: { data: string; mime: string; name: string }) => call<{ url: string }>('uploadImage', p),
-  upsertGuest: (g: Partial<Guest>) => call<void>('upsertGuest', { guest: g }),
+  getGuest: (inviteKey: string) => call<{ id: string; name: string } | null>('getGuest', { inviteKey }),
+  getGuestById: (guestId: string) => call<{ id: string; name: string } | null>('getGuestById', { guestId }),
+  uploadImage: (payload: { data: string; mime: string; name: string }) => call<{ url: string }>('uploadImage', payload),
+  upsertGuest: (guest: Partial<Guest>) => call<{ id: string; inviteToken: string }>('upsertGuest', { guest }),
   deleteGuest: (id: string) => call<boolean>('deleteGuest', { id }),
   markGuestWaSent: (id: string, sent = true) => call<string>('markGuestWaSent', { id, sent }),
-  rsvp: (p: { guestId: string; name: string; rsvp: 'yes' | 'no'; guests: number }) => call<void>('rsvp', p),
-  // New backend returns false for an unknown ID. `null` keeps older deployments compatible.
+  rsvp: (payload: { inviteKey: string; name: string; rsvp: 'yes' | 'no'; guests: number }) => call<void>('rsvp', payload),
   checkIn: (guestId: string) => call<boolean | null>('checkIn', { guestId }),
   listWishes: async (all = false) => (await call<Record<string, unknown>[]>('listWishes', { all })).map(toWish),
-  addWish: (p: { name: string; text: string; guestId?: string }) => call<void>('addWish', p),
+  addWish: (payload: { name: string; text: string; inviteKey: string; website?: string }) => call<void>('addWish', payload),
   moderateWish: (id: string, status: 'approved' | 'hidden') => call<void>('moderateWish', { id, status }),
   getConfig: () => call<Partial<WeddingConfig> | null>('getConfig'),
   saveConfig: (config: WeddingConfig) => call<void>('saveConfig', { config }),
-  track: (p: { guestId: string; event: string }) =>
-    sheetsReady ? call<void>('track', p).catch(() => {}) : Promise.resolve()
+  track: (payload: { inviteKey: string; event: string }) =>
+    sheetsReady && payload.inviteKey ? call<void>('track', payload).catch(() => {}) : Promise.resolve()
 };

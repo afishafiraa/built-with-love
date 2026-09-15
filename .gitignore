@@ -2,11 +2,10 @@ node_modules
 dist
 .DS_Store
 **/.DS_Store
-.env
 .vercel
 tsconfig.tsbuildinfo
 
 # Real wedding content — local dev only, never commit (see invitation.local.example.ts)
 src/config/invitation.local.ts
-docs/
 .env*
+!.env.example

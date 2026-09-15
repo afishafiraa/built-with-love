@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
+import AdminGate from '../components/AdminGate';
 import { sheets, sheetsReady } from '../lib/sheets';
 
 type State = 'loading' | 'ready' | 'saving' | 'ok' | 'missing' | 'err';
 
 /** Opened by scanning a guest QR: /checkin?g=<guestId>. */
 export default function CheckIn() {
+  return <AdminGate title="Check-in Petugas"><CheckInInner /></AdminGate>;
+}
+
+function CheckInInner() {
   const id = new URLSearchParams(location.search).get('g')?.trim() || '';
   const [name, setName] = useState('');
   const [state, setState] = useState<State>(id ? 'loading' : 'missing');
@@ -17,7 +22,7 @@ export default function CheckIn() {
       return;
     }
     let active = true;
-    sheets.getGuest(id)
+    sheets.getGuestById(id)
       .then(guest => {
         if (!active) return;
         if (!guest?.name) setState('missing');

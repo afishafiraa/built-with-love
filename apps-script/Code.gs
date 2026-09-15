@@ -9,12 +9,12 @@
  * Setup
  *  1. Paste this file into the Apps Script editor, Save.
  *  2. Project Settings > Script properties:
- *       SECRET   = same value as VITE_SHEETS_TOKEN in app/.env
+ *       SECRET   = same value as SHEETS_TOKEN in Vercel server environment
  *       SHEET_ID = spreadsheet id (standalone projects only)
  *  3. Run `setup` once from the editor's Run menu. It creates the Guests, Wishes,
  *     Events and Config tabs with the right headers. Grant the permissions it asks for.
  *  4. Deploy > New deployment > Web app > Execute as: me, Access: anyone.
- *  5. Put the /exec URL in VITE_SHEETS_ENDPOINT.
+ *  5. Put the /exec URL in the server-only SHEETS_ENDPOINT variable in Vercel.
  *
  *  The secret lives in Script properties, never in this file — this file is committed.
  *  After editing this file: Deploy > Manage deployments > Edit > Version: New version
@@ -38,7 +38,7 @@ function ss_() {
 }
 
 var TABS = {
-  Guests: ['id', 'name', 'category', 'phone', 'invited', 'opened', 'rsvp', 'guests', 'checkedInAt', 'waSentAt'],
+  Guests: ['id', 'name', 'category', 'phone', 'invited', 'opened', 'rsvp', 'guests', 'checkedInAt', 'waSentAt', 'inviteToken'],
   Wishes: ['id', 'name', 'text', 'createdAt', 'status'],
   Events: ['at', 'guestId', 'event'],
   Config: ['key', 'value']
@@ -64,9 +64,10 @@ function setup() {
   // Kolom yang harus teks. Nomor HP yang tersimpan sebagai angka kehilangan nol
   // depannya (085740894090 -> 85740894090) dan tidak bisa dipulihkan.
   var guests = ss.getSheetByName('Guests');
-  ['id', 'phone'].forEach(function (col) {
+  ['id', 'phone', 'inviteToken'].forEach(function (col) {
     guests.getRange(1, TABS.Guests.indexOf(col) + 1, guests.getMaxRows(), 1).setNumberFormat('@');
   });
+  ensureInviteTokens_();
 
   // Tab bawaan ("Sheet1") biasanya tertinggal kosong setelah tab di atas dibuat.
   // Hanya dihapus kalau benar-benar kosong, namanya masih bawaan, dan bukan satu-satunya tab.
@@ -87,9 +88,9 @@ function setup() {
   Logger.log(
     'Spreadsheet: ' + ss.getName() + ' (' + ss.getId() + ')\n' +
     'Tab siap: ' + Object.keys(TABS).join(', ') + '\n' +
-    'Pastikan app/.env berisi:\nVITE_SHEETS_TOKEN=' + secret
+    'SECRET siap di Script Properties. Jangan salin nilainya ke source code atau VITE_*.'
   );
-  return secret;
+  return 'setup complete';
 }
 
 function sheet_(name) { return ss_().getSheetByName(name); }
@@ -137,6 +138,58 @@ function setCell_(name, row, key, value) {
   sh.getRange(row, head.indexOf(key) + 1).setValue(value);
 }
 
+/** Eight decimal digits, generated from a SHA-256 digest and unique in Guests. */
+function newInviteToken_() {
+  for (var attempt = 0; attempt < 30; attempt++) {
+    var digest = Utilities.computeDigest(
+      Utilities.DigestAlgorithm.SHA_256,
+      Utilities.getUuid() + ':' + new Date().getTime() + ':' + Math.random()
+    );
+    var unsigned = (digest[0] & 255) * 16777216 + (digest[1] & 255) * 65536 +
+      (digest[2] & 255) * 256 + (digest[3] & 255);
+    var token = String(10000000 + (unsigned % 90000000));
+    if (findRow_('Guests', 'inviteToken', token) < 0) return token;
+  }
+  throw new Error('invite token generation failed');
+}
+
+/** Migration used by setup(): existing development rows receive a token once. */
+function ensureInviteTokens_() {
+  var sh = sheet_('Guests');
+  if (!sh || sh.getLastRow() < 2) return;
+  var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var tokenCol = head.indexOf('inviteToken') + 1;
+  var seen = {};
+  for (var row = 2; row <= sh.getLastRow(); row++) {
+    var current = String(sh.getRange(row, tokenCol).getValue() || '').trim();
+    if (!/^\d{8}$/.test(current) || seen[current]) {
+      current = newInviteToken_();
+      sh.getRange(row, tokenCol).setValue(current).setNumberFormat('@');
+    }
+    seen[current] = true;
+  }
+}
+
+function guestAtRow_(row) {
+  if (row < 2) return null;
+  var sh = sheet_('Guests');
+  var head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var values = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
+  var guest = {};
+  head.forEach(function (key, index) { guest[key] = values[index]; });
+  return guest;
+}
+
+/** Resolve only the exact public `slug-12345678` key; bare slugs are rejected. */
+function guestFromInviteKey_(value) {
+  var key = String(value || '').trim().toLowerCase();
+  var match = key.match(/^([a-z0-9]+(?:-[a-z0-9]+)*)-(\d{8})$/);
+  if (!match) return null;
+  var row = findRow_('Guests', 'id', match[1]);
+  var guest = guestAtRow_(row);
+  return guest && String(guest.inviteToken) === match[2] ? guest : null;
+}
+
 function assetFolder_() {
   var it = DriveApp.getFoldersByName('Undangan Assets');
   return it.hasNext() ? it.next() : DriveApp.createFolder('Undangan Assets');
@@ -166,7 +219,7 @@ function doPost(e) {
     var now = new Date().toISOString();
 
     // Serialise writes so two RSVPs arriving together can't overwrite each other.
-    var reads = { listGuests: 1, listWishes: 1, getConfig: 1, getGuest: 1, uploadImage: 1 };
+    var reads = { listGuests: 1, listWishes: 1, getConfig: 1, getGuest: 1, getGuestById: 1, uploadImage: 1 };
     var lock = null;
     if (!reads[body.action]) { lock = LockService.getScriptLock(); lock.waitLock(15000); }
     try { return handle_(body, now); } finally { if (lock) lock.releaseLock(); }
@@ -186,16 +239,21 @@ function handle_(body, now) {
       return json_({ data: rows_('Guests') });
 
     case 'getGuest': {
-      var gr = findRow_('Guests', 'id', body.id);
-      if (gr < 0) return json_({ data: null });
-      var head = sheet_('Guests').getDataRange().getValues()[0];
-      return json_({ data: { name: sheet_('Guests').getRange(gr, head.indexOf('name') + 1).getValue() } });
+      var publicGuest = guestFromInviteKey_(body.inviteKey);
+      return json_({ data: publicGuest ? { id: publicGuest.id, name: publicGuest.name } : null });
+    }
+
+    case 'getGuestById': {
+      var gr = findRow_('Guests', 'id', String(body.guestId || '').trim());
+      var privateGuest = guestAtRow_(gr);
+      return json_({ data: privateGuest ? { id: privateGuest.id, name: privateGuest.name } : null });
     }
 
     case 'uploadImage': {
       // Studio photo/ornament upload -> "Undangan Assets" folder in your Drive, shared view-only by link.
-      var mime = String(body.mime || 'image/jpeg');
-      if (mime.indexOf('image/') !== 0) return json_({ error: 'not an image' });
+      var mime = String(body.mime || 'image/jpeg').toLowerCase();
+      if (!/^image\/(jpeg|png|webp|gif)$/.test(mime)) return json_({ error: 'invalid image type' });
+      if (!body.data || String(body.data).length > 4000000) return json_({ error: 'image too large' });
       var blob = Utilities.newBlob(Utilities.base64Decode(body.data), mime, String(body.name || 'gambar').slice(0, 80));
       var file = assetFolder_().createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
@@ -212,15 +270,23 @@ function handle_(body, now) {
       var guestCategory = String(g.category || '').trim().slice(0, 50);
       var invited = Math.min(2, Math.max(1, Number(g.invited) || 1));
       var row = findRow_('Guests', 'id', guestId);
+      var inviteToken = '';
       if (row < 0) {
-        sheet_('Guests').appendRow([guestId, guestName, guestCategory, guestPhone, invited, '', '', '', '', '']);
+        inviteToken = newInviteToken_();
+        sheet_('Guests').appendRow([guestId, guestName, guestCategory, guestPhone, invited, '', '', '', '', '', inviteToken]);
       } else {
         setCell_('Guests', row, 'name', guestName);
         if (g.category !== undefined) setCell_('Guests', row, 'category', guestCategory);
         if (g.phone !== undefined) setCell_('Guests', row, 'phone', guestPhone);
         if (g.invited !== undefined) setCell_('Guests', row, 'invited', invited);
+        var existingGuest = guestAtRow_(row);
+        inviteToken = String(existingGuest.inviteToken || '');
+        if (!/^\d{8}$/.test(inviteToken)) {
+          inviteToken = newInviteToken_();
+          setCell_('Guests', row, 'inviteToken', inviteToken);
+        }
       }
-      return json_({ data: null });
+      return json_({ data: { id: guestId, inviteToken: inviteToken } });
     }
 
     case 'deleteGuest': {
@@ -245,19 +311,16 @@ function handle_(body, now) {
 
     case 'rsvp': {
       if (body.rsvp !== 'yes' && body.rsvp !== 'no') return json_({ error: 'invalid rsvp' });
-      var rsvpGuestId = String(body.guestId || '').trim().slice(0, 100);
+      var rsvpGuest = guestFromInviteKey_(body.inviteKey);
       var rsvpName = String(body.name || '').trim().slice(0, 80);
-      if (!rsvpGuestId || !rsvpName) return json_({ error: 'guest id and name required' });
+      if (!rsvpGuest || !rsvpName) return json_({ error: 'invalid invitation link' });
       // Enforce the same max-two rule server-side: altered browser requests
       // cannot overbook seats.
       var party = body.rsvp === 'yes' ? Math.min(2, Math.max(1, Number(body.guests) || 1)) : 0;
-      var r = findRow_('Guests', 'id', rsvpGuestId);
-      if (r < 0) { sheet_('Guests').appendRow([rsvpGuestId, rsvpName, '', '', 2, now, body.rsvp, party, '', '']); }
-      else {
-        setCell_('Guests', r, 'rsvp', body.rsvp);
-        setCell_('Guests', r, 'guests', party);
-        if (!sheet_('Guests').getRange(r, 6).getValue()) setCell_('Guests', r, 'opened', now);
-      }
+      var r = findRow_('Guests', 'id', rsvpGuest.id);
+      setCell_('Guests', r, 'rsvp', body.rsvp);
+      setCell_('Guests', r, 'guests', party);
+      if (!sheet_('Guests').getRange(r, 6).getValue()) setCell_('Guests', r, 'opened', now);
       return json_({ data: null });
     }
 
@@ -279,8 +342,10 @@ function handle_(body, now) {
     }
 
     case 'addWish': {
+      var wishGuest = guestFromInviteKey_(body.inviteKey);
       var wishName = String(body.name || '').trim().slice(0, 80);
       var wishText = String(body.text || '').trim().slice(0, 600);
+      if (!wishGuest) return json_({ error: 'invalid invitation link' });
       if (!wishName || !wishText) return json_({ error: 'wish name and text required' });
       sheet_('Wishes').appendRow([Utilities.getUuid(), wishName, wishText, now, 'approved']);
       return json_({ data: null });
@@ -311,8 +376,11 @@ function handle_(body, now) {
     }
 
     case 'track': {
-      sheet_('Events').appendRow([now, body.guestId || '', body.event]);
-      var er = findRow_('Guests', 'id', body.guestId);
+      var trackGuest = guestFromInviteKey_(body.inviteKey);
+      if (!trackGuest) return json_({ data: null });
+      if (body.event !== 'open' && body.event !== 'open-invitation') return json_({ error: 'invalid event' });
+      sheet_('Events').appendRow([now, trackGuest.id, body.event]);
+      var er = findRow_('Guests', 'id', trackGuest.id);
       if (er > 0 && !sheet_('Guests').getRange(er, 6).getValue()) setCell_('Guests', er, 'opened', now);
       return json_({ data: null });
     }

@@ -2,8 +2,8 @@
  * Cek koneksi ke backend Apps Script: `npm run check:sheets`
  *
  * Hanya memanggil aksi baca (getConfig, listGuests, listWishes), jadi tidak
- * menulis apa pun ke spreadsheet. Dipakai untuk memastikan VITE_SHEETS_ENDPOINT
- * dan VITE_SHEETS_TOKEN di .env cocok dengan deployment + Script properties.
+ * menulis apa pun ke spreadsheet. Dipakai untuk memastikan SHEETS_ENDPOINT
+ * dan SHEETS_TOKEN server-side cocok dengan deployment + Script properties.
  */
 import { readFileSync } from 'node:fs';
 
@@ -24,19 +24,19 @@ const bad = (m) => console.log('  \x1b[31m✗\x1b[0m ' + m);
 function fail(m) { console.log('\n  \x1b[31m✗\x1b[0m ' + m + '\n'); process.exit(1); }
 
 const env = readEnv();
-const endpoint = env.VITE_SHEETS_ENDPOINT || '';
-const token = env.VITE_SHEETS_TOKEN || '';
+const endpoint = env.SHEETS_ENDPOINT || '';
+const token = env.SHEETS_TOKEN || '';
 
 console.log('\n  Cek backend Sheets\n  ------------------');
 
 if (!endpoint || endpoint.includes('XXXX')) {
-  fail('VITE_SHEETS_ENDPOINT masih contoh.\n    Deploy dulu apps-script/Code.gs (Deploy > New deployment > Web app),\n    lalu tempel URL /exec-nya ke .env');
+  fail('SHEETS_ENDPOINT masih contoh.\n    Deploy dulu apps-script/Code.gs (Deploy > New deployment > Web app),\n    lalu tempel URL /exec-nya ke .env');
 }
 if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(endpoint)) {
-  fail('VITE_SHEETS_ENDPOINT harus URL Web App yang diakhiri /exec.\n    Sekarang: ' + endpoint);
+  fail('SHEETS_ENDPOINT harus URL Web App yang diakhiri /exec.\n    Sekarang: ' + endpoint);
 }
 if (!token || token === 'ganti-dengan-rahasia') {
-  fail('VITE_SHEETS_TOKEN masih contoh. Isi dengan nilai SECRET di Script properties.');
+  fail('SHEETS_TOKEN masih contoh. Isi dengan nilai SECRET di Script properties.');
 }
 ok('Format .env benar');
 
@@ -77,7 +77,7 @@ async function step(label, fn) {
     failed++;
     bad(label + ' — ' + e.message);
     if (/unauthorized/.test(e.message)) {
-      console.log('      VITE_SHEETS_TOKEN di .env beda dengan SECRET di Script properties.');
+      console.log('      SHEETS_TOKEN di .env beda dengan SECRET di Script properties.');
     }
     if (/setup\(\)/.test(e.message)) {
       console.log('      Buka editor Apps Script > pilih fungsi `setup` > Run.');

@@ -29,7 +29,7 @@ export default tseslint.config(
     }
   },
   {
-    files: ['vite.config.ts', 'scripts/**/*.mjs'],
+    files: ['vite.config.ts', 'scripts/**/*.mjs', 'api/**/*.ts', 'server/**/*.ts'],
     languageOptions: { globals: globals.node }
   }
 );

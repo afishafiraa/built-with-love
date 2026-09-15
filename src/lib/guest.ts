@@ -5,14 +5,15 @@ export const slug = (s: string) =>
   s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-/** ?to=budi-santoso  ->  { id: 'budi-santoso', name: 'Budi Santoso' } */
+/** ?to=budi-santoso-48271935 -> stable slug + separate 8-digit token. */
 export function readGuestParam() {
   const raw = new URLSearchParams(location.search).get('to') || '';
-  const id = raw.trim();
-  const name = id
-    ? id.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    : '';
-  return { id, name };
+  const key = raw.trim().toLowerCase();
+  const match = key.match(/^([a-z0-9]+(?:-[a-z0-9]+)*)-(\d{8})$/);
+  const id = match?.[1] || '';
+  const inviteToken = match?.[2] || '';
+  // Do not infer/display a name from the URL before the token is verified.
+  return { id, inviteToken, key: match ? key : '', name: '' };
 }
 
 /**
@@ -22,18 +23,23 @@ export function readGuestParam() {
 export function useGuest(track = true) {
   const [guest, setGuest] = useState(readGuestParam);
   useEffect(() => {
-    if (!guest.id) return;
-    if (track) sheets.track({ guestId: guest.id, event: 'open' });
+    if (!guest.key) return;
+    if (track) sheets.track({ inviteKey: guest.key, event: 'open' });
     if (!sheetsReady) return;
     let alive = true;
-    sheets.getGuest(guest.id)
-      .then(g => { if (alive && g && g.name) setGuest(cur => ({ ...cur, name: String(g.name) })); })
+    sheets.getGuest(guest.key)
+      .then(g => {
+        if (!alive) return;
+        if (g?.name) setGuest(cur => ({ ...cur, id: g.id, name: String(g.name) }));
+        else setGuest(cur => ({ ...cur, id: '', inviteToken: '', key: '', name: '' }));
+      })
       .catch(() => {});
     return () => { alive = false; };
-  }, [guest.id, track]);
+  }, [guest.key, track]);
   return guest;
 }
 
-export function guestLink(origin: string, id: string) {
-  return origin + '/?to=' + encodeURIComponent(id);
+export function guestLink(origin: string, id: string, inviteToken: string) {
+  if (!id || !/^\d{8}$/.test(inviteToken)) return '';
+  return origin + '/?to=' + encodeURIComponent(id + '-' + inviteToken);
 }

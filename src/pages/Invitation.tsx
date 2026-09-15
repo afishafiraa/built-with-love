@@ -8,7 +8,7 @@ import { RIBBON, THREAD, THREAD_X, slotSrc } from '../config/slots';
 import { fontVars } from '../config/fonts';
 import { isPreview, useConfig } from '../lib/config';
 import { copyText } from '../lib/clipboard';
-import { slug, useGuest } from '../lib/guest';
+import { useGuest } from '../lib/guest';
 import { useMusic } from '../lib/music';
 import { sheets, sheetsReady } from '../lib/sheets';
 import { queueRsvp, startOutbox } from '../lib/outbox';
@@ -268,7 +268,7 @@ export default function Invitation() {
     setClosed(false);
     window.setTimeout(() => setOpening(false), 1350);
     if (!music.playing) music.start();
-    sheets.track({ guestId: guest.id, event: 'open-invitation' });
+    sheets.track({ inviteKey: guest.key, event: 'open-invitation' });
   };
 
   return (
@@ -697,7 +697,7 @@ function Location({ cfg, t, coupleShort }: S & { coupleShort: string }) {
         <div style={{ marginTop: 6, font: "400 12.5px/1.7 var(--f-body)", opacity: .76 }}>{cfg.address}</div>
       </div>
       <div className="sv-wipe bl-clip bl-reveal-card" style={{ position: 'relative', height: 240, borderRadius: 18, border: '1px solid rgba(116,121,99,.16)', background: '#E4DECD' }}>
-        <iframe src={'https://maps.google.com/maps?q=' + q + '&z=15&output=embed'} title="Peta lokasi" style={{ width: '100%', height: '100%', border: 0 }} loading="lazy" referrerPolicy="no-referrer-when-downgrade" />
+        <iframe src={'https://maps.google.com/maps?q=' + q + '&z=15&output=embed'} title="Peta lokasi" style={{ width: '100%', height: '100%', border: 0 }} loading="lazy" referrerPolicy="no-referrer" />
       </div>
       <div style={{ marginTop: 14 }}>
         <button className="bl-btn" onClick={onShare} style={{ ...pill, width: '100%', background: CARD, border: '1px solid rgba(116,121,99,.2)', color: SAGE, boxShadow: '0 9px 22px rgba(90,96,77,.1)' }}>{shared ? t.shared : t.share}</button>
@@ -706,7 +706,7 @@ function Location({ cfg, t, coupleShort }: S & { coupleShort: string }) {
   );
 }
 
-type GuestInfo = { id: string; name: string };
+type GuestInfo = { id: string; key: string; name: string };
 
 /** Keep a "Nama kamu" field in step with the invited guest's name (from the
     link, then the guest list) until the guest types something themselves. */
@@ -721,7 +721,7 @@ function useAutoName(guestName: string, value: string, set: (v: string) => void,
 type RsvpSaved = { name: string; attend: 'yes' | 'no'; guests: number };
 
 function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boolean }) {
-  const key = 'rsvp:' + (guest.id || 'anon');
+  const key = 'rsvp:' + (guest.key || 'preview');
   const saved = useMemo<RsvpSaved | null>(() => {
     try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
   }, [key]);
@@ -741,10 +741,11 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
   const submit = async () => {
     if (!name.trim()) return setErr(t.needName);
     if (!attend) return setErr(t.pickAttend);
+    if (!preview && !guest.key) return setErr(t.needInvite);
     setErr(''); setFailed(false); setBusy(true);
     try {
       if (!preview && sheetsReady) {
-        await sheets.rsvp({ guestId: guest.id || slug(name), name: name.trim(), rsvp: attend, guests: attend === 'yes' ? guests : 0 });
+        await sheets.rsvp({ inviteKey: guest.key, name: name.trim(), rsvp: attend, guests: attend === 'yes' ? guests : 0 });
       }
       const rec: RsvpSaved = { name: name.trim(), attend, guests };
       try { localStorage.setItem(key, JSON.stringify(rec)); } catch { /* ignore */ }
@@ -752,7 +753,7 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
     } catch {
       // Park it so the answer is not lost if this guest never comes back to retry.
       if (!preview && sheetsReady) {
-        queueRsvp({ key, guestId: guest.id || slug(name), name: name.trim(), rsvp: attend, guests: attend === 'yes' ? guests : 0 });
+        queueRsvp({ key, inviteKey: guest.key, name: name.trim(), rsvp: attend, guests: attend === 'yes' ? guests : 0 });
       }
       setErr(t.sendFailed);
       setFailed(true);
@@ -859,10 +860,11 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
   const submit = async () => {
     const n = name.trim(), w = text.trim();
     if (!n || !w) { setNote(!n ? t.needName : t.needWish); return; }
+    if (!preview && !guest.key) { setNote(t.needInvite); return; }
     const mine: WishView = { id: 'local-' + Date.now(), name: n, text: w, createdAt: new Date().toISOString(), mine: true };
     setBusy(true);
     try {
-      if (!preview && sheetsReady) await sheets.addWish({ name: n, text: w, guestId: guest.id });
+      if (!preview && sheetsReady) await sheets.addWish({ name: n, text: w, inviteKey: guest.key });
       setList(l => [mine, ...l]);
       if (!preview && sheetsReady) {
         // Replace the optimistic entry with the server row (and its real id)

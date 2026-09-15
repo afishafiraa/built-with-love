@@ -6,21 +6,21 @@
  * to hear about. So a failed RSVP is parked here and re-sent on the next visit, when
  * the connection comes back, or when the tab is brought back to the foreground.
  *
- * Re-sending is safe: the `rsvp` action writes cells keyed by guestId, so delivering
+ * Re-sending is safe: the `rsvp` action resolves an inviteKey and writes cells keyed by guestId, so delivering
  * the same entry twice lands on the same row rather than creating a duplicate. */
 import { sheets, sheetsReady } from './sheets';
 
 export type PendingRsvp = {
   /** localStorage key the invitation uses to remember "already answered". */
   key: string;
-  guestId: string;
+  inviteKey: string;
   name: string;
   rsvp: 'yes' | 'no';
   guests: number;
   queuedAt: string;
 };
 
-const KEY = 'rsvp-outbox-v1';
+const KEY = 'rsvp-outbox-v2';
 
 function read(): PendingRsvp[] {
   try {
@@ -36,10 +36,10 @@ function write(list: PendingRsvp[]) {
   } catch { /* private mode — nothing more we can do */ }
 }
 
-/** Park an undelivered RSVP. Keyed by guestId, so changing the answer replaces
+/** Park an undelivered RSVP. Keyed by inviteKey, so changing the answer replaces
     the queued one instead of stacking a second entry. */
 export function queueRsvp(entry: Omit<PendingRsvp, 'queuedAt'>) {
-  const list = read().filter(p => p.guestId !== entry.guestId);
+  const list = read().filter(p => p.inviteKey !== entry.inviteKey);
   list.push({ ...entry, queuedAt: new Date().toISOString() });
   write(list);
 }
@@ -62,7 +62,7 @@ export async function flushOutbox(): Promise<number> {
 
   for (const p of list) {
     try {
-      await sheets.rsvp({ guestId: p.guestId, name: p.name, rsvp: p.rsvp, guests: p.guests });
+      await sheets.rsvp({ inviteKey: p.inviteKey, name: p.name, rsvp: p.rsvp, guests: p.guests });
       sent++;
       // Now that it is really recorded, let the invitation show its "answered" state.
       try {
