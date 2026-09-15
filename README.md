@@ -32,7 +32,7 @@ bukan lewat berkas ini.
 | `/` | Undangan. `?to=budi-santoso-48271935` → token diverifikasi, lalu sapaan exact dari Sheets |
 | `/studio` | Atur isi & gambar, pratinjau, dan **Terbitkan** (session admin) |
 | `/dashboard` | Rekap RSVP, tamu, WhatsApp, QR, moderasi, CSV (session admin) |
-| `/checkin?g=<id>` | Scan QR hari H; session admin/petugas diwajibkan |
+| `/checkin` | Scanner QR hari H (kamera/unggah foto); session admin/petugas diwajibkan |
 | `/?preview=1` | Undangan yang mengikuti draf Studio (dipakai iframe pratinjau) |
 
 ## Struktur

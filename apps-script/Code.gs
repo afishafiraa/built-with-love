@@ -39,7 +39,7 @@ function ss_() {
 
 var TABS = {
   Guests: ['id', 'name', 'category', 'phone', 'invited', 'opened', 'rsvp', 'guests', 'checkedInAt', 'waSentAt', 'inviteToken'],
-  Wishes: ['id', 'name', 'text', 'createdAt', 'status'],
+  Wishes: ['id', 'name', 'text', 'createdAt', 'status', 'requestId'],
   Events: ['at', 'guestId', 'event'],
   Config: ['key', 'value']
 };
@@ -190,6 +190,15 @@ function guestFromInviteKey_(value) {
   return guest && String(guest.inviteToken) === match[2] ? guest : null;
 }
 
+/** Admin check-in may receive the internal id or the public `slug-token` key. */
+function guestFromCheckInCode_(value) {
+  var code = String(value || '').trim().toLowerCase();
+  var direct = guestAtRow_(findRow_('Guests', 'id', code));
+  if (direct) return direct;
+  if (/-\d{8}$/.test(code)) return guestFromInviteKey_(code);
+  return null;
+}
+
 function assetFolder_() {
   var it = DriveApp.getFoldersByName('Undangan Assets');
   return it.hasNext() ? it.next() : DriveApp.createFolder('Undangan Assets');
@@ -199,6 +208,18 @@ function configSheet_() {
   var sh = sheet_('Config');
   if (!sh) { sh = ss_().insertSheet('Config'); sh.appendRow(['key', 'value']); }
   return sh;
+}
+
+function readConfig_() {
+  var values = configSheet_().getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (values[i][0] === 'config') return JSON.parse(values[i][1] || 'null');
+  }
+  return null;
+}
+
+function wishes_(all) {
+  return rows_('Wishes').filter(function (wish) { return all || wish.status !== 'hidden'; }).reverse();
 }
 
 function json_(obj) {
@@ -219,7 +240,7 @@ function doPost(e) {
     var now = new Date().toISOString();
 
     // Serialise writes so two RSVPs arriving together can't overwrite each other.
-    var reads = { listGuests: 1, listWishes: 1, getConfig: 1, getGuest: 1, getGuestById: 1, uploadImage: 1 };
+    var reads = { listGuests: 1, listWishes: 1, getConfig: 1, getGuest: 1, getGuestById: 1, bootstrap: 1, dashboardData: 1, uploadImage: 1 };
     var lock = null;
     if (!reads[body.action]) { lock = LockService.getScriptLock(); lock.waitLock(15000); }
     try { return handle_(body, now); } finally { if (lock) lock.releaseLock(); }
@@ -235,6 +256,17 @@ function doGet() {
 
 function handle_(body, now) {
   switch (body.action) {
+    case 'bootstrap': {
+      var bootstrapGuest = guestFromInviteKey_(body.inviteKey);
+      return json_({ data: {
+        config: readConfig_(),
+        guest: bootstrapGuest ? { id: bootstrapGuest.id, name: bootstrapGuest.name } : null
+      } });
+    }
+
+    case 'dashboardData':
+      return json_({ data: { guests: rows_('Guests'), wishes: wishes_(true), config: readConfig_() } });
+
     case 'listGuests':
       return json_({ data: rows_('Guests') });
 
@@ -244,8 +276,7 @@ function handle_(body, now) {
     }
 
     case 'getGuestById': {
-      var gr = findRow_('Guests', 'id', String(body.guestId || '').trim());
-      var privateGuest = guestAtRow_(gr);
+      var privateGuest = guestFromCheckInCode_(body.guestId);
       return json_({ data: privateGuest ? { id: privateGuest.id, name: privateGuest.name } : null });
     }
 
@@ -325,10 +356,11 @@ function handle_(body, now) {
     }
 
     case 'checkIn': {
-      var checkInId = String(body.guestId || '').trim().slice(0, 100);
+      var checkInId = String(body.guestId || '').trim().slice(0, 130);
       if (!checkInId) return json_({ error: 'guest id required' });
-      var cr = findRow_('Guests', 'id', checkInId);
-      if (cr < 0) return json_({ data: false });
+      var checkInGuest = guestFromCheckInCode_(checkInId);
+      if (!checkInGuest) return json_({ data: false });
+      var cr = findRow_('Guests', 'id', checkInGuest.id);
       setCell_('Guests', cr, 'checkedInAt', now);
       return json_({ data: true });
     }
@@ -337,24 +369,30 @@ function handle_(body, now) {
       var all = !!body.all;
       // Wishes are public immediately. Legacy "pending" rows remain public;
       // only an intentional hide action removes one from the wall.
-      var list = rows_('Wishes').filter(function (w) { return all || w.status !== 'hidden'; });
-      return json_({ data: list.reverse() });
+      return json_({ data: wishes_(all) });
     }
 
     case 'addWish': {
       var wishGuest = guestFromInviteKey_(body.inviteKey);
       var wishName = String(body.name || '').trim().slice(0, 80);
       var wishText = String(body.text || '').trim().slice(0, 600);
+      var requestId = String(body.requestId || '').trim();
       if (!wishGuest) return json_({ error: 'invalid invitation link' });
       if (!wishName || !wishText) return json_({ error: 'wish name and text required' });
-      sheet_('Wishes').appendRow([Utilities.getUuid(), wishName, wishText, now, 'approved']);
-      return json_({ data: null });
+      if (!/^[a-zA-Z0-9_-]{16,80}$/.test(requestId)) return json_({ error: 'invalid request id' });
+      ensureHeaders_('Wishes');
+      var existingWishRow = findRow_('Wishes', 'requestId', requestId);
+      if (existingWishRow > 0) {
+        var existingWish = rows_('Wishes')[existingWishRow - 2];
+        return json_({ data: { id: existingWish.id } });
+      }
+      var wishId = Utilities.getUuid();
+      sheet_('Wishes').appendRow([wishId, wishName, wishText, now, 'approved', requestId]);
+      return json_({ data: { id: wishId } });
     }
 
     case 'getConfig': {
-      var cv = configSheet_().getDataRange().getValues();
-      for (var ci = 1; ci < cv.length; ci++) if (cv[ci][0] === 'config') return json_({ data: JSON.parse(cv[ci][1] || 'null') });
-      return json_({ data: null });
+      return json_({ data: readConfig_() });
     }
 
     case 'saveConfig': {

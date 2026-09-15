@@ -16,7 +16,9 @@ export async function callAppsScript(action: string, payload: Record<string, unk
   let lastError = 'backend_unavailable';
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12_000);
+    // Apps Script has noticeable cold starts. A longer single attempt avoids the
+    // false-failure pattern where the write completes after the browser gave up.
+    const timer = setTimeout(() => controller.abort(), 20_000);
     try {
       const response = await fetch(endpoint, {
         method: 'POST',

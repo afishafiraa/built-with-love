@@ -6,7 +6,8 @@ import { downloadCsv } from '../lib/csv';
 import { guestLink, slug } from '../lib/guest';
 import { copyText } from '../lib/clipboard';
 import { isValidWaNumber, waInviteText, waLink, waNumber } from '../lib/whatsapp';
-import { fetchPublished, loadCached } from '../lib/config';
+import { loadCached } from '../lib/config';
+import { mergeConfig } from '../config/invitation';
 import AdminGate from '../components/AdminGate';
 import type { Guest, WeddingConfig, Wish } from '../types';
 
@@ -36,14 +37,17 @@ function DashboardInner() {
     if (!sheetsReady) return;
     setBusy(true);
     try {
-      const [g, w] = await Promise.all([sheets.listGuests(), sheets.listWishes(true)]);
-      setGuests(g); setWishes(w); setErr(null);
+      const data = await sheets.dashboardData();
+      setGuests(data.guests);
+      setWishes(data.wishes);
+      if (data.config) setCfg(mergeConfig(data.config));
+      setErr(null);
     } catch (e) {
       // Without this the dashboard just shows zeros and setup mistakes stay invisible.
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setBusy(false); }
   }
-  useEffect(() => { refresh(); fetchPublished().then(setCfg).catch(() => {}); }, []);
+  useEffect(() => { refresh(); }, []);
 
   const stats = useMemo(() => {
     const yes = guests.filter(g => g.rsvp === 'yes');
@@ -71,6 +75,7 @@ function DashboardInner() {
           <a href="/studio" style={{ display: 'inline-block', marginTop: 6, fontSize: 11, letterSpacing: '.14em', textTransform: 'uppercase', color: sage }}>Studio undangan &rarr;</a>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <a href="/checkin" style={{ ...btn, display: 'grid', placeItems: 'center', boxSizing: 'border-box', color: ink, textDecoration: 'none' }}>Scanner QR</a>
           <button onClick={refresh} style={btn}>{busy ? 'Memuat...' : 'Muat ulang'}</button>
           <button onClick={() => downloadCsv('tamu.csv', guests as unknown as Record<string, unknown>[])} style={btn}>Export CSV</button>
         </div>

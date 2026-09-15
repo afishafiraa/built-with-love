@@ -1,39 +1,45 @@
 import { useEffect, useState } from 'react';
+import { currentInviteParam } from './invite';
+import type { InviteParam } from './invite';
 import { sheets, sheetsReady } from './sheets';
+
+type GuestStatus = 'none' | 'loading' | 'valid' | 'invalid' | 'error';
+export type GuestState = InviteParam & { name: string; status: GuestStatus };
 
 export const slug = (s: string) =>
   s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 /** ?to=budi-santoso-48271935 -> stable slug + separate 8-digit token. */
-export function readGuestParam() {
-  const raw = new URLSearchParams(location.search).get('to') || '';
-  const key = raw.trim().toLowerCase();
-  const match = key.match(/^([a-z0-9]+(?:-[a-z0-9]+)*)-(\d{8})$/);
-  const id = match?.[1] || '';
-  const inviteToken = match?.[2] || '';
+export function readGuestParam(): GuestState {
+  const parsed = currentInviteParam();
   // Do not infer/display a name from the URL before the token is verified.
-  return { id, inviteToken, key: match ? key : '', name: '' };
+  return {
+    ...parsed,
+    name: '',
+    status: parsed.supplied ? (parsed.key && sheetsReady ? 'loading' : 'invalid') : 'none'
+  };
 }
 
 /**
- * The guest this link was made for. The name starts from the ?to= slug and is
- * replaced by the exact name in the guest list (titles, spelling) once Sheets answers.
+ * The guest this link was made for. No name is inferred from the URL: the exact
+ * name only appears after the server verifies the slug and token together.
  */
 export function useGuest(track = true) {
   const [guest, setGuest] = useState(readGuestParam);
   useEffect(() => {
     if (!guest.key) return;
-    if (track) sheets.track({ inviteKey: guest.key, event: 'open' });
     if (!sheetsReady) return;
     let alive = true;
-    sheets.getGuest(guest.key)
+    sheets.bootstrap(guest.key)
       .then(g => {
         if (!alive) return;
-        if (g?.name) setGuest(cur => ({ ...cur, id: g.id, name: String(g.name) }));
-        else setGuest(cur => ({ ...cur, id: '', inviteToken: '', key: '', name: '' }));
+        if (g.guest?.name) {
+          setGuest(cur => ({ ...cur, id: g.guest!.id, name: String(g.guest!.name), status: 'valid' }));
+          if (track) sheets.track({ inviteKey: guest.key, event: 'open' });
+        } else setGuest(cur => ({ ...cur, id: '', inviteToken: '', name: '', status: 'invalid' }));
       })
-      .catch(() => {});
+      .catch(() => { if (alive) setGuest(cur => ({ ...cur, status: 'error' })); });
     return () => { alive = false; };
   }, [guest.key, track]);
   return guest;

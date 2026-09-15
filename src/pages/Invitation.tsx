@@ -225,7 +225,7 @@ const go = (label: string) => () => {
 /* ---------- page ---------- */
 
 export default function Invitation() {
-  const cfg = useConfig();
+  const { config: cfg, ready: configReady } = useConfig();
   const preview = isPreview();
   const guest = useGuest(!preview);
   const [langPick, setLangPick] = useState<Lang | null>(null);
@@ -270,6 +270,16 @@ export default function Invitation() {
     if (!music.playing) music.start();
     sheets.track({ inviteKey: guest.key, event: 'open-invitation' });
   };
+
+  if (!preview && (!configReady || guest.status === 'loading')) {
+    return <InvitationState title="Menyiapkan undangan" body="Mohon tunggu sebentar…" />;
+  }
+  if (!preview && guest.supplied && guest.status === 'invalid') {
+    return <InvitationState title="Link undangan tidak valid" body="Periksa kembali link yang dikirimkan kepadamu. Token tamu mungkin salah atau sudah tidak aktif." />;
+  }
+  if (!preview && guest.supplied && guest.status === 'error') {
+    return <InvitationState title="Undangan belum dapat dimuat" body="Koneksi ke server sedang terganggu. Coba lagi beberapa saat." retry />;
+  }
 
   return (
     <Assets.Provider value={cfg.assets || {}}>
@@ -356,6 +366,19 @@ export default function Invitation() {
         </div>
       </div>
     </Assets.Provider>
+  );
+}
+
+function InvitationState({ title, body, retry = false }: { title: string; body: string; retry?: boolean }) {
+  return (
+    <main className="app-min-screen" style={{ display: 'grid', placeItems: 'center', padding: 28, background: PAPER, color: INK, textAlign: 'center', fontFamily: 'system-ui' }}>
+      <div style={{ boxSizing: 'border-box', width: '100%', maxWidth: 390, padding: '38px 28px', borderRadius: 24, background: CARD, border: '1px solid rgba(116,121,99,.18)', boxShadow: '0 24px 70px rgba(62,53,44,.12)' }}>
+        <div aria-hidden="true" style={{ width: 9, height: 9, margin: '0 auto 19px', borderRadius: '50%', background: GOLD, boxShadow: '0 0 0 7px rgba(201,161,93,.12), 0 0 24px rgba(201,161,93,.7)' }} />
+        <h1 style={{ margin: 0, fontSize: 28, fontWeight: 500 }}>{title}</h1>
+        <p role="status" style={{ margin: '12px auto 0', maxWidth: 310, fontSize: 14, lineHeight: 1.7, opacity: .72 }}>{body}</p>
+        {retry && <button type="button" className="bl-btn" onClick={() => location.reload()} style={{ marginTop: 22, padding: '12px 22px', background: SAGE, color: CARD }}>Coba lagi</button>}
+      </div>
+    </main>
   );
 }
 
@@ -843,6 +866,7 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
   const noteTimer = useRef<number | undefined>(undefined);
+  const requestId = useRef('');
 
   useEffect(() => {
     if (!sheetsReady) return;
@@ -861,17 +885,26 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
     const n = name.trim(), w = text.trim();
     if (!n || !w) { setNote(!n ? t.needName : t.needWish); return; }
     if (!preview && !guest.key) { setNote(t.needInvite); return; }
+    if (!requestId.current) {
+      if (typeof crypto.randomUUID === 'function') requestId.current = crypto.randomUUID();
+      else {
+        const random = new Uint32Array(4);
+        crypto.getRandomValues(random);
+        requestId.current = Array.from(random, value => value.toString(36)).join('-');
+      }
+    }
     const mine: WishView = { id: 'local-' + Date.now(), name: n, text: w, createdAt: new Date().toISOString(), mine: true };
     setBusy(true);
     try {
-      if (!preview && sheetsReady) await sheets.addWish({ name: n, text: w, inviteKey: guest.key });
-      setList(l => [mine, ...l]);
-      if (!preview && sheetsReady) {
-        // Replace the optimistic entry with the server row (and its real id)
-        // without waiting for the next periodic refresh.
-        sheets.listWishes().then(ws => setList(ws.map(item => ({ id: item.id, name: item.name, text: item.text, createdAt: item.createdAt })))).catch(() => {});
-      }
+      const saved = !preview && sheetsReady
+        ? await sheets.addWish({ name: n, text: w, inviteKey: guest.key, requestId: requestId.current })
+        : null;
+      const posted = saved?.id ? { ...mine, id: saved.id } : mine;
+      // A retry may return the id of a row that already reached the periodic
+      // feed. Replace it instead of briefly rendering the same wish twice.
+      setList(list => [posted, ...list.filter(item => item.id !== posted.id)]);
       setText('');
+      requestId.current = '';
       setNote(sheetsReady && !preview ? t.wishPending : '');
     } catch {
       setNote(t.sendFailed);
@@ -892,7 +925,7 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
         </div>
         <div className="bl-reveal-card" style={{ display: 'grid', gap: 11, padding: 22, background: CARD, border: '1px solid rgba(116,121,99,.12)', borderRadius: 20 }}>
           <input className="bl-field" value={name} onChange={e => setName(e.target.value)} placeholder={t.namePh} aria-label={t.namePh} />
-          <textarea className="bl-field" value={text} onChange={e => setText(e.target.value)} rows={3} placeholder={t.wishPh} aria-label={t.wishPh} maxLength={600} />
+          <textarea className="bl-field" value={text} onChange={e => { setText(e.target.value); requestId.current = ''; }} rows={3} placeholder={t.wishPh} aria-label={t.wishPh} maxLength={600} />
           {note && <div className="bl-msg" style={{ color: note === t.wishPending ? SAGE : RED }}>{note}</div>}
           <button className="bl-btn bl-compact-btn" onClick={submit} disabled={busy} style={{ padding: 12, background: RED, color: CARD, borderRadius: 11 }}>{busy ? t.sending : t.sendWish}</button>
         </div>

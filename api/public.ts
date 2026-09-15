@@ -3,13 +3,13 @@ import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit
 import { actionName, invitationKey, optionalText, text } from '../server/validation.js';
 
 const LIMITS: Record<string, [number, number]> = {
-  getConfig: [120, 60_000], getGuest: [120, 60_000], listWishes: [120, 60_000],
+  bootstrap: [120, 60_000], getConfig: [120, 60_000], getGuest: [120, 60_000], listWishes: [120, 60_000],
   rsvp: [12, 10 * 60_000], addWish: [5, 10 * 60_000], track: [40, 10 * 60_000]
 };
 
 function payloadFor(action: string, body: Record<string, unknown>) {
   if (action === 'getConfig' || action === 'listWishes') return {};
-  if (action === 'getGuest') return { inviteKey: invitationKey(body.inviteKey) };
+  if (action === 'bootstrap' || action === 'getGuest') return { inviteKey: invitationKey(body.inviteKey) };
   if (action === 'rsvp') {
     const rsvp = body.rsvp;
     if (rsvp !== 'yes' && rsvp !== 'no') throw new Error('invalid rsvp');
@@ -20,7 +20,9 @@ function payloadFor(action: string, body: Record<string, unknown>) {
   if (action === 'addWish') {
     // Honeypot: bots commonly fill every field. Return success without writing.
     if (optionalText(body.website, 100)) return { trapped: true };
-    return { inviteKey: invitationKey(body.inviteKey), name: text(body.name, 'name', 80), text: text(body.text, 'wish', 600) };
+    const requestId = optionalText(body.requestId, 80);
+    if (!/^[a-zA-Z0-9_-]{16,80}$/.test(requestId)) throw new Error('invalid request id');
+    return { inviteKey: invitationKey(body.inviteKey), name: text(body.name, 'name', 80), text: text(body.text, 'wish', 600), requestId };
   }
   if (action === 'track') {
     const event = optionalText(body.event, 32);

@@ -1,17 +1,17 @@
 import { callAppsScript, sendBackendError } from '../server/apps-script.js';
 import { readSession, validCsrf } from '../server/auth.js';
 import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http.js';
-import { actionName, guestId, optionalText, text } from '../server/validation.js';
+import { actionName, guestCode, guestId, optionalText, text } from '../server/validation.js';
 
 const ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'listWishes', 'moderateWish', 'getConfig', 'saveConfig'
+  'markGuestWaSent', 'checkIn', 'listWishes', 'moderateWish', 'getConfig', 'saveConfig', 'dashboardData'
 ]);
 
 function payloadFor(action: string, body: Record<string, unknown>) {
-  if (action === 'listGuests' || action === 'getConfig') return {};
+  if (action === 'listGuests' || action === 'getConfig' || action === 'dashboardData') return {};
   if (action === 'listWishes') return { all: true };
-  if (action === 'getGuestById' || action === 'checkIn') return { guestId: guestId(body.guestId) };
+  if (action === 'getGuestById' || action === 'checkIn') return { guestId: guestCode(body.guestId) };
   if (action === 'deleteGuest') return { id: guestId(body.id) };
   if (action === 'markGuestWaSent') return { id: guestId(body.id), sent: body.sent !== false };
   if (action === 'moderateWish') {

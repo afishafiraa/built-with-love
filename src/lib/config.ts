@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { WeddingConfig } from '../types';
 import { mergeConfig } from '../config/invitation';
 import { sheets, sheetsReady } from './sheets';
+import { currentInviteParam } from './invite';
 
 /* Content lives in three places:
    - published: the Sheets `Config` tab — what guests see (cached in localStorage for fast repeat visits)
@@ -35,9 +36,9 @@ export function saveDraft(cfg: WeddingConfig | null) {
 }
 
 /** Fetch the published config from Sheets (falls back to cache / defaults). */
-export async function fetchPublished(): Promise<WeddingConfig> {
+export async function fetchPublished(inviteKey = ''): Promise<WeddingConfig> {
   if (!sheetsReady) return loadCached();
-  const remote = await sheets.getConfig();
+  const remote = inviteKey ? (await sheets.bootstrap(inviteKey)).config : await sheets.getConfig();
   if (!remote) return loadCached();
   const cfg = mergeConfig(remote);
   write(CACHE_KEY, cfg);
@@ -50,13 +51,14 @@ export async function publish(cfg: WeddingConfig) {
 }
 
 /** Config for the invitation page. In `?preview` mode it follows the Studio draft live. */
-export function useConfig(): WeddingConfig {
+export function useConfig(): { config: WeddingConfig; ready: boolean } {
   const preview = isPreview();
   const [cfg, setCfg] = useState<WeddingConfig>(() => (preview && loadDraft()) || loadCached());
+  const [ready, setReady] = useState(() => preview || !sheetsReady || !!read(CACHE_KEY));
 
   useEffect(() => {
     if (preview) {
-      const sync = () => setCfg(loadDraft() || loadCached());
+      const sync = () => { setCfg(loadDraft() || loadCached()); setReady(true); };
       const onMsg = (e: MessageEvent) => { if (e.data && e.data.type === 'wedding-config') sync(); };
       window.addEventListener('storage', sync);
       window.addEventListener('wedding-config', sync);
@@ -68,9 +70,10 @@ export function useConfig(): WeddingConfig {
       };
     }
     let alive = true;
-    fetchPublished().then(c => { if (alive) setCfg(c); }).catch(() => {});
+    const invite = currentInviteParam();
+    fetchPublished(invite.key).then(c => { if (alive) { setCfg(c); setReady(true); } }).catch(() => { if (alive) setReady(true); });
     return () => { alive = false; };
   }, [preview]);
 
-  return cfg;
+  return { config: cfg, ready };
 }

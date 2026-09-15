@@ -12,6 +12,13 @@ export function guestId(value: unknown) {
   return id;
 }
 
+/** Admin check-in accepts either an internal slug or a complete public invite key. */
+export function guestCode(value: unknown) {
+  const code = stringValue(value, 130).toLowerCase();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*(?:-\d{8})?$/.test(code)) throw new Error('invalid guest code');
+  return code;
+}
+
 export function text(value: unknown, label: string, max: number) {
   const result = stringValue(value, max);
   if (!result) throw new Error(`${label} required`);

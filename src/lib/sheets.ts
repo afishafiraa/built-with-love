@@ -3,6 +3,11 @@
    attach the server-only token before forwarding to Apps Script. */
 import type { Guest, WeddingConfig, Wish } from '../types';
 
+type PublicBootstrap = {
+  config: Partial<WeddingConfig> | null;
+  guest: { id: string; name: string } | null;
+};
+
 /** Explicit demo mode is useful for visual-only Vite development without APIs. */
 export const sheetsReady = import.meta.env.VITE_DEMO_MODE !== 'true';
 
@@ -13,6 +18,7 @@ const ADMIN_ACTIONS = new Set([
 
 const ATTEMPTS: Record<string, number> = { rsvp: 5, addWish: 1, track: 1 };
 const DEFAULT_ATTEMPTS = 3;
+const bootstrapRequests = new Map<string, Promise<PublicBootstrap>>();
 
 function cookie(name: string) {
   try {
@@ -73,6 +79,17 @@ function toWish(raw: Record<string, unknown>): Wish {
 }
 
 export const sheets = {
+  bootstrap: (inviteKey: string) => {
+    if (!bootstrapRequests.has(inviteKey)) {
+      bootstrapRequests.set(inviteKey, call<PublicBootstrap>('bootstrap', { inviteKey })
+        .catch(error => { bootstrapRequests.delete(inviteKey); throw error; }));
+    }
+    return bootstrapRequests.get(inviteKey)!;
+  },
+  dashboardData: async () => {
+    const data = await call<{ guests: Record<string, unknown>[]; wishes: Record<string, unknown>[]; config: Partial<WeddingConfig> | null }>('dashboardData');
+    return { guests: data.guests.map(toGuest), wishes: data.wishes.map(toWish), config: data.config };
+  },
   listGuests: async () => (await call<Record<string, unknown>[]>('listGuests')).map(toGuest),
   getGuest: (inviteKey: string) => call<{ id: string; name: string } | null>('getGuest', { inviteKey }),
   getGuestById: (guestId: string) => call<{ id: string; name: string } | null>('getGuestById', { guestId }),
@@ -83,7 +100,7 @@ export const sheets = {
   rsvp: (payload: { inviteKey: string; name: string; rsvp: 'yes' | 'no'; guests: number }) => call<void>('rsvp', payload),
   checkIn: (guestId: string) => call<boolean | null>('checkIn', { guestId }),
   listWishes: async (all = false) => (await call<Record<string, unknown>[]>('listWishes', { all })).map(toWish),
-  addWish: (payload: { name: string; text: string; inviteKey: string; website?: string }) => call<void>('addWish', payload),
+  addWish: (payload: { name: string; text: string; inviteKey: string; requestId: string; website?: string }) => call<{ id: string }>('addWish', payload),
   moderateWish: (id: string, status: 'approved' | 'hidden') => call<void>('moderateWish', { id, status }),
   getConfig: () => call<Partial<WeddingConfig> | null>('getConfig'),
   saveConfig: (config: WeddingConfig) => call<void>('saveConfig', { config }),
