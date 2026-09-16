@@ -9,10 +9,10 @@ type PublicBootstrap = {
 };
 
 /** Explicit demo mode is useful for visual-only Vite development without APIs. */
-export const sheetsReady = import.meta.env.VITE_DEMO_MODE !== 'true';
+export const backendReady = import.meta.env.VITE_DEMO_MODE !== 'true';
 
 const ADMIN_ACTIONS = new Set([
-  'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
+  'listGuests', 'getGuestById', 'uploadImage', 'createAudioUpload', 'upsertGuest', 'deleteGuest',
   'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
 ]);
 
@@ -29,7 +29,7 @@ function cookie(name: string) {
 }
 
 async function call<T>(action: string, payload: Record<string, unknown> = {}): Promise<T> {
-  if (!sheetsReady) throw new Error('Backend dinonaktifkan oleh VITE_DEMO_MODE');
+  if (!backendReady) throw new Error('Backend dinonaktifkan oleh VITE_DEMO_MODE');
   const admin = ADMIN_ACTIONS.has(action) || (action === 'listWishes' && payload.all === true);
   const tries = ATTEMPTS[action] ?? DEFAULT_ATTEMPTS;
   let last = 'server tidak menjawab';
@@ -78,7 +78,7 @@ function toWish(raw: Record<string, unknown>): Wish {
   };
 }
 
-export const sheets = {
+export const api = {
   bootstrap: (inviteKey: string) => {
     if (!bootstrapRequests.has(inviteKey)) {
       bootstrapRequests.set(inviteKey, call<PublicBootstrap>('bootstrap', { inviteKey })
@@ -94,6 +94,8 @@ export const sheets = {
   getGuest: (inviteKey: string) => call<{ id: string; name: string } | null>('getGuest', { inviteKey }),
   getGuestById: (guestId: string) => call<{ id: string; name: string } | null>('getGuestById', { guestId }),
   uploadImage: (payload: { data: string; mime: string; name: string }) => call<{ url: string }>('uploadImage', payload),
+  createAudioUpload: (payload: { name: string; mime: string; size: number }) =>
+    call<{ signedUrl: string; url: string }>('createAudioUpload', payload),
   upsertGuest: (guest: Partial<Guest>) => call<{ id: string; inviteToken: string }>('upsertGuest', { guest }),
   deleteGuest: (id: string) => call<boolean>('deleteGuest', { id }),
   markGuestWaSent: (id: string, sent = true) => call<string>('markGuestWaSent', { id, sent }),
@@ -107,5 +109,5 @@ export const sheets = {
   getConfig: () => call<Partial<WeddingConfig> | null>('getConfig'),
   saveConfig: (config: WeddingConfig) => call<void>('saveConfig', { config }),
   track: (payload: { inviteKey: string; event: string }) =>
-    sheetsReady && payload.inviteKey ? call<void>('track', payload).catch(() => {}) : Promise.resolve()
+    backendReady && payload.inviteKey ? call<void>('track', payload).catch(() => {}) : Promise.resolve()
 };

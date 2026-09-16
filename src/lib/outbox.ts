@@ -1,6 +1,6 @@
 /* Safety net for RSVPs that could not be delivered.
  *
- * sheets.rsvp() already retries a handful of times, which covers a brief network blip.
+ * The RSVP API already retries a handful of times, which covers a brief network blip.
  * It does not cover a guest who loses signal entirely,
  * gives up and closes the page — and that guest is exactly the one the couple needs
  * to hear about. So a failed RSVP is parked here and re-sent on the next visit, when
@@ -8,9 +8,9 @@
  *
  * Re-sending is safe: the `rsvp` action resolves an inviteKey and updates the same
  * guest row atomically, so delivering the same entry twice does not create a duplicate. */
-import { sheets, sheetsReady } from './sheets';
+import { api, backendReady } from './api';
 
-export type PendingRsvp = {
+type PendingRsvp = {
   /** localStorage key the invitation uses to remember "already answered". */
   key: string;
   inviteKey: string;
@@ -44,16 +44,12 @@ export function queueRsvp(entry: Omit<PendingRsvp, 'queuedAt'>) {
   write(list);
 }
 
-export function pendingCount() {
-  return read().length;
-}
-
 /**
  * Deliver everything queued. Returns how many got through.
  * Entries that still fail stay queued for the next attempt.
  */
-export async function flushOutbox(): Promise<number> {
-  if (!sheetsReady) return 0;
+async function flushOutbox(): Promise<number> {
+  if (!backendReady) return 0;
   const list = read();
   if (!list.length) return 0;
 
@@ -62,7 +58,7 @@ export async function flushOutbox(): Promise<number> {
 
   for (const p of list) {
     try {
-      await sheets.rsvp({ inviteKey: p.inviteKey, name: p.name, rsvp: p.rsvp, guests: p.guests });
+      await api.rsvp({ inviteKey: p.inviteKey, name: p.name, rsvp: p.rsvp, guests: p.guests });
       sent++;
       // Now that it is really recorded, let the invitation show its "answered" state.
       try {

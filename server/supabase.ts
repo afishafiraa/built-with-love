@@ -191,6 +191,26 @@ async function uploadImage(payload: JsonRecord) {
   return { url: publicUrl };
 }
 
+async function createAudioUpload(payload: JsonRecord) {
+  const mime = stringValue(payload.mime);
+  const extension = ({
+    'audio/mpeg': 'mp3', 'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a', 'video/mp4': 'mp4'
+  } as Record<string, string>)[mime];
+  const size = Number(payload.size);
+  if (!extension) throw new Error('invalid audio type');
+  if (!Number.isInteger(size) || size < 1 || size > 15_000_000) throw new Error('audio too large');
+
+  const path = `${new Date().getUTCFullYear()}/${randomUUID()}.${extension}`;
+  const bucket = database().storage.from('invitation-audio');
+  const signed = await bucket.createSignedUploadUrl(path);
+  if (signed.error) databaseError('createAudioUpload', signed.error);
+  if (!signed.data) throw new Error('database_unavailable');
+  return {
+    signedUrl: signed.data.signedUrl,
+    url: bucket.getPublicUrl(path).data.publicUrl
+  };
+}
+
 export async function callSupabase(action: string, payload: JsonRecord = {}) {
   const client = database();
 
@@ -207,6 +227,7 @@ export async function callSupabase(action: string, payload: JsonRecord = {}) {
     return findGuest(stringValue(action === 'getGuest' ? payload.inviteKey : payload.guestId));
   }
   if (action === 'uploadImage') return uploadImage(payload);
+  if (action === 'createAudioUpload') return createAudioUpload(payload);
   if (action === 'upsertGuest') return upsertGuest(payload);
   if (action === 'deleteGuest') {
     const result = await client.from('guests').delete().eq('id', stringValue(payload.id)).select('id');

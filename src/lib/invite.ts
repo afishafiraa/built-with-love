@@ -5,7 +5,7 @@ export type InviteParam = {
   supplied: boolean;
 };
 
-export function parseInviteParam(rawValue: string): InviteParam {
+function parseInviteParam(rawValue: string): InviteParam {
   const raw = String(rawValue || '').trim().toLowerCase();
   const match = raw.match(/^([a-z0-9]+(?:-[a-z0-9]+)*)-(\d{8})$/);
   return {

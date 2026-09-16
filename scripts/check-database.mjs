@@ -1,5 +1,5 @@
 /** Read-only production database smoke test. */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
 const raw = readFileSync(new URL('../.env', import.meta.url), 'utf8');
@@ -17,17 +17,23 @@ const client = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, {
 const ok = message => console.log(`  ✓ ${message}`);
 
 console.log('\n  Cek Supabase production\n  ------------------------');
-const [guests, wishes, config, bucket] = await Promise.all([
+const [guests, wishes, config, assetBucket, audioBucket] = await Promise.all([
   client.from('guests').select('id,invite_token,name', { count: 'exact' }).limit(1),
   client.from('wishes').select('*', { count: 'exact', head: true }),
-  client.from('invitation_config').select('*', { count: 'exact', head: true }),
-  client.storage.getBucket('invitation-assets')
+  client.from('invitation_config').select('data', { count: 'exact' }).eq('id', 1).maybeSingle(),
+  client.storage.getBucket('invitation-assets'),
+  client.storage.getBucket('invitation-audio')
 ]);
-for (const [label, result] of [['guests', guests], ['wishes', wishes], ['config', config], ['storage', bucket]]) {
+for (const [label, result] of [['guests', guests], ['wishes', wishes], ['config', config], ['asset storage', assetBucket], ['audio storage', audioBucket]]) {
   if (result.error) throw new Error(`${label}: ${result.error.message}`);
 }
 ok(`${guests.count || 0} tamu, ${wishes.count || 0} ucapan, ${config.count || 0} config`);
-ok('bucket invitation-assets tersedia');
+ok('bucket gambar dan audio tersedia');
+
+const localAssets = [...new Set(JSON.stringify(config.data?.data || {}).match(/\/assets\/[^"'\\\s]+/g) || [])];
+const missingAssets = localAssets.filter(path => !existsSync(new URL('../public' + path, import.meta.url)));
+if (missingAssets.length) throw new Error(`config memakai aset lokal yang tidak tersedia: ${missingAssets.join(', ')}`);
+ok(`${localAssets.length} aset lokal pada config tersedia`);
 
 const sample = guests.data?.[0];
 if (!sample) throw new Error('Belum ada tamu untuk menguji token');

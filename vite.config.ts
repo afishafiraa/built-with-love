@@ -4,8 +4,8 @@ import legacy from '@vitejs/plugin-legacy';
 
 export default defineConfig({
   // Only these explicitly public namespaces can ever enter the browser bundle.
-  // Old VITE_SHEETS_* / VITE_ADMIN_* values left in a developer's .env are ignored.
-  envPrefix: ['VITE_WA_', 'VITE_DEMO_'],
+  // Any variable outside these namespaces is excluded from the browser bundle.
+  envPrefix: ['VITE_DEMO_'],
   plugins: [
     react(),
     legacy({

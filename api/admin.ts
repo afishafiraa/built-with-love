@@ -4,7 +4,7 @@ import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit
 import { actionName, guestCode, guestId, optionalText, text } from '../server/validation.js';
 
 const ACTIONS = new Set([
-  'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
+  'listGuests', 'getGuestById', 'uploadImage', 'createAudioUpload', 'upsertGuest', 'deleteGuest',
   'markGuestWaSent', 'checkIn', 'listWishes', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
 ]);
 
@@ -49,6 +49,13 @@ function payloadFor(action: string, body: Record<string, unknown>) {
     }
     const data = body.data;
     return { mime, data, name: optionalText(body.name, 80) || 'gambar' };
+  }
+  if (action === 'createAudioUpload') {
+    const mime = optionalText(body.mime, 60).toLowerCase();
+    if (!/^(audio\/(mpeg|mp4|x-m4a)|video\/mp4)$/.test(mime)) throw new Error('invalid audio type');
+    const size = Number(body.size);
+    if (!Number.isInteger(size) || size < 1 || size > 15_000_000) throw new Error('audio too large');
+    return { mime, size, name: optionalText(body.name, 120) || 'musik' };
   }
   throw new Error('unknown action');
 }

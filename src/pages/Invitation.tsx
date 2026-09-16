@@ -10,7 +10,7 @@ import { isPreview, useConfig } from '../lib/config';
 import { copyText } from '../lib/clipboard';
 import { useGuest } from '../lib/guest';
 import { useMusic } from '../lib/music';
-import { sheets, sheetsReady } from '../lib/sheets';
+import { api, backendReady } from '../lib/api';
 import { queueRsvp, startOutbox } from '../lib/outbox';
 import type { Lang, WeddingConfig } from '../types';
 
@@ -283,7 +283,7 @@ export default function Invitation() {
     setClosed(false);
     window.setTimeout(() => setOpening(false), 1350);
     if (!music.playing) music.start();
-    sheets.track({ inviteKey: guest.key, event: 'open-invitation' });
+    api.track({ inviteKey: guest.key, event: 'open-invitation' });
   };
 
   if (!preview && !guest.supplied) {
@@ -803,15 +803,15 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
     if (!preview && !guest.key) return setErr(t.needInvite);
     setErr(''); setFailed(false); setBusy(true);
     try {
-      if (!preview && sheetsReady) {
-        await sheets.rsvp({ inviteKey: guest.key, name: name.trim(), rsvp: attend, guests: attend === 'yes' ? guests : 0 });
+      if (!preview && backendReady) {
+        await api.rsvp({ inviteKey: guest.key, name: name.trim(), rsvp: attend, guests: attend === 'yes' ? guests : 0 });
       }
       const rec: RsvpSaved = { name: name.trim(), attend, guests };
       try { localStorage.setItem(key, JSON.stringify(rec)); } catch { /* ignore */ }
       setDone(true);
     } catch {
       // Park it so the answer is not lost if this guest never comes back to retry.
-      if (!preview && sheetsReady) {
+      if (!preview && backendReady) {
         queueRsvp({ key, inviteKey: guest.key, name: name.trim(), rsvp: attend, guests: attend === 'yes' ? guests : 0 });
       }
       setErr(t.sendFailed);
@@ -895,7 +895,7 @@ const SAMPLE_WISHES: WishView[] = [
 ];
 
 function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boolean }) {
-  const [list, setList] = useState<WishView[]>(preview || !sheetsReady ? SAMPLE_WISHES : []);
+  const [list, setList] = useState<WishView[]>(preview || !backendReady ? SAMPLE_WISHES : []);
   const [name, setName] = useState(guest.name);
   useAutoName(guest.name, name, setName, false);
   const [text, setText] = useState('');
@@ -905,9 +905,9 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
   const requestId = useRef('');
 
   useEffect(() => {
-    if (!sheetsReady || preview || !guest.key) return;
+    if (!backendReady || preview || !guest.key) return;
     let alive = true;
-    const load = () => sheets.listWishes(false, guest.key)
+    const load = () => api.listWishes(false, guest.key)
       .then(ws => { if (alive) setList(ws.map(w => ({ id: w.id, name: w.name, text: w.text, createdAt: w.createdAt }))); })
       .catch(() => {});
     load();
@@ -932,8 +932,8 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
     const mine: WishView = { id: 'local-' + Date.now(), name: n, text: w, createdAt: new Date().toISOString(), mine: true };
     setBusy(true);
     try {
-      const saved = !preview && sheetsReady
-        ? await sheets.addWish({ name: n, text: w, inviteKey: guest.key, requestId: requestId.current })
+      const saved = !preview && backendReady
+        ? await api.addWish({ name: n, text: w, inviteKey: guest.key, requestId: requestId.current })
         : null;
       const posted = saved?.id ? { ...mine, id: saved.id } : mine;
       // A retry may return the id of a row that already reached the periodic
@@ -941,7 +941,7 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
       setList(list => [posted, ...list.filter(item => item.id !== posted.id)]);
       setText('');
       requestId.current = '';
-      setNote(sheetsReady && !preview ? t.wishPending : '');
+      setNote(backendReady && !preview ? t.wishPending : '');
     } catch {
       setNote(t.sendFailed);
     } finally {

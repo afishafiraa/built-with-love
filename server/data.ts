@@ -1,7 +1,7 @@
 import { ApiResponse, send } from './http.js';
 import { callSupabase } from './supabase.js';
 
-/** Supabase is the sole runtime database. Apps Script is only a one-time migration source. */
+/** Supabase is the sole runtime database. */
 export function callBackend(action: string, payload: Record<string, unknown> = {}) {
   return callSupabase(action, payload);
 }

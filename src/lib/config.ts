@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { WeddingConfig } from '../types';
 import { mergeConfig } from '../config/invitation';
-import { sheets, sheetsReady } from './sheets';
+import { api, backendReady } from './api';
 import { currentInviteParam } from './invite';
 
 /* Content lives in three places:
@@ -37,8 +37,8 @@ export function saveDraft(cfg: WeddingConfig | null) {
 
 /** Fetch the published config from Supabase (falls back to cache / defaults). */
 export async function fetchPublished(inviteKey = ''): Promise<WeddingConfig> {
-  if (!sheetsReady) return loadCached();
-  const remote = inviteKey ? (await sheets.bootstrap(inviteKey)).config : await sheets.getConfig();
+  if (!backendReady) return loadCached();
+  const remote = inviteKey ? (await api.bootstrap(inviteKey)).config : await api.getConfig();
   if (!remote) return loadCached();
   const cfg = mergeConfig(remote);
   write(CACHE_KEY, cfg);
@@ -46,7 +46,7 @@ export async function fetchPublished(inviteKey = ''): Promise<WeddingConfig> {
 }
 
 export async function publish(cfg: WeddingConfig) {
-  await sheets.saveConfig(cfg);
+  await api.saveConfig(cfg);
   write(CACHE_KEY, cfg);
 }
 
@@ -58,7 +58,7 @@ export function useConfig(): { config: WeddingConfig; ready: boolean } {
   const hasGuestAccess = !!invite.key;
   const [cfg, setCfg] = useState<WeddingConfig>(() =>
     (preview && loadDraft()) || (!preview && !hasGuestAccess ? mergeConfig(null) : loadCached()));
-  const [ready, setReady] = useState(() => preview || !hasGuestAccess || !sheetsReady || !!read(CACHE_KEY));
+  const [ready, setReady] = useState(() => preview || !hasGuestAccess || !backendReady || !!read(CACHE_KEY));
 
   useEffect(() => {
     if (preview) {

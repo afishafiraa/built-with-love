@@ -1,6 +1,6 @@
 /* Every ornament / photo position in the Blossom invitation, grouped the way
    the Studio shows them. `slot` is the key in `config.assets`. */
-export type SlotKind = 'orn' | 'photo' | 'petal';
+type SlotKind = 'orn' | 'photo' | 'petal';
 export interface SlotDef { slot: string; label: string; kind: SlotKind; ratio: string }
 
 const A = '/assets/';
@@ -80,7 +80,6 @@ export const LIBRARY: { group: string; items: { src: string; label: string }[] }
   ] }
 ];
 
-export const PAPER_TEXTURE = A + 'paper-texture.webp';
 export const RIBBON = A + 'red-thread.webp';
 
 /* Centre line of the red thread (px offset from the image centre, every 10px of

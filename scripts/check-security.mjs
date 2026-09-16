@@ -2,12 +2,12 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const banned = [
-  'VITE_SHEETS_TOKEN', 'VITE_ADMIN_PIN', 'VITE_SHEETS_ENDPOINT',
+  'VITE_ADMIN_PIN',
   'VITE_CLOUDINARY_PRESET', 'VITE_CLOUDINARY_CLOUD',
   'VITE_SUPABASE_SECRET_KEY', 'VITE_SUPABASE_SERVICE_ROLE_KEY'
 ];
 const secretKeys = [
-  ...banned, 'SHEETS_TOKEN', 'SHEETS_ENDPOINT', 'SUPABASE_SECRET_KEY',
+  ...banned, 'SUPABASE_SECRET_KEY',
   'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_PASSWORD_HASH', 'SESSION_SECRET'
 ];
 const files = [];

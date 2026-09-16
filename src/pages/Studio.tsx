@@ -9,11 +9,13 @@ const UPLOAD_NOTE = {
 };
 const SLOT_DEF = Object.fromEntries(SLOTS.flatMap(g => g.items).map(it => [it.slot, it]));
 import { BODY_FONTS, DISPLAY_FONTS } from '../config/fonts';
+import { MUSIC_TRACKS } from '../config/music';
 import type { SlotDef } from '../config/slots';
 import { fetchPublished, loadCached, loadDraft, publish, saveDraft } from '../lib/config';
-import { sheetsReady } from '../lib/sheets';
+import { backendReady } from '../lib/api';
 import { copyText } from '../lib/clipboard';
 import { uploadAsset, uploadMode } from '../lib/upload';
+import { uploadAudio } from '../lib/audio-upload';
 import { slug } from '../lib/guest';
 import type { WeddingConfig } from '../types';
 
@@ -33,7 +35,7 @@ const card: CSSProperties = { background: PAPER, border: '1px solid rgba(47,44,3
 type Key = Exclude<keyof WeddingConfig, 'assets' | 'template' | 'lang'>;
 type Field = { key: Key; label: string; ph?: string; note?: string; area?: boolean; wide?: boolean; options?: { value: string; label: string }[] };
 
-const GROUPS: { title: string; hint: string; isLang?: boolean; photos?: string[]; fields: Field[] }[] = [
+const GROUPS: { title: string; hint: string; isLang?: boolean; musicUpload?: boolean; photos?: string[]; fields: Field[] }[] = [
   { title: 'Mempelai', hint: 'Nama, foto & orang tua', photos: ['v-groom', 'v-bride', 'v-cover-round'], fields: [
     { key: 'groomName', label: 'Nama panggilan pria', ph: 'Ave' },
     { key: 'brideName', label: 'Nama panggilan wanita', ph: 'Mumu' },
@@ -79,9 +81,9 @@ const GROUPS: { title: string; hint: string; isLang?: boolean; photos?: string[]
     { key: 'giftAddressHolder', label: 'Kartu alamat — penerima & telepon' },
     { key: 'giftAddress', label: 'Alamat kirim hadiah', area: true, wide: true }
   ] },
-  { title: 'Musik & bahasa', hint: 'Latar suara', isLang: true, fields: [
-    { key: 'musicUrl', label: 'URL musik', wide: true, ph: 'https://contoh.com/lagu.mp3',
-      note: 'Paling andal: tautan langsung ke berkas .mp3/.m4a (Dropbox/Drive dengan tautan unduh langsung, atau file yang kamu unggah sendiri). Tautan YouTube / YouTube Music tetap bisa dipakai — diputar lewat pemutar YouTube tersembunyi, tapi bisa diblokir browser atau pemilik lagu. Kosongkan untuk memakai nada lembut bawaan.' },
+  { title: 'Musik & bahasa', hint: 'Latar suara', isLang: true, musicUpload: true, fields: [
+    { key: 'musicUrl', label: 'Musik tersimpan', wide: true, options: MUSIC_TRACKS.map(track => ({ value: track.value, label: track.label })),
+      note: 'Pilihan ini berasal dari file yang tersedia di public/audio. Judul lagu di bawah akan terisi otomatis dan tetap dapat disesuaikan.' },
     { key: 'musicTitle', label: 'Judul lagu (opsional)', wide: true }
   ] }
 ];
@@ -134,7 +136,14 @@ function StudioInner() {
     setCfg(next); saveDraft(next);
     if (pub !== 'publishing') setPub('idle');
   };
-  const set = (key: keyof WeddingConfig, value: string) => update({ ...cfg, [key]: value });
+  const set = (key: keyof WeddingConfig, value: string) => {
+    if (key === 'musicUrl') {
+      const track = MUSIC_TRACKS.find(item => item.value === value);
+      update({ ...cfg, musicUrl: value, musicTitle: track?.title ?? cfg.musicTitle });
+      return;
+    }
+    update({ ...cfg, [key]: value });
+  };
   const setAsset = (slot: string, url: string) => {
     const assets = { ...cfg.assets };
     if (url) assets[slot] = url; else delete assets[slot];
@@ -163,7 +172,7 @@ function StudioInner() {
     window.setTimeout(() => setJsonCopied(false), 1800);
   };
 
-  const status = !sheetsReady
+  const status = !backendReady
     ? { text: 'Mode lokal — Supabase belum diatur. Salin JSON sebagai backup sebelum menerbitkan.', color: '#8A5A12', bg: '#F5E7D8' }
     : pub === 'publishing' ? { text: 'Menerbitkan…', color: INK, bg: PANEL }
     : pub === 'error' ? { text: 'Gagal menerbitkan: ' + pubErr, color: RED, bg: '#F5E0DC' }
@@ -215,8 +224,8 @@ function StudioInner() {
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={onCopyJson} style={pill}>{jsonCopied ? '✓ JSON tersalin' : 'Salin JSON'}</button>
             <button onClick={onReset} style={{ ...pill, borderColor: 'rgba(169,50,39,.4)', color: RED }}>{confirmReset ? 'Yakin reset?' : 'Reset'}</button>
-            <button onClick={onPublish} disabled={!sheetsReady || pub === 'publishing' || !dirty}
-              style={{ ...pill, background: SAGE, borderColor: SAGE, color: PAPER, opacity: !sheetsReady || !dirty ? .45 : 1, cursor: !sheetsReady || !dirty ? 'default' : 'pointer' }}>
+            <button onClick={onPublish} disabled={!backendReady || pub === 'publishing' || !dirty}
+              style={{ ...pill, background: SAGE, borderColor: SAGE, color: PAPER, opacity: !backendReady || !dirty ? .45 : 1, cursor: !backendReady || !dirty ? 'default' : 'pointer' }}>
               {pub === 'publishing' ? 'Menerbitkan…' : 'Terbitkan'}
             </button>
           </div>
@@ -260,6 +269,9 @@ function StudioInner() {
                       <span style={label}>{f.label}</span>
                       {f.options
                         ? <select value={cfg[f.key] ?? ''} onChange={e => set(f.key, e.target.value)} style={{ ...input, appearance: 'auto', cursor: 'pointer' }} className="st-in">
+                            {String(cfg[f.key] ?? '') && !f.options.some(o => o.value === cfg[f.key]) && (
+                              <option value={String(cfg[f.key])}>Musik upload saat ini — {cfg.musicTitle || 'tanpa judul'}</option>
+                            )}
                             {f.options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                           </select>
                         : f.area
@@ -272,6 +284,9 @@ function StudioInner() {
                     </label>
                   ))}
                 </div>
+                {g.musicUpload && (
+                  <MusicUploader onUploaded={(url, title) => update({ ...cfg, musicUrl: url, musicTitle: title })} />
+                )}
                 {g.isLang && (
                   <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
                     {(['id', 'en'] as const).map(l => (
@@ -307,6 +322,40 @@ function GroupHead({ title, hint }: { title: string; hint: string }) {
       <div style={{ fontFamily: "'Bodoni Moda', serif", fontSize: 21, whiteSpace: 'nowrap' }}>{title}</div>
       <div style={{ flex: 1, height: 1, background: 'rgba(47,44,38,.12)' }} />
       <div style={{ font: "500 10.5px/1.3 'Archivo'", letterSpacing: '.12em', textTransform: 'uppercase', opacity: .55, textAlign: 'right' }}>{hint}</div>
+    </div>
+  );
+}
+
+function MusicUploader({ onUploaded }: { onUploaded: (url: string, title: string) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const take = async (file?: File | null) => {
+    if (!file) return;
+    setBusy(true); setError('');
+    try {
+      const uploaded = await uploadAudio(file);
+      onUploaded(uploaded.url, uploaded.title);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Upload musik gagal.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 14, padding: '14px 16px', border: '1px dashed rgba(47,44,38,.24)', borderRadius: 14, background: '#FFFFFF' }}>
+      <input ref={fileRef} type="file" accept=".mp3,.m4a,.mp4,audio/mpeg,audio/mp4,video/mp4" hidden
+        onChange={event => { take(event.target.files?.[0]); event.target.value = ''; }} />
+      <button type="button" disabled={busy} onClick={() => fileRef.current?.click()}
+        style={{ ...pill, borderColor: SAGE, color: SAGE, opacity: busy ? .55 : 1 }}>
+        {busy ? 'Mengunggah musik…' : 'Browse & upload musik'}
+      </button>
+      <div style={{ marginTop: 8, font: "300 11px/1.6 'Archivo'", opacity: .65 }}>
+        MP3, M4A, atau MP4 · maksimal 15 MB. File disimpan di Supabase Storage; setelah upload selesai, klik Terbitkan agar tamu memakai lagu baru.
+      </div>
+      {error && <div role="alert" style={{ marginTop: 7, font: "400 11px/1.5 'Archivo'", color: RED }}>{error}</div>}
     </div>
   );
 }

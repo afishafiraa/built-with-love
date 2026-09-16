@@ -5,8 +5,8 @@ import type { WeddingConfig } from '../types';
    reaches GitHub, and is only read by `npm run dev`. Any key left out falls
    back to the placeholder in `invitation.ts`.
 
-   For the live invitation, publish the real content from /studio to the
-   Sheets `Config` tab instead — guests read that, not this file. */
+   For the live invitation, publish the real content from /studio to Supabase —
+   guests read that, not this file. */
 const LOCAL: Partial<WeddingConfig> = {
   groomName: "",
   brideName: "",

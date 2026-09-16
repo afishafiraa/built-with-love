@@ -1,4 +1,4 @@
-export type Template = 'blossom' | 'ivory' | 'modern';
+type Template = 'blossom' | 'ivory' | 'modern';
 export type Lang = 'id' | 'en';
 
 /**

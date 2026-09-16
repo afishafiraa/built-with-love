@@ -1,12 +1,12 @@
 import type { WeddingConfig } from '../types';
 
-/* Default content. The live copy is edited in /studio and published to the
-   Sheets `Config` tab; these values are the fallback (and what "Reset" in the
-   Studio goes back to). A JSON copied from the Studio can be pasted here.
+/* Default content. The live copy is edited in /studio and published to
+   Supabase; these values are the fallback (and what "Reset" in Studio returns
+   to). A JSON copied from Studio can be pasted here.
 
    Everything below is placeholder data on purpose — this file is committed, so
    it must never hold real names, addresses or account numbers. Real content
-   lives in `invitation.local.ts` (gitignored, local dev only) or in Sheets.
+   lives in `invitation.local.ts` (gitignored, local dev only) or Supabase.
    See `invitation.local.example.ts`. */
 const TEMPLATE_CONFIG: WeddingConfig = {
   template: "blossom",
@@ -87,7 +87,7 @@ function merge(base: WeddingConfig, partial: Partial<WeddingConfig> | null | und
   }
   /* The visual system now uses one friendly handwriting face and one rounded
      text face. Migrate previously published font values automatically so an
-     old Sheets/Studio setting cannot silently restore the formal typography. */
+     an older Studio setting cannot silently restore the formal typography. */
   if (out.displayFont !== 'custom') out.displayFont = 'Cookie';
   out.bodyFont = 'Quicksand';
   // The cover is now intentionally colour + gilding only. Discard the legacy
@@ -98,7 +98,7 @@ function merge(base: WeddingConfig, partial: Partial<WeddingConfig> | null | und
 
 export const DEFAULT_CONFIG: WeddingConfig = merge(TEMPLATE_CONFIG, LOCAL_OVERRIDES);
 
-/** Merge a partial (from Sheets, localStorage or pasted JSON) over the defaults. */
+/** Merge a partial (from Supabase, localStorage or pasted JSON) over the defaults. */
 export function mergeConfig(partial: Partial<WeddingConfig> | null | undefined): WeddingConfig {
   return merge(DEFAULT_CONFIG, partial);
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import type { IScannerControls } from '@zxing/browser';
 import AdminGate from '../components/AdminGate';
-import { sheets, sheetsReady } from '../lib/sheets';
+import { api, backendReady } from '../lib/api';
 
 type State = 'idle' | 'scanning' | 'loading' | 'ready' | 'saving' | 'ok' | 'missing' | 'err';
 
@@ -66,14 +66,14 @@ function CheckInInner() {
 
   useEffect(() => {
     if (!code) return;
-    if (!sheetsReady) {
+    if (!backendReady) {
       setError('Backend Supabase belum tersambung.');
       setState('err');
       return;
     }
     let active = true;
     setState('loading');
-    sheets.getGuestById(code)
+    api.getGuestById(code)
       .then(guest => {
         if (!active) return;
         if (!guest?.name) setState('missing');
@@ -146,7 +146,7 @@ function CheckInInner() {
     setState('saving');
     setError('');
     try {
-      const saved = await sheets.checkIn(code);
+      const saved = await api.checkIn(code);
       setState(saved === false ? 'missing' : 'ok');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal menyimpan check-in.');

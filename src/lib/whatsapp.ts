@@ -24,9 +24,8 @@ export function waInviteText(guestName: string, link: string, c: WeddingConfig =
 /**
  * Any of 08xx, 8xx, +62 8xx, 0812-3456-7890 -> 628xx.
  *
- * The bare `8xx` case is not hypothetical: Sheets parses a phone typed as
- * 085740894090 into the number 85740894090 and the leading zero is gone for good,
- * so a number starting with 8 is treated as an Indonesian one missing its 0.
+ * The bare `8xx` case also handles imported numeric data where the leading zero
+ * was lost, so it is treated as an Indonesian number missing its 0.
  */
 export function waNumber(phone: string | number | null | undefined) {
   const p = String(phone ?? '').replace(/[^0-9]/g, '');
@@ -48,6 +47,3 @@ export function waLink(phone: string | number | null | undefined, text: string) 
 
 /** Ping the couple when an RSVP lands (opens WA on the guest's device is intrusive —
     this variant is meant for the dashboard's "kabari" button). */
-export function notifyCouple(text: string) {
-  return waLink(import.meta.env.VITE_WA_NUMBER as string, text);
-}

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import { sheets, sheetsReady } from '../lib/sheets';
+import { api, backendReady } from '../lib/api';
 import { downloadCsv } from '../lib/csv';
 import { guestLink, slug } from '../lib/guest';
 import { copyText } from '../lib/clipboard';
@@ -34,10 +34,10 @@ function DashboardInner() {
   const [err, setErr] = useState<string | null>(null);
 
   async function refresh() {
-    if (!sheetsReady) return;
+    if (!backendReady) return;
     setBusy(true);
     try {
-      const data = await sheets.dashboardData();
+      const data = await api.dashboardData();
       setGuests(data.guests);
       setWishes(data.wishes);
       if (data.config) setCfg(mergeConfig(data.config));
@@ -81,13 +81,13 @@ function DashboardInner() {
         </div>
       </header>
 
-      {!sheetsReady && (
+      {!backendReady && (
         <Notice tone={sage} title="Mode demo aktif">
           Backend sengaja dimatikan melalui <code>VITE_DEMO_MODE=true</code>. Jalankan lewat
           Vercel Preview dengan server environment yang lengkap untuk mengelola data asli.
         </Notice>
       )}
-      {sheetsReady && err && (
+      {backendReady && err && (
         <Notice tone={red} title="Gagal memuat data">
           {err}
         </Notice>
@@ -112,8 +112,8 @@ function DashboardInner() {
       {tab === 'guests'
         ? <GuestTable guests={guests} cfg={cfg} onQr={setQrFor} onSaved={refresh} />
         : <WishList wishes={wishes}
-            onModerate={async (id, s) => { await sheets.moderateWish(id, s); await refresh(); }}
-            onDelete={async id => { const removed = await sheets.deleteWish(id); if (removed) await refresh(); return removed; }} />}
+            onModerate={async (id, s) => { await api.moderateWish(id, s); await refresh(); }}
+            onDelete={async id => { const removed = await api.deleteWish(id); if (removed) await refresh(); return removed; }} />}
 
       {qrFor && (
         <div onClick={() => setQrFor(null)}
@@ -212,7 +212,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
     setWaBusy(true);
     setWaError('');
     try {
-      await sheets.markGuestWaSent(currentWa.id);
+      await api.markGuestWaSent(currentWa.id);
       await onSaved();
       advanceWa();
     } catch (e) {
@@ -223,7 +223,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
     if (!window.confirm(`Masukkan ${guest.name} kembali ke antrean WhatsApp?`)) return;
     setWaBusy(true);
     setWaError('');
-    try { await sheets.markGuestWaSent(guest.id, false); await onSaved(); }
+    try { await api.markGuestWaSent(guest.id, false); await onSaved(); }
     catch (e) { setWaError(e instanceof Error ? e.message : 'Gagal mengubah status WhatsApp'); }
     finally { setWaBusy(false); }
   };
@@ -231,7 +231,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
     if (!window.confirm(`Tandai undangan WhatsApp untuk ${guest.name} sebagai sudah dikirim?`)) return;
     setWaBusy(true);
     setWaError('');
-    try { await sheets.markGuestWaSent(guest.id); await onSaved(); }
+    try { await api.markGuestWaSent(guest.id); await onSaved(); }
     catch (e) { setWaError(e instanceof Error ? e.message : 'Gagal menyimpan status WhatsApp'); }
     finally { setWaBusy(false); }
   };
@@ -243,7 +243,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
     setDeleting(guest.id);
     setDeleteError('');
     try {
-      const removed = await sheets.deleteGuest(guest.id);
+      const removed = await api.deleteGuest(guest.id);
       if (!removed) throw new Error('Tamu tidak ditemukan. Muat ulang daftar dan coba lagi.');
       await onSaved();
     } catch (e) {
@@ -268,10 +268,10 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
     try {
       const nextPhone = editPhone.trim();
       const phoneChanged = waNumber(nextPhone) !== waNumber(editing.phone);
-      await sheets.upsertGuest({ id: editing.id, name: editName.trim(), phone: nextPhone });
+      await api.upsertGuest({ id: editing.id, name: editName.trim(), phone: nextPhone });
       // A corrected number has not received the invitation yet, even when the
       // old number was previously marked as sent.
-      if (phoneChanged && editing.waSentAt) await sheets.markGuestWaSent(editing.id, false);
+      if (phoneChanged && editing.waSentAt) await api.markGuestWaSent(editing.id, false);
       await onSaved();
       setEditing(null);
     } catch (e) {
@@ -294,7 +294,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
         setAddBusy(true);
         setAddError('');
         try {
-          await sheets.upsertGuest({ id, name: cleanName, phone: phone.trim(), invited: 2 });
+          await api.upsertGuest({ id, name: cleanName, phone: phone.trim(), invited: 2 });
           setName(''); setPhone('');
           await onSaved();
         } catch (error) {

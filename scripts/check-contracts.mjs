@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 
 const read = path => readFileSync(path, 'utf8');
-const client = read('src/lib/sheets.ts');
+const client = read('src/lib/api.ts');
 const publicApi = read('api/public.ts');
 const adminApi = read('api/admin.ts');
 const data = read('server/data.ts');
@@ -11,7 +11,7 @@ const migration = read('supabase/migrations/202609160001_initial_schema.sql');
 
 const publicActions = ['bootstrap', 'getGuest', 'listWishes', 'rsvp', 'addWish', 'track'];
 const adminActions = [
-  'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
+  'listGuests', 'getGuestById', 'uploadImage', 'createAudioUpload', 'upsertGuest', 'deleteGuest',
   'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
 ];
 const serverActions = [...new Set([...publicActions, ...adminActions])];
@@ -41,7 +41,6 @@ forbidText(publicApiBlock, 'getConfig', '/api/public tidak boleh membuka config 
 requireText(publicApi, "if (action === 'listWishes') return { inviteKey: invitationKey(body.inviteKey) }", 'listWishes publik wajib membawa invite token');
 requireText(client, "action === 'listWishes' && payload.all === true", 'listWishes(all) harus memakai /api/admin');
 requireText(data, 'return callSupabase(action, payload)', 'runtime harus selalu menggunakan Supabase');
-forbidText(data, 'callAppsScript', 'runtime tidak boleh fallback ke Apps Script');
 for (const action of serverActions) requireText(supabase, `action === '${action}'`, `adapter Supabase belum menangani ${action}`);
 for (const rpc of ['invitation_bootstrap', 'public_wishes', 'submit_rsvp', 'submit_wish', 'mark_invitation_opened', 'check_in_guest']) {
   requireText(migration, `function public.${rpc}`, `migration belum mendefinisikan RPC ${rpc}`);

@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /** youtube / youtube music / youtu.be -> embeddable player id */
-export function youtubeId(url: string): string | null {
+function youtubeId(url: string): string | null {
   if (!url) return null;
   const m = String(url).match(/(?:v=|youtu\.be\/|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{6,})/);
   return m ? m[1] : null;
 }
 
 /** Background music sits at 30/100 — present, but never over the reading. */
-export const MUSIC_VOLUME = 0.3;
+const MUSIC_VOLUME = 0.3;
 
 /** The hidden YouTube player only takes a volume once it has loaded, and only
     through the iframe API's postMessage channel (enablejsapi=1 in the src). */
-export function setYtVolume(frame: HTMLIFrameElement | null) {
+function setYtVolume(frame: HTMLIFrameElement | null) {
   sendYtCommand(frame, 'setVolume', [Math.round(MUSIC_VOLUME * 100)]);
 }
 
@@ -135,7 +135,7 @@ export function useMusic(url: string, title = '') {
   }, [playing, start, stop, title]);
 
   /* A changing URL means a new source: Studio edits, but also the published
-     config arriving from Sheets a moment after the page opened. That second case
+     config arriving from Supabase a moment after the page opened. That second case
      used to silence the music — the guest tapped "buka undangan" while the URL
      was still the default, and this effect then reset `playing` to false, which
      stops the chime and unmounts the YouTube frame. Carry the intent over to the
