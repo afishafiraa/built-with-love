@@ -1,11 +1,11 @@
 /* Image upload for the Studio. Two routes, picked automatically:
-   1. Google Drive through the authenticated same-origin API proxy
+   1. Supabase Storage through the authenticated same-origin API proxy
    2. In explicit VITE_DEMO_MODE, the image stays in this browser only
    Photos are resized in the browser first, so phone pictures upload quickly. */
 import { sheets, sheetsReady } from './sheets';
 
-export type UploadMode = 'drive' | 'local';
-export const uploadMode: UploadMode = sheetsReady ? 'drive' : 'local';
+export type UploadMode = 'remote' | 'local';
+export const uploadMode: UploadMode = sheetsReady ? 'remote' : 'local';
 /** Kept for older imports — uploads now always work (local mode as the fallback). */
 export const uploadReady = true;
 
@@ -49,7 +49,7 @@ export async function uploadAsset(file: File, kind: 'photo' | 'orn' | 'petal' = 
   const blob = await resizeImage(file, uploadMode === 'local' ? 900 : 1600, keepAlpha);
 
   const dataUrl = await toDataUrl(blob);
-  if (uploadMode === 'drive') {
+  if (uploadMode === 'remote') {
     const { url } = await sheets.uploadImage({ data: dataUrl.split(',')[1], mime: blob.type, name: file.name.replace(/\.[^.]+$/, '') + (keepAlpha ? '.webp' : '.jpg') });
     return url;
   }

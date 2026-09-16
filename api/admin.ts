@@ -1,4 +1,4 @@
-import { callAppsScript, sendBackendError } from '../server/apps-script.js';
+import { callBackend, sendBackendError } from '../server/data.js';
 import { readSession, validCsrf } from '../server/auth.js';
 import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http.js';
 import { actionName, guestCode, guestId, optionalText, text } from '../server/validation.js';
@@ -7,6 +7,9 @@ const ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
   'markGuestWaSent', 'checkIn', 'listWishes', 'moderateWish', 'getConfig', 'saveConfig', 'dashboardData'
 ]);
+
+// dashboardData performs three parallel database reads.
+export const maxDuration = 30;
 
 function payloadFor(action: string, body: Record<string, unknown>) {
   if (action === 'listGuests' || action === 'getConfig' || action === 'dashboardData') return {};
@@ -69,7 +72,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (!ACTIONS.has(action)) return send(res, 400, { error: 'Action tidak diizinkan.' });
 
   try {
-    const data = await callAppsScript(action, payloadFor(action, body));
+    const data = await callBackend(action, payloadFor(action, body));
     return send(res, 200, { data });
   } catch (error) {
     if (error instanceof Error && /invalid|required|unknown|too large/.test(error.message)) {

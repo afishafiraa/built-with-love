@@ -15,7 +15,7 @@ import { queueRsvp, startOutbox } from '../lib/outbox';
 import type { Lang, WeddingConfig } from '../types';
 
 /* Blossom Garden v2 — a faithful port of the Claude Design prototype, wired to
-   the Sheets backend (RSVP, wishes, visit tracking) and the ?to= guest link. */
+   the Supabase backend (RSVP, wishes, visit tracking) and the ?to= guest link. */
 
 const Assets = createContext<Record<string, string>>({});
 
@@ -244,14 +244,18 @@ export default function Invitation() {
   const dateLabel = lang === 'en' ? cfg.dateLabelEn || cfg.dateLabel : cfg.dateLabel;
 
   useEffect(() => {
-    document.title = coupleShort + (lang === 'en' ? ' — Wedding Invitation' : ' — Undangan Pernikahan');
+    document.title = preview || guest.status === 'valid'
+      ? coupleShort + (lang === 'en' ? ' — Wedding Invitation' : ' — Undangan Pernikahan')
+      : 'Undangan Pernikahan Pribadi';
     document.documentElement.lang = lang;
     document.documentElement.classList.add('bl-document');
     return () => document.documentElement.classList.remove('bl-document');
-  }, [coupleShort, lang]);
+  }, [coupleShort, guest.status, lang, preview]);
 
   // Deliver any RSVP a previous visit could not send (see lib/outbox.ts).
-  useEffect(() => startOutbox(), []);
+  useEffect(() => {
+    if (preview || guest.status === 'valid') startOutbox();
+  }, [guest.status, preview]);
 
   // No scrolling behind the cover or the gift sheet.
   useEffect(() => {
@@ -271,6 +275,9 @@ export default function Invitation() {
     sheets.track({ inviteKey: guest.key, event: 'open-invitation' });
   };
 
+  if (!preview && !guest.supplied) {
+    return <InvitationState title="Undangan bersifat pribadi" body="Silakan buka tautan pribadi yang dikirimkan oleh pengantin." />;
+  }
   if (!preview && (!configReady || guest.status === 'loading')) {
     // Never expose committed placeholder names while the private published
     // config is still crossing the network.
@@ -877,7 +884,7 @@ const SAMPLE_WISHES: WishView[] = [
 ];
 
 function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boolean }) {
-  const [list, setList] = useState<WishView[]>(sheetsReady ? [] : SAMPLE_WISHES);
+  const [list, setList] = useState<WishView[]>(preview || !sheetsReady ? SAMPLE_WISHES : []);
   const [name, setName] = useState(guest.name);
   useAutoName(guest.name, name, setName, false);
   const [text, setText] = useState('');
@@ -887,9 +894,9 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
   const requestId = useRef('');
 
   useEffect(() => {
-    if (!sheetsReady) return;
+    if (!sheetsReady || preview || !guest.key) return;
     let alive = true;
-    const load = () => sheets.listWishes()
+    const load = () => sheets.listWishes(false, guest.key)
       .then(ws => { if (alive) setList(ws.map(w => ({ id: w.id, name: w.name, text: w.text, createdAt: w.createdAt }))); })
       .catch(() => {});
     load();
@@ -897,7 +904,7 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
     // who leave the invitation open while others send their messages.
     const timer = window.setInterval(load, 25000);
     return () => { alive = false; window.clearInterval(timer); };
-  }, []);
+  }, [guest.key, preview]);
 
   const submit = async () => {
     const n = name.trim(), w = text.trim();

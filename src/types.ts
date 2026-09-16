@@ -4,7 +4,7 @@ export type Lang = 'id' | 'en';
 /**
  * Flat content shape — identical to what the Studio edits and what
  * "Salin JSON" copies, so a JSON export can be pasted straight into
- * `src/config/invitation.ts` or stored in the Sheets `Config` tab.
+ * `src/config/invitation.ts` or stored in Supabase `invitation_config`.
  */
 export interface WeddingConfig {
   template: Template;
@@ -53,6 +53,6 @@ export interface Guest {
 
 export interface Wish {
   id: string; name: string; text: string; createdAt: string;
-  /** `approved` means visible to everyone. Kept for compatibility with existing Sheets rows. */
+  /** `approved` means visible to everyone; `hidden` is visible only in the dashboard. */
   status: 'approved' | 'hidden';
 }

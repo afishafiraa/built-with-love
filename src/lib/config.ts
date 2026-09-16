@@ -5,7 +5,7 @@ import { sheets, sheetsReady } from './sheets';
 import { currentInviteParam } from './invite';
 
 /* Content lives in three places:
-   - published: the Sheets `Config` tab — what guests see (cached in localStorage for fast repeat visits)
+   - published: Supabase `invitation_config` — what guests see (cached in localStorage for fast repeat visits)
    - draft:     the Studio's working copy in localStorage — what the Studio preview shows
    - defaults:  src/config/invitation.ts — fallback when nothing else exists */
 const DRAFT_KEY = 'wedding-config-v1';
@@ -35,7 +35,7 @@ export function saveDraft(cfg: WeddingConfig | null) {
   });
 }
 
-/** Fetch the published config from Sheets (falls back to cache / defaults). */
+/** Fetch the published config from Supabase (falls back to cache / defaults). */
 export async function fetchPublished(inviteKey = ''): Promise<WeddingConfig> {
   if (!sheetsReady) return loadCached();
   const remote = inviteKey ? (await sheets.bootstrap(inviteKey)).config : await sheets.getConfig();
@@ -53,8 +53,12 @@ export async function publish(cfg: WeddingConfig) {
 /** Config for the invitation page. In `?preview` mode it follows the Studio draft live. */
 export function useConfig(): { config: WeddingConfig; ready: boolean } {
   const preview = isPreview();
-  const [cfg, setCfg] = useState<WeddingConfig>(() => (preview && loadDraft()) || loadCached());
-  const [ready, setReady] = useState(() => preview || !sheetsReady || !!read(CACHE_KEY));
+  const invite = currentInviteParam();
+  // A bare/malformed root URL must not hydrate real cached invitation content.
+  const hasGuestAccess = !!invite.key;
+  const [cfg, setCfg] = useState<WeddingConfig>(() =>
+    (preview && loadDraft()) || (!preview && !hasGuestAccess ? mergeConfig(null) : loadCached()));
+  const [ready, setReady] = useState(() => preview || !hasGuestAccess || !sheetsReady || !!read(CACHE_KEY));
 
   useEffect(() => {
     if (preview) {
@@ -69,11 +73,11 @@ export function useConfig(): { config: WeddingConfig; ready: boolean } {
         window.removeEventListener('message', onMsg);
       };
     }
+    if (!hasGuestAccess) { setReady(true); return; }
     let alive = true;
-    const invite = currentInviteParam();
     fetchPublished(invite.key).then(c => { if (alive) { setCfg(c); setReady(true); } }).catch(() => { if (alive) setReady(true); });
     return () => { alive = false; };
-  }, [preview]);
+  }, [hasGuestAccess, invite.key, preview]);
 
   return { config: cfg, ready };
 }

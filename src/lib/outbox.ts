@@ -1,13 +1,13 @@
 /* Safety net for RSVPs that could not be delivered.
  *
- * sheets.rsvp() already retries a handful of times, which covers a brief blip in
- * Apps Script's redirect hop. It does not cover a guest who loses signal entirely,
+ * sheets.rsvp() already retries a handful of times, which covers a brief network blip.
+ * It does not cover a guest who loses signal entirely,
  * gives up and closes the page — and that guest is exactly the one the couple needs
  * to hear about. So a failed RSVP is parked here and re-sent on the next visit, when
  * the connection comes back, or when the tab is brought back to the foreground.
  *
- * Re-sending is safe: the `rsvp` action resolves an inviteKey and writes cells keyed by guestId, so delivering
- * the same entry twice lands on the same row rather than creating a duplicate. */
+ * Re-sending is safe: the `rsvp` action resolves an inviteKey and updates the same
+ * guest row atomically, so delivering the same entry twice does not create a duplicate. */
 import { sheets, sheetsReady } from './sheets';
 
 export type PendingRsvp = {

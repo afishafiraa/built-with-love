@@ -1,6 +1,6 @@
-/* Same-origin API client. Apps Script credentials never enter the browser bundle:
-   Vercel Functions validate the request, enforce public/admin capabilities, then
-   attach the server-only token before forwarding to Apps Script. */
+/* Same-origin API client. Supabase credentials never enter the browser bundle:
+   Vercel Functions validate requests and enforce public/admin capabilities before
+   accessing the production database with a server-only secret. */
 import type { Guest, WeddingConfig, Wish } from '../types';
 
 type PublicBootstrap = {
@@ -13,7 +13,7 @@ export const sheetsReady = import.meta.env.VITE_DEMO_MODE !== 'true';
 
 const ADMIN_ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'moderateWish', 'saveConfig', 'dashboardData'
+  'markGuestWaSent', 'checkIn', 'moderateWish', 'getConfig', 'saveConfig', 'dashboardData'
 ]);
 
 const ATTEMPTS: Record<string, number> = { bootstrap: 1, dashboardData: 1, rsvp: 5, addWish: 1, track: 1 };
@@ -99,7 +99,8 @@ export const sheets = {
   markGuestWaSent: (id: string, sent = true) => call<string>('markGuestWaSent', { id, sent }),
   rsvp: (payload: { inviteKey: string; name: string; rsvp: 'yes' | 'no'; guests: number }) => call<void>('rsvp', payload),
   checkIn: (guestId: string) => call<boolean | null>('checkIn', { guestId }),
-  listWishes: async (all = false) => (await call<Record<string, unknown>[]>('listWishes', { all })).map(toWish),
+  listWishes: async (all = false, inviteKey = '') =>
+    (await call<Record<string, unknown>[]>('listWishes', { all, inviteKey })).map(toWish),
   addWish: (payload: { name: string; text: string; inviteKey: string; requestId: string; website?: string }) => call<{ id: string }>('addWish', payload),
   moderateWish: (id: string, status: 'approved' | 'hidden') => call<void>('moderateWish', { id, status }),
   getConfig: () => call<Partial<WeddingConfig> | null>('getConfig'),

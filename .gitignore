@@ -9,3 +9,4 @@ tsconfig.tsbuildinfo
 src/config/invitation.local.ts
 .env*
 !.env.example
+.migration/

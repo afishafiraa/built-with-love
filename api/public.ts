@@ -1,14 +1,17 @@
-import { callAppsScript, sendBackendError } from '../server/apps-script.js';
+import { callBackend, sendBackendError } from '../server/data.js';
 import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit, requireSameOrigin, send } from '../server/http.js';
 import { actionName, invitationKey, optionalText, text } from '../server/validation.js';
 
 const LIMITS: Record<string, [number, number]> = {
-  bootstrap: [120, 60_000], getConfig: [120, 60_000], getGuest: [120, 60_000], listWishes: [120, 60_000],
+  bootstrap: [120, 60_000], getGuest: [120, 60_000], listWishes: [120, 60_000],
   rsvp: [12, 10 * 60_000], addWish: [5, 10 * 60_000], track: [40, 10 * 60_000]
 };
 
+// Leaves enough time for a cold serverless function and one database round-trip.
+export const maxDuration = 30;
+
 function payloadFor(action: string, body: Record<string, unknown>) {
-  if (action === 'getConfig' || action === 'listWishes') return {};
+  if (action === 'listWishes') return { inviteKey: invitationKey(body.inviteKey) };
   if (action === 'bootstrap' || action === 'getGuest') return { inviteKey: invitationKey(body.inviteKey) };
   if (action === 'rsvp') {
     const rsvp = body.rsvp;
@@ -52,7 +55,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {
     const payload = payloadFor(action, body);
     if (payload.trapped) return send(res, 200, { data: null });
-    const data = await callAppsScript(action, payload);
+    const data = await callBackend(action, payload);
     // Public callers can never switch listWishes into admin/all mode.
     return send(res, 200, { data });
   } catch (error) {

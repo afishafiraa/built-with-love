@@ -4,8 +4,8 @@ import AdminGate from '../components/AdminGate';
 import { DEFAULT_CONFIG, mergeConfig } from '../config/invitation';
 import { LIBRARY, SLOTS, SLOT_SRC } from '../config/slots';
 const UPLOAD_NOTE = {
-  drive: 'Gambar disimpan di Google Drive kamu (folder "Undangan Assets").',
-  local: 'Mode lokal: gambar hanya tersimpan di browser ini — atur Sheets di .env supaya foto ikut terbit ke tamu.'
+  remote: 'Gambar disimpan di Supabase Storage melalui server yang terautentikasi.',
+  local: 'Mode lokal: gambar hanya tersimpan di browser ini — atur Supabase di .env supaya foto ikut terbit ke tamu.'
 };
 const SLOT_DEF = Object.fromEntries(SLOTS.flatMap(g => g.items).map(it => [it.slot, it]));
 import { BODY_FONTS, DISPLAY_FONTS } from '../config/fonts';
@@ -20,7 +20,7 @@ import type { WeddingConfig } from '../types';
 /* Studio Undangan — port of "Studio Undangan.dc.html".
    Left: content form + per-position image slots. Right: live phone preview of
    the invitation (/?preview=1), which follows the draft through localStorage.
-   "Terbitkan" writes the draft to the Sheets `Config` tab so guests see it. */
+   "Terbitkan" writes the draft to Supabase so guests see it. */
 
 const INK = '#2F2C26', PAPER = '#FBF8F0', SAGE = '#4A5343', RED = '#A93227', BG = '#EDEADF', PANEL = '#E3DFD2';
 
@@ -143,7 +143,7 @@ function StudioInner() {
 
   const onPublish = async () => {
     if (Object.values(cfg.assets).some(u => u.startsWith('data:'))) {
-      setPub('error'); setPubErr('ada gambar yang diunggah saat mode lokal. Unggah ulang gambar itu sekarang (Sheets sudah aktif) lalu terbitkan lagi.'); return;
+      setPub('error'); setPubErr('ada gambar yang diunggah saat mode lokal. Unggah ulang gambar itu sekarang (Supabase sudah aktif) lalu terbitkan lagi.'); return;
     }
     setPub('publishing'); setPubErr('');
     try { await publish(cfg); setPublishedJson(JSON.stringify(cfg)); setPub('done'); }
@@ -164,7 +164,7 @@ function StudioInner() {
   };
 
   const status = !sheetsReady
-    ? { text: 'Mode lokal — Sheets belum diatur. Salin JSON ke src/config/invitation.ts untuk menerbitkan.', color: '#8A5A12', bg: '#F5E7D8' }
+    ? { text: 'Mode lokal — Supabase belum diatur. Salin JSON sebagai backup sebelum menerbitkan.', color: '#8A5A12', bg: '#F5E7D8' }
     : pub === 'publishing' ? { text: 'Menerbitkan…', color: INK, bg: PANEL }
     : pub === 'error' ? { text: 'Gagal menerbitkan: ' + pubErr, color: RED, bg: '#F5E0DC' }
     : dirty ? { text: 'Draf tersimpan di browser ini · belum diterbitkan', color: '#8A5A12', bg: '#F5E7D8' }

@@ -139,8 +139,8 @@ if (sampleGuest) {
     const last = Number(validKey.slice(-1));
     const invalidKey = validKey.slice(0, -1) + String((last + 1) % 10);
     const data = await call('bootstrap', { inviteKey: invalidKey });
-    if (data?.guest) throw new Error('token yang diubah masih diterima');
-    return 'ditolak dengan benar';
+    if (data?.guest || data?.config) throw new Error('token yang diubah masih menerima data privat');
+    return 'ditolak tanpa membocorkan config';
   });
 } else {
   bad('bootstrap token — tidak ada tamu bertoken untuk diuji');

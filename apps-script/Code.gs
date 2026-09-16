@@ -22,6 +22,26 @@
  *  Drive permission — photos uploaded in /studio are saved in Drive > "Undangan Assets".
  */
 var SS_CACHE = null;
+var CACHE_VERSION = 'v2';
+
+function cache_() { return CacheService.getScriptCache(); }
+
+function cachedJson_(key) {
+  try {
+    var raw = cache_().get(CACHE_VERSION + ':' + key);
+    return raw === null ? null : JSON.parse(raw);
+  } catch (_) { return null; }
+}
+
+function putCachedJson_(key, value, seconds) {
+  try { cache_().put(CACHE_VERSION + ':' + key, JSON.stringify(value), seconds); } catch (_) { /* cache is best-effort */ }
+}
+
+function removeCache_(keys) {
+  try { cache_().removeAll(keys.map(function (key) { return CACHE_VERSION + ':' + key; })); } catch (_) { /* cache is best-effort */ }
+}
+
+function invalidateDashboard_() { removeCache_(['dashboard', 'wishes:public']); }
 
 /** The spreadsheet: SHEET_ID when standalone, the container when bound. */
 function ss_() {
@@ -185,9 +205,25 @@ function guestFromInviteKey_(value) {
   var key = String(value || '').trim().toLowerCase();
   var match = key.match(/^([a-z0-9]+(?:-[a-z0-9]+)*)-(\d{8})$/);
   if (!match) return null;
-  var row = findRow_('Guests', 'id', match[1]);
-  var guest = guestAtRow_(row);
-  return guest && String(guest.inviteToken) === match[2] ? guest : null;
+  var cached = cachedJson_('guest:' + key);
+  if (cached) return cached.missing ? null : cached;
+
+  // One Sheets read instead of findRow_ + guestAtRow_. This is the hottest
+  // path because every invitation opening calls it.
+  var values = sheet_('Guests').getDataRange().getValues();
+  var head = values[0] || [];
+  var idCol = head.indexOf('id');
+  var tokenCol = head.indexOf('inviteToken');
+  var guest = null;
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][idCol]).toLowerCase() === match[1] && String(values[i][tokenCol]) === match[2]) {
+      guest = {};
+      head.forEach(function (field, index) { guest[field] = values[i][index]; });
+      break;
+    }
+  }
+  putCachedJson_('guest:' + key, guest || { missing: true }, guest ? 300 : 45);
+  return guest;
 }
 
 /** Admin check-in may receive the internal id or the public `slug-token` key. */
@@ -211,15 +247,36 @@ function configSheet_() {
 }
 
 function readConfig_() {
+  var cached = cachedJson_('config');
+  if (cached) return cached.empty ? null : cached;
   var values = configSheet_().getDataRange().getValues();
   for (var i = 1; i < values.length; i++) {
-    if (values[i][0] === 'config') return JSON.parse(values[i][1] || 'null');
+    if (values[i][0] === 'config') {
+      var config = JSON.parse(values[i][1] || 'null');
+      putCachedJson_('config', config || { empty: true }, 300);
+      return config;
+    }
   }
+  putCachedJson_('config', { empty: true }, 60);
   return null;
 }
 
 function wishes_(all) {
-  return rows_('Wishes').filter(function (wish) { return all || wish.status !== 'hidden'; }).reverse();
+  if (!all) {
+    var cached = cachedJson_('wishes:public');
+    if (cached) return cached;
+  }
+  var wishes = rows_('Wishes').filter(function (wish) { return all || wish.status !== 'hidden'; }).reverse();
+  if (!all) putCachedJson_('wishes:public', wishes, 20);
+  return wishes;
+}
+
+function dashboardData_() {
+  var cached = cachedJson_('dashboard');
+  if (cached) return cached;
+  var data = { guests: rows_('Guests'), wishes: wishes_(true), config: readConfig_() };
+  putCachedJson_('dashboard', data, 15);
+  return data;
 }
 
 function json_(obj) {
@@ -259,13 +316,14 @@ function handle_(body, now) {
     case 'bootstrap': {
       var bootstrapGuest = guestFromInviteKey_(body.inviteKey);
       return json_({ data: {
-        config: readConfig_(),
+        // Never disclose the published invitation config when the token fails.
+        config: bootstrapGuest ? readConfig_() : null,
         guest: bootstrapGuest ? { id: bootstrapGuest.id, name: bootstrapGuest.name } : null
       } });
     }
 
     case 'dashboardData':
-      return json_({ data: { guests: rows_('Guests'), wishes: wishes_(true), config: readConfig_() } });
+      return json_({ data: dashboardData_() });
 
     case 'listGuests':
       return json_({ data: rows_('Guests') });
@@ -317,6 +375,8 @@ function handle_(body, now) {
           setCell_('Guests', row, 'inviteToken', inviteToken);
         }
       }
+      removeCache_(['guest:' + guestId + '-' + inviteToken]);
+      invalidateDashboard_();
       return json_({ data: { id: guestId, inviteToken: inviteToken } });
     }
 
@@ -325,7 +385,10 @@ function handle_(body, now) {
       if (!guestId) return json_({ error: 'guest id required' });
       var guestRow = findRow_('Guests', 'id', guestId);
       if (guestRow < 0) return json_({ data: false });
+      var deletedGuest = guestAtRow_(guestRow);
       sheet_('Guests').deleteRow(guestRow);
+      if (deletedGuest && deletedGuest.inviteToken) removeCache_(['guest:' + guestId + '-' + deletedGuest.inviteToken]);
+      invalidateDashboard_();
       return json_({ data: true });
     }
 
@@ -337,6 +400,7 @@ function handle_(body, now) {
       if (waGuestRow < 0) return json_({ error: 'guest not found' });
       var waSentAt = body.sent === false ? '' : now;
       setCell_('Guests', waGuestRow, 'waSentAt', waSentAt);
+      invalidateDashboard_();
       return json_({ data: waSentAt });
     }
 
@@ -352,6 +416,7 @@ function handle_(body, now) {
       setCell_('Guests', r, 'rsvp', body.rsvp);
       setCell_('Guests', r, 'guests', party);
       if (!sheet_('Guests').getRange(r, 6).getValue()) setCell_('Guests', r, 'opened', now);
+      invalidateDashboard_();
       return json_({ data: null });
     }
 
@@ -362,11 +427,13 @@ function handle_(body, now) {
       if (!checkInGuest) return json_({ data: false });
       var cr = findRow_('Guests', 'id', checkInGuest.id);
       setCell_('Guests', cr, 'checkedInAt', now);
+      invalidateDashboard_();
       return json_({ data: true });
     }
 
     case 'listWishes': {
       var all = !!body.all;
+      if (!all && !guestFromInviteKey_(body.inviteKey)) return json_({ error: 'invalid invitation link' });
       // Wishes are public immediately. Legacy "pending" rows remain public;
       // only an intentional hide action removes one from the wall.
       return json_({ data: wishes_(all) });
@@ -388,6 +455,7 @@ function handle_(body, now) {
       }
       var wishId = Utilities.getUuid();
       sheet_('Wishes').appendRow([wishId, wishName, wishText, now, 'approved', requestId]);
+      invalidateDashboard_();
       return json_({ data: { id: wishId } });
     }
 
@@ -403,6 +471,8 @@ function handle_(body, now) {
       if (crow < 0) csh.appendRow(['config', text]); else csh.getRange(crow, 2).setValue(text);
       var urow = findRow_('Config', 'key', 'updatedAt');
       if (urow < 0) csh.appendRow(['updatedAt', now]); else csh.getRange(urow, 2).setValue(now);
+      removeCache_(['config']);
+      invalidateDashboard_();
       return json_({ data: null });
     }
 
@@ -410,6 +480,7 @@ function handle_(body, now) {
       if (body.status !== 'approved' && body.status !== 'hidden') return json_({ error: 'invalid wish status' });
       var wr = findRow_('Wishes', 'id', body.id);
       if (wr > 0) setCell_('Wishes', wr, 'status', body.status);
+      invalidateDashboard_();
       return json_({ data: null });
     }
 
@@ -420,6 +491,7 @@ function handle_(body, now) {
       sheet_('Events').appendRow([now, trackGuest.id, body.event]);
       var er = findRow_('Guests', 'id', trackGuest.id);
       if (er > 0 && !sheet_('Guests').getRange(er, 6).getValue()) setCell_('Guests', er, 'opened', now);
+      invalidateDashboard_();
       return json_({ data: null });
     }
   }

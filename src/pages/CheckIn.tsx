@@ -67,7 +67,7 @@ function CheckInInner() {
   useEffect(() => {
     if (!code) return;
     if (!sheetsReady) {
-      setError('Backend Google Sheets belum tersambung.');
+      setError('Backend Supabase belum tersambung.');
       setState('err');
       return;
     }
