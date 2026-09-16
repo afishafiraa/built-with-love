@@ -13,7 +13,7 @@ export const sheetsReady = import.meta.env.VITE_DEMO_MODE !== 'true';
 
 const ADMIN_ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'moderateWish', 'getConfig', 'saveConfig', 'dashboardData'
+  'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
 ]);
 
 const ATTEMPTS: Record<string, number> = { bootstrap: 1, dashboardData: 1, rsvp: 5, addWish: 1, track: 1 };
@@ -103,6 +103,7 @@ export const sheets = {
     (await call<Record<string, unknown>[]>('listWishes', { all, inviteKey })).map(toWish),
   addWish: (payload: { name: string; text: string; inviteKey: string; requestId: string; website?: string }) => call<{ id: string }>('addWish', payload),
   moderateWish: (id: string, status: 'approved' | 'hidden') => call<void>('moderateWish', { id, status }),
+  deleteWish: (id: string) => call<boolean>('deleteWish', { id }),
   getConfig: () => call<Partial<WeddingConfig> | null>('getConfig'),
   saveConfig: (config: WeddingConfig) => call<void>('saveConfig', { config }),
   track: (payload: { inviteKey: string; event: string }) =>

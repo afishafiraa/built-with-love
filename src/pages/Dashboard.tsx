@@ -111,7 +111,9 @@ function DashboardInner() {
 
       {tab === 'guests'
         ? <GuestTable guests={guests} cfg={cfg} onQr={setQrFor} onSaved={refresh} />
-        : <WishList wishes={wishes} onModerate={async (id, s) => { await sheets.moderateWish(id, s); refresh(); }} />}
+        : <WishList wishes={wishes}
+            onModerate={async (id, s) => { await sheets.moderateWish(id, s); await refresh(); }}
+            onDelete={async id => { const removed = await sheets.deleteWish(id); if (removed) await refresh(); return removed; }} />}
 
       {qrFor && (
         <div onClick={() => setQrFor(null)}
@@ -477,15 +479,34 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   );
 }
 
-function WishList({ wishes, onModerate }: { wishes: Wish[]; onModerate: (id: string, s: 'approved' | 'hidden') => void }) {
+function WishList({ wishes, onModerate, onDelete }: {
+  wishes: Wish[];
+  onModerate: (id: string, s: 'approved' | 'hidden') => Promise<void>;
+  onDelete: (id: string) => Promise<boolean>;
+}) {
   const [changing, setChanging] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const changeVisibility = async (wish: Wish) => {
     setChanging(wish.id);
+    setError('');
     try { await onModerate(wish.id, wish.status === 'hidden' ? 'approved' : 'hidden'); }
+    catch (e) { setError(e instanceof Error ? e.message : 'Gagal mengubah visibilitas ucapan.'); }
     finally { setChanging(null); }
+  };
+  const removeWish = async (wish: Wish) => {
+    if (!window.confirm(`Hapus ucapan dari ${wish.name}?\n\nUcapan akan dihapus permanen dan tidak dapat dikembalikan.`)) return;
+    setDeleting(wish.id);
+    setError('');
+    try {
+      if (!await onDelete(wish.id)) throw new Error('Ucapan tidak ditemukan. Muat ulang dashboard dan coba lagi.');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal menghapus ucapan.');
+    } finally { setDeleting(null); }
   };
   return (
     <div style={{ display: 'grid', gap: 10 }}>
+      {error && <div role="alert" style={{ color: red, fontSize: 12 }}>{error}</div>}
       {wishes.map(w => (
         <div key={w.id} style={{ background: paper, border: '1px solid rgba(47,44,38,.1)', borderRadius: 14, padding: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
@@ -496,9 +517,13 @@ function WishList({ wishes, onModerate }: { wishes: Wish[]; onModerate: (id: str
           </div>
           <p style={{ margin: '8px 0 12px', fontSize: 13.5, lineHeight: 1.7 }}>{w.text}</p>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => changeVisibility(w)} disabled={changing === w.id}
+            <button onClick={() => changeVisibility(w)} disabled={changing === w.id || deleting === w.id}
               style={{ ...mini, marginRight: 0, background: w.status === 'hidden' ? sage : red, color: paper, opacity: changing === w.id ? .6 : 1 }}>
               {changing === w.id ? 'Menyimpan…' : w.status === 'hidden' ? 'Tampilkan kembali' : 'Sembunyikan'}
+            </button>
+            <button type="button" onClick={() => removeWish(w)} disabled={deleting === w.id || changing === w.id}
+              style={{ ...dangerMini, opacity: deleting === w.id ? .55 : 1 }}>
+              {deleting === w.id ? 'Menghapus…' : 'Hapus permanen'}
             </button>
           </div>
         </div>

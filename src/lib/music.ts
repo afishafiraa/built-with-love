@@ -33,7 +33,7 @@ function musicKind(url: string): Kind {
  * Background music: a direct audio file, a hidden YouTube player, or — when no
  * URL is set — a soft pentatonic chime generated with Web Audio.
  */
-export function useMusic(url: string) {
+export function useMusic(url: string, title = '') {
   const [playing, setPlaying] = useState(false);
   const audio = useRef<HTMLAudioElement | null>(null);
   const ctx = useRef<AudioContext | null>(null);
@@ -60,6 +60,7 @@ export function useMusic(url: string) {
         audio.current?.pause();
         audio.current = new Audio(k.url);
         audio.current.loop = true;
+        audio.current.preload = 'auto';
       }
       audio.current.volume = MUSIC_VOLUME;
       audio.current.play().catch(() => setPlaying(false));
@@ -102,12 +103,36 @@ export function useMusic(url: string) {
 
   const toggle = useCallback(() => { if (playing) stop(); else start(); }, [playing, start, stop]);
 
-  // Pause when the tab is hidden, like a well-behaved invitation should.
+  // Keep playback intent when guests switch tabs. Browsers may still suspend a
+  // background page (especially iOS or battery-saver mode), so re-assert play
+  // when the page becomes visible again without requiring another tap.
   useEffect(() => {
-    const onVis = () => { if (document.hidden && playing) stop(); };
+    const onVis = () => {
+      if (document.hidden || !playing) return;
+      const k = musicKind(url);
+      if (k.kind === 'file' && audio.current?.paused) audio.current.play().catch(() => setPlaying(false));
+      if (k.kind === 'yt' && wantYt.current) sendYtCommand(ytFrame.current, 'playVideo');
+      if (k.kind === 'synth') ctx.current?.resume();
+    };
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
-  }, [playing, stop]);
+  }, [playing, url]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = title ? new MediaMetadata({ title }) : null;
+    navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
+    try {
+      navigator.mediaSession.setActionHandler('play', start);
+      navigator.mediaSession.setActionHandler('pause', stop);
+    } catch { /* action handlers are optional on older browsers */ }
+    return () => {
+      try {
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+      } catch { /* ignore unsupported cleanup */ }
+    };
+  }, [playing, start, stop, title]);
 
   /* A changing URL means a new source: Studio edits, but also the published
      config arriving from Sheets a moment after the page opened. That second case

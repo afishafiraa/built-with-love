@@ -5,7 +5,7 @@ import { actionName, guestCode, guestId, optionalText, text } from '../server/va
 
 const ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'listWishes', 'moderateWish', 'getConfig', 'saveConfig', 'dashboardData'
+  'markGuestWaSent', 'checkIn', 'listWishes', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
 ]);
 
 // dashboardData performs three parallel database reads.
@@ -16,6 +16,7 @@ function payloadFor(action: string, body: Record<string, unknown>) {
   if (action === 'listWishes') return { all: true };
   if (action === 'getGuestById' || action === 'checkIn') return { guestId: guestCode(body.guestId) };
   if (action === 'deleteGuest') return { id: guestId(body.id) };
+  if (action === 'deleteWish') return { id: text(body.id, 'wish id', 100) };
   if (action === 'markGuestWaSent') return { id: guestId(body.id), sent: body.sent !== false };
   if (action === 'moderateWish') {
     if (body.status !== 'approved' && body.status !== 'hidden') throw new Error('invalid wish status');

@@ -254,6 +254,11 @@ export async function callSupabase(action: string, payload: JsonRecord = {}) {
     value(action, result as DatabaseResult<null>);
     return null;
   }
+  if (action === 'deleteWish') {
+    const result = await client.from('wishes').delete().eq('id', stringValue(payload.id)).select('id');
+    const rows = value(action, result as DatabaseResult<Array<Pick<WishRow, 'id'>>>) || [];
+    return rows.length > 0;
+  }
   if (action === 'getConfig') return readConfig();
   if (action === 'saveConfig') {
     const result = await client.from('invitation_config').upsert({ id: 1, data: payload.config as JsonRecord }, { onConflict: 'id' });

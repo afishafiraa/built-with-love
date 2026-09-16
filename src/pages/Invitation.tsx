@@ -25,6 +25,7 @@ const Assets = createContext<Record<string, string>>({});
    supplies a little celebratory light without turning the invitation yellow. */
 const SAGE = '#747963', DEEP = '#5A604D', PAPER = '#F3EADB', CARD = '#FFF9EF';
 const INK = '#3E352C', RED = '#A06B5B', RED_TEXT = '#8B594A', GOLD = '#C9A15D', GOLD_LIGHT = '#FFEAB0';
+const MIN_LOADING_MS = 2400;
 
 /* ---------- small building blocks ---------- */
 
@@ -234,7 +235,8 @@ export default function Invitation() {
   const [closed, setClosed] = useState(true);
   const [opening, setOpening] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
-  const music = useMusic(cfg.musicUrl);
+  const [minimumLoadElapsed, setMinimumLoadElapsed] = useState(preview);
+  const music = useMusic(cfg.musicUrl, cfg.musicTitle);
   const progress = useScrollProgress();
   useSectionReveal(!closed);
 
@@ -242,6 +244,15 @@ export default function Invitation() {
   const bride = cfg.brideName || 'Mumu';
   const coupleShort = groom + ' & ' + bride;
   const dateLabel = lang === 'en' ? cfg.dateLabelEn || cfg.dateLabel : cfg.dateLabel;
+
+  // Keep the opening loader visible long enough to feel intentional even when
+  // Supabase and cached assets answer immediately. Slow connections still wait
+  // for their real data; this is a minimum, never an artificial maximum.
+  useEffect(() => {
+    if (preview) return;
+    const timer = window.setTimeout(() => setMinimumLoadElapsed(true), MIN_LOADING_MS);
+    return () => window.clearTimeout(timer);
+  }, [preview]);
 
   useEffect(() => {
     document.title = preview || guest.status === 'valid'
@@ -278,7 +289,7 @@ export default function Invitation() {
   if (!preview && !guest.supplied) {
     return <InvitationState title="Undangan bersifat pribadi" body="Silakan buka tautan pribadi yang dikirimkan oleh pengantin." />;
   }
-  if (!preview && (!configReady || guest.status === 'loading')) {
+  if (!preview && (!minimumLoadElapsed || !configReady || guest.status === 'loading')) {
     // Never expose committed placeholder names while the private published
     // config is still crossing the network.
     return <InvitationLoading cfg={cfg} coupleShort="Hanif & Afi" />;
@@ -437,7 +448,7 @@ function Cover({ t, dateLabel, coupleShort, guestName, langLabel, onOpen, onTogg
 }) {
   const assets = useContext(Assets);
   return (
-    <div className="bl-clip bl-cover bl-gilded" style={{ background: 'radial-gradient(circle at 50% 34%,rgba(255,249,239,.10),transparent 43%),' + SAGE, overscrollBehavior: 'contain' }}>
+    <div className="bl-clip bl-cover bl-gilded" style={{ background: 'radial-gradient(circle at 50% 30%,rgba(116,121,99,.72) 0%,rgba(90,96,77,.96) 48%,#4A5343 100%)', overscrollBehavior: 'contain' }}>
       <Corners slot="orn-cover-corner" at={['bl', 'br']} width="42%" opacity={.82} />
       <button className="bl-icon-btn" onClick={onToggleLang} title="Language" aria-label="Language"
         style={{ position: 'absolute', top: CTL_TOP, right: CTL_RIGHT, zIndex: 2, animation: 'vFade 1.2s 1.4s both' }}>

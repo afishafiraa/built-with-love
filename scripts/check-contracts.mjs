@@ -12,7 +12,7 @@ const migration = read('supabase/migrations/202609160001_initial_schema.sql');
 const publicActions = ['bootstrap', 'getGuest', 'listWishes', 'rsvp', 'addWish', 'track'];
 const adminActions = [
   'listGuests', 'getGuestById', 'uploadImage', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'moderateWish', 'getConfig', 'saveConfig', 'dashboardData'
+  'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
 ];
 const serverActions = [...new Set([...publicActions, ...adminActions])];
 
