@@ -324,15 +324,13 @@ export default function Invitation() {
           <Quote t={t} />
           <Couple cfg={cfg} t={t} />
           <Seam from={PAPER} orn />
-          <Events cfg={cfg} t={t} dateLabel={dateLabel} />
+          <EventLocation cfg={cfg} t={t} dateLabel={dateLabel} />
           <Seam from={SAGE} />
-          <Location cfg={cfg} t={t} coupleShort={coupleShort} />
           <Story cfg={cfg} t={t} lang={lang} />
           <Seam from={PAPER} />
-          <Rsvp t={t} guest={guest} preview={preview} />
+          <GiftRsvpSection cfg={cfg} t={t} guest={guest} preview={preview} onOpenGift={() => setGiftOpen(true)} />
           <Seam from={SAGE} />
           <Wishes t={t} guest={guest} preview={preview} />
-          <GiftSection cfg={cfg} t={t} onOpen={() => setGiftOpen(true)} />
           <Seam from={PAPER} orn />
           <Closing cfg={cfg} t={t} coupleShort={coupleShort} />
 
@@ -565,6 +563,7 @@ function Couple({ cfg, t }: S) {
       <div style={{ position: 'relative', textAlign: 'center', marginBottom: 34 }}>
         <Kicker>{t.coupleKicker}</Kicker>
         <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 48 }}>{t.coupleTitle}</h2>
+        <p className="bl-batang sv-rise-q" style={{ maxWidth: 350, margin: '14px auto 0', fontSize: 13.5, lineHeight: 1.85, opacity: .78, textWrap: 'pretty' } as CSSProperties}>{t.coupleIntro}</p>
       </div>
       <div style={{ display: 'grid', gap: 24 }}>
         <div className="sv-grow bl-reveal-card" style={{ ...card, borderRadius: '80px 14px 14px 80px' }}>
@@ -629,6 +628,15 @@ function Countdown({ iso, t }: { iso: string; t: Copy }) {
   );
 }
 
+function EventLocation({ cfg, t, dateLabel }: S & { dateLabel: string }) {
+  return (
+    <section className="bl-sec bl-gilded" data-screen-label="Acara" style={{ position: 'relative', background: SAGE, color: PAPER }}>
+      <Events cfg={cfg} t={t} dateLabel={dateLabel} />
+      <Location cfg={cfg} t={t} />
+    </section>
+  );
+}
+
 function Events({ cfg, t, dateLabel }: S & { dateLabel: string }) {
   const dt = safeDate(cfg.dateISO);
   const q = encodeURIComponent(cfg.mapsQuery || cfg.venue + ', ' + cfg.city);
@@ -660,7 +668,7 @@ function Events({ cfg, t, dateLabel }: S & { dateLabel: string }) {
   );
 
   return (
-    <section className="bl-sec bl-gilded" data-screen-label="Acara" style={{ position: 'relative', padding: '74px 26px 80px', background: SAGE, color: PAPER }}>
+    <div style={{ position: 'relative', padding: '74px 26px 42px' }}>
       <Orn slot="orn-acara-ring" className="bl-center-x" style={{ left: '50%', top: 24, translate: '-50% 0', width: 252, height: 252, opacity: .18, animation: 'vSpin 170s linear infinite' }} />
       <div style={{ position: 'relative' }}>
         <Kicker color="#FFFFFF" style={{ letterSpacing: '.16em' }}>{t.eventKicker}</Kicker>
@@ -679,7 +687,7 @@ function Events({ cfg, t, dateLabel }: S & { dateLabel: string }) {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -734,38 +742,34 @@ function Story({ cfg, t, lang }: S & { lang: Lang }) {
   );
 }
 
-function Location({ cfg, t, coupleShort }: S & { coupleShort: string }) {
-  const [shared, setShared] = useState(false);
+function Location({ cfg, t }: S) {
   const q = encodeURIComponent(cfg.mapsQuery || cfg.venue + ', ' + cfg.city);
-  const onShare = async () => {
-    const url = location.origin + location.pathname;   // never share someone's personal ?to= link
-    if (navigator.share) {
-      try { await navigator.share({ title: coupleShort, text: cfg.dateLabel + ' · ' + cfg.venue, url }); return; } catch { /* cancelled */ }
-    }
-    if (await copyText(url)) {
-      setShared(true);
-      window.setTimeout(() => setShared(false), 1800);
-    }
-  };
-  const pill: CSSProperties = { flex: 1, textAlign: 'center', padding: 15, borderRadius: 999, font: "400 10px/1 var(--f-ui)", letterSpacing: '.12em', textTransform: 'uppercase' };
   return (
-    <section className="bl-sec" data-screen-label="Lokasi" style={{ position: 'relative', padding: '72px 24px' }}>
+    <div style={{ position: 'relative', padding: '12px 24px 82px' }}>
       <div style={{ position: 'relative', textAlign: 'center', marginBottom: 20 }}>
-        <Kicker>{t.locKicker}</Kicker>
-        <h2 className="bl-place-name" style={{ margin: '6px 0 0', fontSize: 35 }}>{cfg.venue}</h2>
-        <div style={{ marginTop: 6, font: "400 12.5px/1.7 var(--f-body)", opacity: .76 }}>{cfg.address}</div>
+        <Kicker color="#FFFFFF">{t.locKicker}</Kicker>
       </div>
-      <div className="sv-wipe bl-clip bl-reveal-card" style={{ position: 'relative', height: 240, borderRadius: 18, border: '1px solid rgba(116,121,99,.16)', background: '#E4DECD' }}>
+      <div className="sv-wipe bl-clip bl-reveal-card" style={{ position: 'relative', height: 260, borderRadius: 18, border: '1px solid rgba(201,161,93,.42)', background: '#E4DECD', boxShadow: '0 18px 38px rgba(33,36,28,.24)' }}>
         <iframe src={'https://maps.google.com/maps?q=' + q + '&z=15&output=embed'} title="Peta lokasi" style={{ width: '100%', height: '100%', border: 0 }} loading="lazy" referrerPolicy="no-referrer" />
       </div>
-      <div style={{ marginTop: 14 }}>
-        <button className="bl-btn" onClick={onShare} style={{ ...pill, width: '100%', background: CARD, border: '1px solid rgba(116,121,99,.2)', color: SAGE, boxShadow: '0 9px 22px rgba(90,96,77,.1)' }}>{shared ? t.shared : t.share}</button>
-      </div>
-    </section>
+    </div>
   );
 }
 
 type GuestInfo = { id: string; key: string; name: string };
+
+function GiftRsvpSection({ cfg, t, guest, preview, onOpenGift }: S & {
+  guest: GuestInfo; preview: boolean; onOpenGift: () => void;
+}) {
+  const hasGift = !!(cfg.bank1Acct || cfg.bank2Acct || cfg.giftAddress);
+  return (
+    <section className="bl-sec bl-gilded" data-screen-label="RSVP" style={{ position: 'relative', background: SAGE, color: PAPER }}>
+      {hasGift && <GiftSection cfg={cfg} t={t} onOpen={onOpenGift} />}
+      {hasGift && <div aria-hidden="true" style={{ position: 'relative', width: 96, height: 1, margin: '0 auto', background: 'linear-gradient(90deg,transparent,' + GOLD + ',transparent)' }} />}
+      <Rsvp t={t} guest={guest} preview={preview} />
+    </section>
+  );
+}
 
 /** Keep a "Nama kamu" field in step with the invited guest's name (from the
     link, then the guest list) until the guest types something themselves. */
@@ -826,7 +830,7 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
   const round: CSSProperties = { width: 45, height: 45, border: '1px solid rgba(116,121,99,.2)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "500 15px/1 var(--f-ui)" };
 
   return (
-    <section className="bl-sec bl-gilded" data-screen-label="RSVP" style={{ position: 'relative', padding: '74px 24px', background: SAGE, color: PAPER }}>
+    <div style={{ position: 'relative', padding: '52px 24px 78px' }}>
       <div style={{ position: 'relative' }}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <Kicker color="#FFFFFF">RSVP</Kicker>
@@ -883,7 +887,7 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -992,15 +996,15 @@ function giftCards(cfg: WeddingConfig, t: Copy, lang: Lang) {
 function GiftSection({ cfg, t, onOpen }: S & { onOpen: () => void }) {
   if (!cfg.bank1Acct && !cfg.bank2Acct && !cfg.giftAddress) return null;
   return (
-    <section className="bl-sec" data-screen-label="Amplop" style={{ position: 'relative', padding: '74px 24px' }}>
-      <Orn slot="orn-amplop" className="bl-center-x" style={{ left: '50%', top: 24, translate: '-50% 0', width: 190, height: 107, opacity: .42, animation: 'vFloat 11s ease-in-out infinite' }} />
+    <div style={{ position: 'relative', padding: '74px 24px 46px', color: PAPER }}>
+      <Orn slot="orn-amplop" className="bl-center-x" style={{ left: '50%', top: 24, translate: '-50% 0', width: 190, height: 107, opacity: .3, animation: 'vFloat 11s ease-in-out infinite' }} />
       <div style={{ position: 'relative', textAlign: 'center', paddingTop: 24 }}>
-        <Kicker>{t.giftKicker}</Kicker>
+        <Kicker color="#FFFFFF">{t.giftKicker}</Kicker>
         <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 43 }}>{t.giftTitle}</h2>
-        <p style={{ maxWidth: 310, margin: '12px auto 0', font: "400 12.5px/1.8 var(--f-body)", opacity: .74, textWrap: 'pretty' } as CSSProperties}>{t.giftBody}</p>
-        <button className="bl-btn bl-compact-btn" onClick={onOpen} style={{ marginTop: 22, padding: '12px 24px', background: SAGE, color: PAPER, boxShadow: '0 10px 24px rgba(90,96,77,.22)', animation: 'vBeat 5s 2s ease-in-out infinite' }}>{t.giftOpen}</button>
+        <p style={{ maxWidth: 330, margin: '12px auto 0', font: "400 12.5px/1.8 var(--f-body)", opacity: .82, textWrap: 'pretty' } as CSSProperties}>{t.giftBody}</p>
+        <button className="bl-btn bl-compact-btn" onClick={onOpen} style={{ marginTop: 22, padding: '12px 24px', background: CARD, color: SAGE, border: '1px solid rgba(201,161,93,.46)', boxShadow: '0 10px 24px rgba(33,36,28,.2)', animation: 'vBeat 5s 2s ease-in-out infinite' }}>{t.giftOpen}</button>
       </div>
-    </section>
+    </div>
   );
 }
 
