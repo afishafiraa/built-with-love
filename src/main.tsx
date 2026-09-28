@@ -12,7 +12,7 @@ const Studio = lazy(() => import('./pages/Studio'));
 const CheckIn = lazy(() => import('./pages/CheckIn'));
 
 const loading = (
-  <div className="app-min-screen" role="status" style={{ display: 'grid', placeItems: 'center', background: '#F3EADB', color: '#747963', fontFamily: 'system-ui', fontSize: 13 }}>
+  <div className="app-min-screen" role="status" style={{ display: 'grid', placeItems: 'center', background: '#F3EADB', color: '#686F4D', fontFamily: 'system-ui', fontSize: 13 }}>
     Memuat halaman…
   </div>
 );

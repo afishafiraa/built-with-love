@@ -2,7 +2,7 @@ import type { Lang } from '../types';
 
 const id = {
   and: 'dan', weddingOf: 'Pernikahan', openInvite: 'Buka Undangan',
-  coverKicker: 'Anda diundang ke pernikahan', guestGreeting: 'Kepada Bapak/Ibu/Saudara/i', guestDefault: 'Tamu Undangan',
+  coverKicker: 'Dengan hangat, kami mengundang Anda', guestGreeting: 'Kepada Bapak/Ibu/Saudara/i', guestDefault: 'Tamu Undangan',
   quoteSource: 'QS. Ar-Rum 21',
   quote: 'Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan hidup dari jenismu sendiri, supaya kamu dapat ketenangan hati.',
   quoteAlt: 'And among His signs is this, that He created for you mates from among yourselves, that you may dwell in tranquillity with them.',
@@ -25,7 +25,7 @@ const id = {
   wishKicker: 'Ucapan & Doa', wishTitle: 'Kirim Ucapan', wishSub: 'Titipkan doa dan ucapan terbaik Anda untuk mengiringi langkah baru kami.',
   wishPh: 'Tulis ucapan & doa', sendWish: 'Kirim ucapan', wishPending: 'Terkirim — ucapanmu langsung tampil di sini.',
   justNow: 'Baru saja', minutesAgo: '{n} menit lalu', hoursAgo: '{n} jam lalu', yesterday: 'Kemarin', daysAgo: '{n} hari lalu',
-  giftKicker: 'Hadiah Pernikahan', giftTitle: 'Amplop Cinta',
+  giftKicker: 'Hadiah Pernikahan', giftTitle: 'Tanda Kasih',
   giftBody: 'Bagi yang ingin berbagi lebih, kami menyediakan amplop cinta sebagai dukungan dan doa bagi langkah baru kami.',
   giftOpen: 'Buka amplop', giftNote: 'Terima kasih atas ketulusan dan doa yang Anda kirimkan.',
   copy: 'Salin nomor', copyAddr: 'Salin alamat', copied: '✓ Tersalin', transfer: 'Transfer', addressKind: 'Alamat', holderPrefix: 'a.n. ',

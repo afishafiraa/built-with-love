@@ -1,6 +1,6 @@
 /* Blossom Garden v2 — ported from the Claude Design handoff
    (Undangan Blossom Garden v2.dc.html). Palette:
-   warm sage #747963 · deep olive #5A604D · sand #F3EADB · ivory #FFF9EF
+   reference olive #686F4D · deep olive #50573B · sand #F3EADB · ivory #FFF9EF
    ink #3E352C · rose taupe #A06B5B · gold #C9A15D */
 
 /* Invitation page only: no visible scrollbar, no white flash when the page
@@ -8,13 +8,13 @@
 html, body, #root { min-height: 100%; background: #F3EADB; }
 /* Keep the fallback selector in its own rule. In older engines, one unknown
    selector invalidates an entire comma-separated selector list. */
-html.bl-document { scrollbar-width: none; -ms-overflow-style: none; background: #747963; overscroll-behavior-y: none; }
+html.bl-document { scrollbar-width: none; -ms-overflow-style: none; background: #686F4D; overscroll-behavior-y: none; }
 html.bl-document::-webkit-scrollbar, html.bl-document body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-html.bl-document body { background: #747963; }
+html.bl-document body { background: #686F4D; }
 @supports selector(html:has(*)) {
-  html:has(.bl-root) { scrollbar-width: none; background: #747963; overscroll-behavior-y: none; }
+  html:has(.bl-root) { scrollbar-width: none; background: #686F4D; overscroll-behavior-y: none; }
   html:has(.bl-root)::-webkit-scrollbar, html:has(.bl-root) body::-webkit-scrollbar { display: none; width: 0; height: 0; }
-  html:has(.bl-root) body { background: #747963; }
+  html:has(.bl-root) body { background: #686F4D; }
 }
 
 .bl-root a:focus, .bl-root button:focus, .bl-root input:focus, .bl-root textarea:focus {
@@ -47,7 +47,7 @@ html.bl-document body { background: #747963; }
   background: #F3EADB;
   -webkit-font-smoothing: antialiased;
 }
-.bl-root a { color: #5A604D; text-decoration: none; }
+.bl-root a { color: #50573B; text-decoration: none; }
 .bl-root a:hover { color: #A06B5B; }
 .bl-root input, .bl-root textarea, .bl-root button { color: inherit; }
 /* `:where()` keeps this reset at zero specificity, so component typography
@@ -114,24 +114,25 @@ html.bl-document body { background: #747963; }
 }
 .bl-fill { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.bl-kicker { font: 600 11px/1.1 var(--f-ui); letter-spacing: .18em; text-transform: uppercase; color: #8B594A; }
+.bl-kicker { max-width: 100%; font: 600 11px/1.4 var(--f-ui); letter-spacing: .18em; text-transform: uppercase; color: #8B594A; text-wrap: balance; overflow-wrap: break-word; }
 .bl-serif { font-family: var(--f-serif); font-weight: 500; }
 .bl-batang { font-family: var(--f-body); font-weight: 400; }
 .bl-display { font-family: var(--f-display); font-weight: 400; letter-spacing: 0; text-wrap: balance; }
 /* Cookie carries the romantic display moments; full legal names receive a
    separate warm serif so they stand apart from general interface copy. */
 .bl-couple-name { font-family: var(--f-display); font-weight: 400; letter-spacing: 0; }
-.bl-full-name { font-family: 'Fraunces', Georgia, serif; font-weight: 600; letter-spacing: -.018em; text-wrap: balance; }
+.bl-full-name { font-family: 'Fraunces', Georgia, serif; font-weight: 600; letter-spacing: -.018em; text-wrap: balance; overflow-wrap: break-word; }
 .bl-place-name, .bl-event-date, .bl-hashtag { font-family: var(--f-body); font-weight: 600; letter-spacing: 0; text-wrap: balance; }
 .bl-event-date { color: #FFF9EF; }
 .bl-hashtag { text-transform: none; }
+.bl-root h1, .bl-root h2, .bl-root h3, .bl-root p { max-width: 100%; overflow-wrap: break-word; }
 
 .bl-ig {
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; box-sizing: border-box; margin-top: 10px; padding: 7px 12px;
-  border: 1px solid rgba(116, 121, 99, .3); border-radius: 999px; color: #5A604D !important;
+  border: 1px solid rgba(104, 111, 77, .3); border-radius: 999px; color: #50573B !important;
   font: 500 10px/1 var(--f-ui); letter-spacing: .04em; transition: background .25s, color .25s;
 }
-.bl-ig:hover { background: #747963; color: #FFF9EF !important; }
+.bl-ig:hover { background: #686F4D; color: #FFF9EF !important; }
 .bl-body { font: 400 12px/1.7 var(--f-body); }
 .bl-center { text-align: center; }
 
@@ -146,7 +147,7 @@ html.bl-document body { background: #747963; }
 button:disabled { cursor: default !important; opacity: .45; }
 
 .bl-field {
-  padding: 15px 16px; background: #FFF9EF; border: 1px solid rgba(116, 121, 99, .18);
+  padding: 15px 16px; background: #FFF9EF; border: 1px solid rgba(104, 111, 77, .18);
   border-radius: 11px; font: 500 16px var(--f-ui); outline: none; width: 100%; box-sizing: border-box;
   transition: border-color .2s;
 }
@@ -155,10 +156,10 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 
 .bl-dock-btn {
   width: 42px; height: 38px; padding: 0; display: grid; place-items: center; border: 0;
-  background: transparent; border-radius: 999px; cursor: pointer; color: #747963;
+  background: transparent; border-radius: 999px; cursor: pointer; color: #686F4D;
   transition: background .3s, color .3s, transform .2s;
 }
-.bl-dock-btn:hover { background: #747963; color: #FFF9EF; }
+.bl-dock-btn:hover { background: #686F4D; color: #FFF9EF; }
 .bl-dock-btn:active { transform: scale(.92); }
 .bl-dock-btn:focus-visible { outline: 2px solid #C9A15D; outline-offset: 2px; }
 .bl-dock-icon { display: block; width: 20px; height: 20px; overflow: visible; }
@@ -166,8 +167,8 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 /* Music / language: round chips stacked above the right end of the dock. */
 .bl-icon-btn {
   width: 44px; height: 44px; display: grid; place-items: center; padding: 0;
-  background: #FFF9EF; border: 1px solid rgba(116, 121, 99, .18); border-radius: 50%;
-  box-shadow: 0 10px 26px rgba(62, 53, 44, .2); color: #747963; cursor: pointer;
+  background: #FFF9EF; border: 1px solid rgba(104, 111, 77, .18); border-radius: 50%;
+  box-shadow: 0 10px 26px rgba(62, 53, 44, .2); color: #686F4D; cursor: pointer;
   transition: background .3s, color .3s, transform .2s;
 }
 .bl-icon-btn:active { transform: scale(.94); }
@@ -189,14 +190,32 @@ textarea.bl-field { line-height: 1.6; resize: none; }
    without relying on the scroll-timeline feature. */
 .bl-event-card { transition: transform .28s cubic-bezier(.2,.9,.25,1), background .28s, box-shadow .28s; animation: vCharm 5.5s ease-in-out infinite; }
 .bl-event-card:nth-child(3) { animation-delay: -2.1s; }
+.ig-event-date {
+  margin: 10px 0 0; font-size: clamp(28px, 8.6vw, 33px); line-height: 1.12;
+  text-wrap: balance; overflow-wrap: break-word;
+}
+.ig-event-date span { display: inline; }
+.ig-event-venue { margin-top: 8px; font: 400 13px/1.6 var(--f-body); color: rgba(255,249,239,.86); text-wrap: balance; overflow-wrap: break-word; }
+.ig-event-grid { display: grid; grid-template-columns: minmax(0,1fr) 12px minmax(0,1fr); align-items: stretch; gap: 10px; margin-top: 30px; }
+.ig-event-divider { display: grid; place-items: center; }
+.ig-event-divider span { width: 1px; height: 72%; background: rgba(201,161,93,.55); }
+.ig-event-grid .bl-event-card { min-width: 0; }
+.ig-event-grid .bl-display { text-wrap: balance; overflow-wrap: break-word; }
 .bl-calendar-actions { display: flex; justify-content: center; }
 .bl-event-save {
   width: 100%; max-width: 190px; min-height: 40px; box-sizing: border-box; display: grid; place-items: center; padding: 3px 18px;
-  text-align: center; background: #FFF9EF; border: 1px solid #FFF9EF; color: #5A604D !important;
+  text-align: center; background: #FFF9EF; border: 1px solid #FFF9EF; color: #50573B !important;
   border-radius: 999px; box-shadow: 0 10px 24px rgba(62,53,44,.16);
   font: 600 10px/1.25 var(--f-ui); letter-spacing: .08em; text-transform: uppercase;
   transition: transform .24s, background .24s, color .24s;
 }
+.ig-rsvp-choice { line-height: 1.3 !important; white-space: normal; text-wrap: balance; }
+.ig-wish-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 10px; flex-wrap: wrap; }
+.ig-wish-meta > span { min-width: 0; overflow-wrap: break-word; }
+.ig-sheet-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.ig-sheet-heading > div { min-width: 0; }
+.ig-gift-card-head { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
+.ig-gift-card-head > span, .ig-gift-value { max-width: 100%; overflow-wrap: anywhere; }
 
 /* Centering fallbacks for browsers that predate individual transform
    properties. They avoid fighting the ornaments' transform animations. */
@@ -225,7 +244,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 .bl-initial {
   position: absolute; inset: 0; display: grid; place-items: center;
   background: radial-gradient(circle at 35% 30%, #FFF9EF, #E4D4BB);
-  font-family: var(--f-display); font-weight: 600; color: #747963;
+  font-family: var(--f-display); font-weight: 600; color: #686F4D;
 }
 
 /* A sparse, static gilding: it enriches the olive-taupe panels without
@@ -276,7 +295,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 .ig-cover-kicker {
   font: 600 9.5px/1.5 var(--f-ui); letter-spacing: .19em; text-transform: uppercase; color: #8B594A;
 }
-.ig-cover-name { margin-top: 10px; font-size: 55px; line-height: .95; color: #5A604D; }
+.ig-cover-name { margin-top: 10px; font-size: 55px; line-height: .95; color: #50573B; }
 .ig-cover-envelope {
   position: relative; width: min(84vw, 330px); aspect-ratio: 1.08; margin: 27px auto 0;
   animation: vEnvelopeArrive 1.05s .28s cubic-bezier(.18,1,.32,1) both;
@@ -284,13 +303,13 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 }
 .ig-envelope-addressee {
   position: absolute; z-index: 2; left: 22%; right: 22%; top: 24%; display: grid; gap: 4px;
-  color: #5A604D; text-align: center; text-shadow: 0 1px rgba(255,249,239,.72);
+  color: #50573B; text-align: center; text-shadow: 0 1px rgba(255,249,239,.72);
 }
 .ig-envelope-addressee span { font: 600 8px/1.4 var(--f-ui); letter-spacing: .11em; text-transform: uppercase; }
-.ig-envelope-addressee strong { font-size: 23px; line-height: 1; font-weight: 400; color: #8B594A; }
+.ig-envelope-addressee strong { max-width: 100%; font-size: clamp(18px, 5.8vw, 23px); line-height: 1.08; font-weight: 400; color: #8B594A; text-wrap: balance; overflow-wrap: anywhere; }
 .ig-cover-button {
   position: absolute; z-index: 3; left: 50%; bottom: 1%; min-width: 154px; padding: 11px 18px;
-  transform: translateX(-50%); color: #FFF9EF; background: #747963;
+  transform: translateX(-50%); color: #FFF9EF; background: #686F4D;
   border: 1px solid rgba(201,161,93,.82); box-shadow: 0 9px 20px rgba(90,96,77,.23);
 }
 .ig-cover-button:active { transform: translateX(-50%) scale(.97); }
@@ -326,7 +345,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 .ig-hero-couple { z-index: 5; filter: drop-shadow(0 18px 16px rgba(90,96,77,.13)); animation: vCharacterFade 1.65s 3.55s ease-out both; }
 .ig-hero-title { position: absolute; z-index: 8; top: max(86px, 11vh); left: 36px; right: 36px; text-align: center; animation: vFade .9s 4.43s both; }
 .ig-hero-kicker { margin-bottom: 8px; font: 600 10px/1 var(--f-ui); letter-spacing: .18em; text-transform: uppercase; color: #A06B5B; }
-.ig-hero-title h1 { display: grid; justify-items: center; margin: 0; font-size: 48px; line-height: .72; color: #5A604D; }
+.ig-hero-title h1 { display: grid; justify-items: center; margin: 0; font-size: 48px; line-height: .72; color: #50573B; }
 .ig-hero-title h1 strong { font: inherit; }
 .ig-hero-title h1 span { display: block; margin: .15em 0 .08em; font-size: .42em; line-height: 1; color: #A06B5B; }
 
@@ -335,6 +354,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 .ig-section-heading { position: relative; text-align: center; margin-bottom: 30px; }
 .ig-section-heading h2 { margin: 6px 0 0; font-size: 48px; }
 .ig-section-heading p { max-width: 350px; margin: 13px auto 0; font-size: 13.5px; line-height: 1.85; opacity: .78; text-wrap: pretty; }
+.ig-section-title { margin: 6px 0 0; font-size: clamp(38px, 10.5vw, 46px); line-height: 1.08; text-wrap: balance; overflow-wrap: break-word; }
 .ig-portrait-grid { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .ig-portrait-card {
   position: relative; min-width: 0; padding: 0 5px 14px; text-align: center;
@@ -346,10 +366,10 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 .ig-portrait-media { display: block; width: 100%; height: 100%; }
 .ig-portrait-media.is-photo { object-fit: cover; object-position: center 22%; }
 .ig-portrait-media.is-illustration { object-fit: cover; object-position: center top; transform: scale(1.06); transform-origin: center bottom; filter: drop-shadow(0 7px 9px rgba(90,96,77,.09)); }
-.ig-portrait-copy { position: relative; display: grid; grid-template-rows: 48px 18px 42px auto; align-items: start; margin-top: 10px; padding: 0 3px; }
+.ig-portrait-copy { position: relative; display: grid; grid-template-rows: minmax(48px,auto) minmax(18px,auto) minmax(42px,auto) auto; align-items: start; margin-top: 10px; padding: 0 3px; }
 .ig-portrait-copy .bl-full-name { display: flex; align-items: flex-start; justify-content: center; font-size: 18px; line-height: 1.12; }
 .ig-portrait-role { margin: 0; font: 600 9px/1.25 var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: #A06B5B; }
-.ig-portrait-parents { display: flex; align-items: flex-start; justify-content: center; margin: 0; font: 400 10.5px/1.5 var(--f-body); opacity: .76; }
+.ig-portrait-parents { display: flex; align-items: flex-start; justify-content: center; margin: 0; font: 400 10.5px/1.5 var(--f-body); opacity: .76; text-wrap: pretty; overflow-wrap: break-word; }
 .ig-portrait-copy .bl-ig { align-self: start; justify-content: center; margin: 9px auto 0; padding: 5px 9px; font-size: 8.5px; }
 .ig-couple-divider { display: grid; grid-template-columns: 1fr 56px 1fr; align-items: center; gap: 10px; width: 68%; margin: 32px auto 0; }
 .ig-couple-divider > span { height: 1px; background: linear-gradient(90deg, transparent, #C9A15D); }
@@ -360,7 +380,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 .ig-gift-envelope { opacity: .72; filter: drop-shadow(0 12px 15px rgba(33,36,28,.18)); animation: vFloat 10s ease-in-out infinite; }
 .ig-gift-copy { position: relative; z-index: 1; padding-top: 142px; text-align: center; }
 
-.ig-closing { position: relative; padding: 78px 26px 34px; background: #747963; color: #F3EADB; text-align: center; }
+.ig-closing { position: relative; padding: 78px 26px 34px; background: #686F4D; color: #F3EADB; text-align: center; }
 .ig-closing-copy { position: relative; }
 .ig-closing-mark { position: relative; width: 74px; height: 74px; margin: 0 auto 20px; opacity: .84; }
 .ig-closing-copy .bl-hashtag { font-size: 27px !important; }
@@ -383,10 +403,27 @@ textarea.bl-field { line-height: 1.6; resize: none; }
   .ig-cover { padding-left: 18px; padding-right: 18px; }
   .ig-cover-name { font-size: 49px; }
   .ig-hero-title h1 { font-size: 43px; }
+  .ig-section-heading h2 { font-size: 43px; }
+  .ig-event-date span { display: block; }
+  .ig-event-date span + span { margin-top: 2px; }
+  .ig-section-title { font-size: 39px; }
+  .ig-closing-copy .bl-hashtag { font-size: 24px !important; }
+  .ig-sheet-heading .bl-display { font-size: 32px !important; }
 }
-@media (max-width: 339px) {
+@media (max-width: 359px) {
   .ig-portrait-grid { grid-template-columns: 1fr; gap: 24px; padding: 0 30px; }
   .ig-portrait-copy .bl-full-name { font-size: 21px; }
+  .ig-event-grid { grid-template-columns: 1fr; gap: 12px; }
+  .ig-event-divider { height: 10px; }
+  .ig-event-divider span { width: 72%; height: 1px; }
+  .ig-event-grid .bl-event-card { text-align: center; }
+  .ig-event-grid .bl-event-card > div:last-child { justify-content: center; }
+  .ig-couple-section { padding-left: 16px; padding-right: 16px; }
+  .bl-dock-btn { width: 39px; }
+}
+@media (min-width: 420px) {
+  .ig-section-heading h2 { font-size: 50px; }
+  .ig-section-title { font-size: 46px; }
 }
 
 /* The token/config handshake is normally brief, but it still belongs to the
@@ -409,7 +446,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
   font: 600 10px/1 var(--f-ui); letter-spacing: .28em; text-transform: uppercase;
   color: #8B594A;
 }
-.bl-loader-names { margin-top: 13px; font-size: 64px; line-height: 1; color: #5A604D; }
+.bl-loader-names { margin-top: 13px; font-size: 64px; line-height: 1; color: #50573B; }
 @supports (font-size: clamp(1px, 2vw, 3px)) {
   .bl-loader-names { font-size: clamp(54px, 17vw, 76px); }
 }
