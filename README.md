@@ -25,6 +25,8 @@ Browser-visible, opsional: `VITE_DEMO_MODE=true` hanya untuk demo visual lokal; 
 
 Jangan pernah memberi prefix `VITE_` pada credential server. Detail setup dan smoke test ada di [konfigurasi production](docs/production-configuration.md).
 
+Untuk memakai password admin pilihan sendiri, jalankan `npm run security:set-password`, lalu salin hash yang dihasilkan ke `ADMIN_PASSWORD_HASH`. Password asli tidak disimpan di source code atau environment.
+
 ## Rute
 
 | Rute | Fungsi |

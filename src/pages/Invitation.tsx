@@ -44,39 +44,54 @@ function Orn({ slot, style, className, flip }: { slot: string; style: CSSPropert
   );
 }
 
-/* Corner artwork is drawn for the bottom-right corner. Every other corner is the
-   same image mirrored, and swings in mirrored time, so the frame stays symmetric. */
-type Corner = 'tl' | 'tr' | 'bl' | 'br';
-const CORNER: Record<Corner, { flip?: Flip; origin: string; anim: string; x: 'left' | 'right'; y: 'top' | 'bottom' }> = {
-  tl: { flip: 'xy', origin: 'top left', anim: 'vCorner', x: 'left', y: 'top' },
-  tr: { flip: 'y', origin: 'top right', anim: 'vCornerR', x: 'right', y: 'top' },
-  bl: { flip: 'x', origin: 'bottom left', anim: 'vCornerR', x: 'left', y: 'bottom' },
-  br: { origin: 'bottom right', anim: 'vCorner', x: 'right', y: 'bottom' }
-};
+function PortraitMedia({ photoSlot, fallbackSlot, alt }: { photoSlot: string; fallbackSlot: string; alt: string }) {
+  const assets = useContext(Assets);
+  const custom = assets[photoSlot];
+  const src = custom || slotSrc(assets, fallbackSlot);
+  if (!src) return null;
+  return <img className={'ig-portrait-media ' + (custom ? 'is-photo' : 'is-illustration')} src={src} alt={alt} loading="lazy" decoding="async" referrerPolicy="no-referrer" />;
+}
 
-function CornerOrn({ slot, at, width, ratio = '900 / 719', inset = -8, opacity, secs = 12 }: {
-  slot: string; at: Corner; width: string | number; ratio?: string; inset?: number; opacity?: number; secs?: number;
-}) {
-  const c = CORNER[at];
-  const style: CSSProperties = {
-    width, aspectRatio: ratio, opacity,
-    transformOrigin: c.origin, animation: c.anim + ' ' + secs + 's ease-in-out infinite'
+type DockIconName = 'couple' | 'event' | 'story' | 'rsvp';
+
+function DockIcon({ name }: { name: DockIconName }) {
+  const common = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.55,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
   };
-  style[c.x] = inset;
-  style[c.y] = inset;
-  return <Orn slot={slot} className="bl-natural-ratio" flip={c.flip} style={style} />;
+
+  return (
+    <svg className="bl-dock-icon" viewBox="0 0 24 24" aria-hidden="true">
+      {name === 'couple' && <>
+        <circle {...common} cx="8" cy="8" r="2.6" />
+        <circle {...common} cx="16" cy="8" r="2.6" />
+        <path {...common} d="M3.8 18.5c.35-3.45 1.7-5.35 4.2-5.35s3.85 1.9 4.2 5.35M11.8 18.5c.35-3.45 1.7-5.35 4.2-5.35s3.85 1.9 4.2 5.35" />
+        <path {...common} d="M10.15 11.15 12 13l1.85-1.85" />
+      </>}
+      {name === 'event' && <>
+        <rect {...common} x="3.5" y="5.2" width="17" height="15" rx="2.2" />
+        <path {...common} d="M7.5 3.5v3.4M16.5 3.5v3.4M3.5 9.2h17" />
+        <path {...common} d="m9.2 14.8 1.75 1.75 3.85-4.05" />
+      </>}
+      {name === 'story' && <>
+        <path {...common} d="M4 5.3c2.85-.35 5.25.25 8 2.15v11.25c-2.75-1.9-5.15-2.5-8-2.15zM20 5.3c-2.85-.35-5.25.25-8 2.15v11.25c2.75-1.9 5.15-2.5 8-2.15z" />
+        <path {...common} d="M9.4 11.1c.95-.8 2.05-.15 2.6.75.55-.9 1.65-1.55 2.6-.75 1.35 1.15-.15 2.85-2.6 4.45-2.45-1.6-3.95-3.3-2.6-4.45Z" />
+      </>}
+      {name === 'rsvp' && <>
+        <rect {...common} x="3" y="5.5" width="18" height="13" rx="2.2" />
+        <path {...common} d="m4.1 7 7.9 6 7.9-6" />
+        <path {...common} d="m14.9 16 1.35 1.35 2.55-2.75" />
+      </>}
+    </svg>
+  );
 }
 
 /* The cover and the invitation itself park their controls on the same spot, so
    the language chip stays put while everything around it changes. */
 const CTL_TOP = 'calc(14px + env(safe-area-inset-top))', CTL_RIGHT = 14;
-
-/* Corners come in pairs rather than all four: the cover is anchored along its
-   bottom edge and the opened page along its top, so each screen has one planted
-   band of flowers and one open half for the photograph. */
-function Corners({ slot, width, at, opacity }: { slot: string; width: string; at: Corner[]; opacity?: number }) {
-  return <>{at.map(c => <CornerOrn key={c} slot={slot} at={c} width={width} inset={0} opacity={opacity} />)}</>;
-}
 
 /* Section edges are a scalloped border, not a gradient: fading dark sage into
    paper over a few pixels only ever goes through muddy grey, however the stops
@@ -149,20 +164,9 @@ function IgButton({ handle, align }: { handle: string; align: 'left' | 'right' }
   );
 }
 
-function Photo({ slot, fallback, focus, alt = '' }: { slot: string; fallback?: ReactNode; focus?: string; alt?: string }) {
-  const assets = useContext(Assets);
-  const src = assets[slot];
-  return src
-    ? <img className="bl-fill" src={src} alt={alt} decoding="async" referrerPolicy="no-referrer" style={focus ? { objectPosition: focus } : undefined} />
-    : <>{fallback ?? null}</>;
-}
-
 function Kicker({ children, color, style }: { children: ReactNode; color?: string; style?: CSSProperties }) {
   return <div className="bl-kicker bl-reveal-kicker" style={{ color: color || RED_TEXT, ...style }}>{children}</div>;
 }
-
-const letters = (word: string, base: number) =>
-  String(word || '').split('').map((c, i) => ({ c: c === ' ' ? '\u00A0' : c, d: (base + i * 0.07).toFixed(2) + 's' }));
 
 const two = (n: number) => String(n).padStart(2, '0');
 
@@ -244,6 +248,10 @@ export default function Invitation() {
   const bride = cfg.brideName || 'Mumu';
   const coupleShort = groom + ' & ' + bride;
   const dateLabel = lang === 'en' ? cfg.dateLabelEn || cfg.dateLabel : cfg.dateLabel;
+  const weddingHashtag = (() => {
+    const clean = String(cfg.hashtag || '').trim().replace(/\s+/g, '');
+    return clean ? (clean.startsWith('#') ? clean : '#' + clean) : '#' + groom + bride;
+  })();
 
   // Keep the opening loader visible long enough to feel intentional even when
   // Supabase and cached assets answer immediately. Slow connections still wait
@@ -292,7 +300,7 @@ export default function Invitation() {
   if (!preview && (!minimumLoadElapsed || !configReady || guest.status === 'loading')) {
     // Never expose committed placeholder names while the private published
     // config is still crossing the network.
-    return <InvitationLoading cfg={cfg} coupleShort="Hanif & Afi" />;
+    return <InvitationLoading cfg={cfg} coupleShort="Hanif & Afi" t={t} />;
   }
   if (!preview && guest.supplied && guest.status === 'invalid') {
     return <InvitationState title="Link undangan tidak valid" body="Periksa kembali link yang dikirimkan kepadamu. Token tamu mungkin salah atau sudah tidak aktif." />;
@@ -318,8 +326,8 @@ export default function Invitation() {
 
           <Petals />
 
-          <Hero cfg={cfg} t={t} dateLabel={dateLabel} />
-          <Ticker text={coupleShort + ' — ' + dateLabel} />
+          <Hero cfg={cfg} t={t} />
+          <Ticker text={weddingHashtag} />
           <Seam from={SAGE} />
           <Quote t={t} />
           <Couple cfg={cfg} t={t} />
@@ -336,10 +344,10 @@ export default function Invitation() {
 
           <div className="bl-col" style={{ position: 'fixed', bottom: 'calc(16px + env(safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', zIndex: 58, pointerEvents: 'none' }}>
             <nav style={{ display: 'flex', alignItems: 'center', gap: 2, padding: 6, background: CARD, border: '1px solid rgba(116,121,99,.16)', borderRadius: 999, boxShadow: '0 12px 34px rgba(62,53,44,.20)', pointerEvents: 'auto' }}>
-              <button className="bl-dock-btn" onClick={go('Mempelai')}>{t.coupleTitle}</button>
-              <button className="bl-dock-btn" onClick={go('Acara')}>{t.navEvents}</button>
-              <button className="bl-dock-btn" onClick={go('Story')}>{t.navStory}</button>
-              <button className="bl-dock-btn" onClick={go('RSVP')}>RSVP</button>
+              <button className="bl-dock-btn" onClick={go('Mempelai')} title={t.coupleTitle} aria-label={t.coupleTitle}><DockIcon name="couple" /></button>
+              <button className="bl-dock-btn" onClick={go('Acara')} title={t.navEvents} aria-label={t.navEvents}><DockIcon name="event" /></button>
+              <button className="bl-dock-btn" onClick={go('Story')} title={t.navStory} aria-label={t.navStory}><DockIcon name="story" /></button>
+              <button className="bl-dock-btn" onClick={go('RSVP')} title="RSVP" aria-label="RSVP"><DockIcon name="rsvp" /></button>
             </nav>
           </div>
 
@@ -371,14 +379,15 @@ export default function Invitation() {
           {giftOpen && <GiftSheet cfg={cfg} t={t} lang={lang} onClose={() => setGiftOpen(false)} />}
 
           {closed && (
-            <Cover cfg={cfg} t={t} dateLabel={dateLabel} coupleShort={coupleShort} guestName={guest.name}
+            <Cover cfg={cfg} t={t} coupleShort={coupleShort} guestName={guest.name}
               langLabel={lang === 'id' ? 'EN' : 'ID'} onOpen={onOpen} onToggleLang={toggleLang} />
           )}
 
           {opening && (
-            <div className="bl-col bl-screen" style={{ zIndex: 85, pointerEvents: 'none', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ flex: 1, background: SAGE, animation: 'vFlapTop 1.25s cubic-bezier(.66,0,.25,1) both' }} />
-              <div style={{ flex: 1, background: DEEP, animation: 'vFlapBot 1.25s cubic-bezier(.66,0,.25,1) both' }} />
+            <div className="bl-col bl-screen ig-opening" style={{ zIndex: 85, pointerEvents: 'none' }}>
+              <div className="ig-opening-paper ig-opening-paper-left" aria-hidden="true" />
+              <div className="ig-opening-paper ig-opening-paper-right" aria-hidden="true" />
+              <div className="ig-opening-seam" aria-hidden="true" />
             </div>
           )}
         </div>
@@ -387,13 +396,13 @@ export default function Invitation() {
   );
 }
 
-function InvitationLoading({ cfg, coupleShort }: { cfg: WeddingConfig; coupleShort: string }) {
+function InvitationLoading({ cfg, coupleShort, t }: { cfg: WeddingConfig; coupleShort: string; t: Copy }) {
   return (
     <main className="app-min-screen bl-root bl-wedding-loader bl-gilded" role="status" aria-label="Menyiapkan undangan"
       style={fontVars(cfg.displayFont, cfg.bodyFont) as CSSProperties}>
       <div className="bl-loader-halo" aria-hidden="true"><span /></div>
       <div className="bl-loader-copy">
-        <div className="bl-loader-kicker">The Wedding of</div>
+        <div className="bl-loader-kicker">{t.weddingOf}</div>
         <div className="bl-display bl-loader-names">{coupleShort}</div>
         <div className="bl-loader-dots" aria-hidden="true">
           {[0, 1, 2, 3].map(index => <span key={index} style={{ animationDelay: index * 140 + 'ms' }} />)}
@@ -440,80 +449,55 @@ function Petals() {
   );
 }
 
-function Cover({ t, dateLabel, coupleShort, guestName, langLabel, onOpen, onToggleLang }: S & {
-  dateLabel: string; coupleShort: string; guestName: string; langLabel: string;
+function Cover({ t, coupleShort, guestName, langLabel, onOpen, onToggleLang }: S & {
+  coupleShort: string; guestName: string; langLabel: string;
   onOpen: () => void; onToggleLang: () => void;
 }) {
-  const assets = useContext(Assets);
   return (
-    <div className="bl-clip bl-cover bl-gilded" style={{ background: 'radial-gradient(circle at 50% 30%,rgba(116,121,99,.72) 0%,rgba(90,96,77,.96) 48%,#4A5343 100%)', overscrollBehavior: 'contain' }}>
-      <Corners slot="orn-cover-corner" at={['bl', 'br']} width="42%" opacity={.82} />
+    <div className="bl-clip bl-cover bl-gilded ig-cover" style={{ overscrollBehavior: 'contain' }}>
       <button className="bl-icon-btn" onClick={onToggleLang} title="Language" aria-label="Language"
         style={{ position: 'absolute', top: CTL_TOP, right: CTL_RIGHT, zIndex: 2, animation: 'vFade 1.2s 1.4s both' }}>
         <span style={{ font: "600 10px/1 var(--f-ui)", letterSpacing: '.1em' }}>{langLabel}</span>
       </button>
-      <div style={{ position: 'relative', height: '100%', display: 'grid', placeItems: 'center', textAlign: 'center', padding: '50px 30px', color: PAPER, boxSizing: 'border-box' }}>
-        <div>
-          <div style={{ position: 'relative', width: 148, height: 148, margin: '0 auto 40px' }}>
-            <Orn slot="orn-cover-ring" className="bl-center-xy" style={{ left: '50%', top: '50%', translate: '-50% -50%', width: 206, height: 206, opacity: .5, animation: 'vSpin 120s linear infinite' }} />
-            <div className="bl-clip" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '2px solid rgba(201,161,93,.7)', animation: 'vPop 1.1s .1s both, vFloat 9s 1.2s ease-in-out infinite', background: 'rgba(90,96,77,.55)' }}>
-              <Photo slot="v-cover-round" focus="center 28%" alt={'Foto ' + coupleShort} fallback={
-                <img src={slotSrc(assets, 'v-monogram')} alt="" style={{ position: 'absolute', inset: '22%', width: '56%', height: '56%', objectFit: 'contain', filter: 'invert(1)', opacity: .9 }} />
-              } />
-            </div>
-          </div>
-          <div style={{ font: "400 11px/1 var(--f-ui)", letterSpacing: '.11em', textTransform: 'uppercase', opacity: .82, animation: 'vFade 1.2s .4s both' }}>{t.weddingOf}</div>
-          <div className="bl-display bl-couple-name" style={{ margin: '12px 0 0', fontSize: 68, lineHeight: 1.05, animation: 'vRise 1.1s .55s both' }}>{coupleShort}</div>
-          <div style={{ margin: '18px auto', display: 'inline-block', padding: '8px 18px', border: '1px solid rgba(250,243,231,.4)', borderRadius: 999, font: "400 10px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', animation: 'vPop 1s .9s both' }}>{dateLabel}</div>
-          <div style={{ font: "400 12px/1.7 var(--f-body)", opacity: .82, animation: 'vFade 1.2s 1.1s both' }}>{t.guestGreeting}</div>
-          {guestName && (
-            <div className="bl-display" style={{ marginTop: 4, fontSize: 36, lineHeight: 1.2, color: GOLD_LIGHT, animation: 'vFade 1.2s 1.2s both' }}>{guestName}</div>
-          )}
-          <div style={{ marginTop: 24, animation: 'vPop 1s 1.3s both' }}>
-            <button className="bl-btn bl-compact-btn" onClick={onOpen} style={{ padding: '13px 24px', background: GOLD, color: INK, boxShadow: '0 12px 28px rgba(0,0,0,.28)' }}>{t.openInvite}</button>
-          </div>
+      <div className="ig-cover-content">
+        <div className="ig-cover-copy">
+          <div className="ig-cover-kicker">{t.coverKicker}</div>
+          <div className="bl-display bl-couple-name ig-cover-name">{coupleShort}</div>
         </div>
+        <div className="ig-cover-envelope">
+          <Orn slot="v-envelope-closed" style={{ inset: 0, width: '100%', height: '100%' }} />
+          <div className="ig-envelope-addressee">
+            <span>{t.guestGreeting}</span>
+            <strong className="bl-display">{guestName || t.guestDefault}</strong>
+          </div>
+          <button className="bl-btn bl-compact-btn ig-cover-button" onClick={onOpen}>{t.openInvite}</button>
+        </div>
+        <div className="ig-cover-rule" aria-hidden="true"><span /></div>
       </div>
     </div>
   );
 }
 
-function Hero({ cfg, t, dateLabel }: S & { dateLabel: string }) {
-  const g = letters(cfg.groomName, 0.4), b = letters(cfg.brideName, 1.05);
-  const letter = (l: { c: string; d: string }, i: number) => (
-    <span key={i} style={{ display: 'inline-block', animation: 'vLetter 1s cubic-bezier(.2,.9,.2,1) both', animationDelay: l.d }}>{l.c}</span>
-  );
+function Hero({ cfg, t }: S) {
   return (
-    <section className="bl-sec bl-gilded bl-hero" data-screen-label="Hero" style={{ position: 'relative', minHeight: 600, background: SAGE }}>
-      <div className="bl-clip" style={{ position: 'absolute', inset: 0 }}>
-        <div className="sv-para" style={{ position: 'absolute', inset: '-12% 0' }}><Photo slot="v-hero" /></div>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(90,96,77,.57),rgba(90,96,77,.18) 42%,rgba(90,96,77,.88))' }} />
-      </div>
-      <Corners slot="orn-hero-corner" at={['tl', 'tr']} width="42%" opacity={.7} />
-      <div style={{ position: 'relative', height: '100%', display: 'grid', gridTemplateRows: '1fr auto', padding: '70px 26px 42px', color: PAPER, textAlign: 'center', boxSizing: 'border-box' }}>
-        <div style={{ alignSelf: 'center' }}>
-          <div style={{ font: "400 11px/1 var(--f-ui)", letterSpacing: '.11em', textTransform: 'uppercase', opacity: .78, animation: 'vFade 1.2s .2s both' }}>{t.weddingOf}</div>
-          <div style={{ position: 'relative', margin: '20px 0 0' }}>
-            <Orn slot="orn-hero-ring" className="bl-center-xy" style={{ left: '50%', top: '50%', translate: '-50% -50%', width: 296, height: 296, opacity: .16, animation: 'vSpin 150s linear infinite' }} />
-            {/* Names intentionally return to their more ceremonial stacked form,
-                with a light "dan" bridge between them. */}
-            <h1 className="bl-display bl-couple-name bl-hero-name" aria-label={`${cfg.groomName} ${t.and} ${cfg.brideName}`}
-              style={{ position: 'relative', margin: 0, lineHeight: .82 }}>
-              <span style={{ display: 'block' }}>{g.map(letter)}</span>
-              <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, margin: '9px 0 7px' }}>
-                <span style={{ width: 38, height: 1, background: GOLD, transformOrigin: 'right', animation: 'vLine .8s .72s both' }} />
-                <span style={{ color: CARD, font: "600 13px/1 var(--f-ui)", letterSpacing: '.08em', animation: 'vPop .8s .78s both' }}>{t.and}</span>
-                <span style={{ width: 38, height: 1, background: GOLD, transformOrigin: 'left', animation: 'vLine .8s .72s both' }} />
-              </span>
-              <span style={{ display: 'block' }}>{b.map(letter)}</span>
-            </h1>
-          </div>
-        </div>
-        <div style={{ textShadow: '0 1px 14px rgba(40,44,35,.6)' }}>
-          <div style={{ font: "500 11px/1.8 var(--f-body)", letterSpacing: '.14em', textTransform: 'uppercase', animation: 'vFade 1.2s 1.6s both' }}>{dateLabel}</div>
-          <div style={{ marginTop: 4, font: "400 12px/1.8 var(--f-body)", opacity: .84, animation: 'vFade 1.2s 1.75s both' }}>{cfg.venue}, {cfg.city}</div>
-          <div className="bl-scroll-cue" aria-hidden="true"><span /></div>
-        </div>
+    <section className="bl-sec bl-gilded bl-hero ig-hero" data-screen-label="Hero">
+      <Orn slot="v-hero-trees" className="ig-hero-trees" style={{ left: '50%', bottom: '12%', translate: '-50% 0', width: '112%', height: '60%' }} />
+      <Orn slot="v-hero-shrubs" className="ig-hero-shrub ig-hero-shrub-left" style={{ left: '-9%', bottom: '16%', width: '70%', height: '25%' }} />
+      <Orn slot="v-hero-shrubs" className="ig-hero-shrub ig-hero-shrub-right" flip="x" style={{ right: '-9%', bottom: '16%', width: '70%', height: '25%' }} />
+      <Orn slot="v-hero-grass-carpet" className="ig-hero-carpet" style={{ left: '50%', bottom: '-1%', translate: '-50% 0', width: '96%', height: '32%' }} />
+      <Orn slot="v-hero-curtains" className="ig-hero-curtains" style={{ inset: 0, width: '100%', height: '100%' }} />
+      <Orn slot="v-hero-side-garden" className="ig-hero-side-garden ig-hero-side-garden-left" style={{ left: '-2%', bottom: 0, width: '40%', height: '53%' }} />
+      <Orn slot="v-hero-side-garden" className="ig-hero-side-garden ig-hero-side-garden-right" flip="x" style={{ right: '-2%', bottom: 0, width: '40%', height: '53%' }} />
+      <Orn slot="ig-lavender" className="ig-hero-grass ig-hero-grass-left" style={{ left: '-3%', bottom: '2%', width: '34%', height: '19%' }} />
+      <Orn slot="ig-lavender" className="ig-hero-grass ig-hero-grass-right" flip="x" style={{ right: '-3%', bottom: '2%', width: '34%', height: '19%' }} />
+      <Orn slot="v-couple-illustration" className="ig-hero-couple" style={{ left: '50%', bottom: 0, translate: '-50% 0', width: '76%', height: '71%' }} />
+      <div className="ig-hero-title">
+        <div className="ig-hero-kicker">{t.weddingOf}</div>
+        <h1 className="bl-display bl-couple-name" aria-label={`${cfg.groomName} ${t.and} ${cfg.brideName}`}>
+          <strong>{cfg.groomName}</strong>
+          <span>{t.and}</span>
+          <strong>{cfg.brideName}</strong>
+        </h1>
       </div>
     </section>
   );
@@ -547,56 +531,44 @@ function Quote({ t }: { t: Copy }) {
       <div style={{ position: 'relative', paddingTop: 52 }}>
         <Kicker>{t.quoteSource}</Kicker>
         <p className="bl-serif sv-mask" style={{ margin: '18px auto 0', maxWidth: 340, fontSize: 16, lineHeight: 1.85, textWrap: 'pretty' } as CSSProperties}>{t.quote}</p>
-        <p className="sv-rise-q" style={{ margin: '16px auto 0', maxWidth: 300, font: "400 12px/1.85 var(--f-body)", opacity: .6, textWrap: 'pretty' } as CSSProperties}>{t.quoteAlt}</p>
       </div>
     </section>
   );
 }
 
 function Couple({ cfg, t }: S) {
-  const card: CSSProperties = { position: 'relative', padding: 18, background: CARD, border: '1px solid rgba(116,121,99,.14)', boxShadow: '0 16px 38px rgba(90,96,77,.09)' };
-  const role: CSSProperties = { marginTop: 9, font: "500 11px/1 var(--f-ui)", letterSpacing: '.1em', textTransform: 'uppercase', color: RED };
-  const parents: CSSProperties = { marginTop: 5, font: "400 12px/1.65 var(--f-body)", opacity: .78 };
-  const initial = (name: string) => <div className="bl-initial" style={{ fontSize: 54 }}>{(name || '?').trim().charAt(0).toUpperCase()}</div>;
+  const people = [
+    { key: 'groom', photo: 'v-groom', fallback: 'v-groom-illustration', name: cfg.groomFull, role: t.sonOf, parents: cfg.groomParents, instagram: cfg.groomInstagram },
+    { key: 'bride', photo: 'v-bride', fallback: 'v-bride-illustration', name: cfg.brideFull, role: t.daughterOf, parents: cfg.brideParents, instagram: cfg.brideInstagram }
+  ];
   return (
-    <section className="bl-sec" data-screen-label="Mempelai" style={{ position: 'relative', padding: '64px 22px 78px' }}>
-      <div style={{ position: 'relative', textAlign: 'center', marginBottom: 34 }}>
+    <section className="bl-sec ig-couple-section" data-screen-label="Mempelai">
+      <Orn slot="ig-floral-swag" className="ig-couple-swag" style={{ left: '50%', top: 8, translate: '-50% 0', width: 210, height: 110 }} />
+      <div className="ig-section-heading">
         <Kicker>{t.coupleKicker}</Kicker>
-        <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 48 }}>{t.coupleTitle}</h2>
-        <p className="bl-batang sv-rise-q" style={{ maxWidth: 350, margin: '14px auto 0', fontSize: 13.5, lineHeight: 1.85, opacity: .78, textWrap: 'pretty' } as CSSProperties}>{t.coupleIntro}</p>
+        <h2 className="bl-display">{t.coupleTitle}</h2>
+        <p className="bl-batang sv-rise-q">{t.coupleIntro}</p>
       </div>
-      <div style={{ display: 'grid', gap: 24 }}>
-        <div className="sv-grow bl-reveal-card" style={{ ...card, borderRadius: '80px 14px 14px 80px' }}>
-          <Orn slot="orn-groom-top" style={{ right: -12, top: -38, width: 74, height: 121, opacity: .85, animation: 'vFloat 8s ease-in-out infinite' }} />
-          <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '132px 1fr', gap: 18, alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: 132, height: 132 }}>
-              <div className="bl-clip" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid ' + GOLD }}><Photo slot="v-groom" focus="center 28%" alt={'Foto ' + cfg.groomFull} fallback={initial(cfg.groomName)} /></div>
+      <div className="ig-portrait-grid">
+        {people.map(person => (
+          <article key={person.key} className="ig-portrait-card sv-grow bl-reveal-card">
+            <div className={'ig-portrait-art ig-portrait-' + person.key}>
+              <Orn slot="ig-scallop-frame" className="ig-portrait-frame" style={{ inset: 0, width: '100%', height: '100%' }} />
+              <div className="ig-portrait-window">
+                <PortraitMedia photoSlot={person.photo} fallbackSlot={person.fallback} alt={'Foto ' + person.name} />
+              </div>
             </div>
-            <div>
-              <div className="bl-full-name" style={{ fontSize: 23, lineHeight: 1.18 }}>{cfg.groomFull}</div>
-              <div style={role}>{t.sonOf}</div>
-              <div style={parents}>{cfg.groomParents}</div>
-              <IgButton handle={cfg.groomInstagram} align="left" />
+            <div className="ig-portrait-copy">
+              <div className="bl-full-name">{person.name}</div>
+              <div className="ig-portrait-role">{person.role}</div>
+              <div className="ig-portrait-parents">{person.parents}</div>
+              <IgButton handle={person.instagram} align="left" />
             </div>
-          </div>
-        </div>
-        <div style={{ position: 'relative', justifySelf: 'center', width: 156, height: 72 }}>
-          <Orn slot="orn-divider" style={{ inset: 0, width: '100%', height: '100%', opacity: .8, animation: 'vBeat 4s ease-in-out infinite' }} />
-        </div>
-        <div className="sv-grow bl-reveal-card" style={{ ...card, borderRadius: '14px 80px 80px 14px', textAlign: 'right' }}>
-          <Orn slot="orn-bride-top" flip="x" style={{ left: -12, top: -38, width: 74, height: 121, opacity: .85, animation: 'vFloat 8s ease-in-out infinite' }} />
-          <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 132px', gap: 18, alignItems: 'center' }}>
-            <div>
-              <div className="bl-full-name" style={{ fontSize: 23, lineHeight: 1.18 }}>{cfg.brideFull}</div>
-              <div style={role}>{t.daughterOf}</div>
-              <div style={parents}>{cfg.brideParents}</div>
-              <IgButton handle={cfg.brideInstagram} align="right" />
-            </div>
-            <div style={{ position: 'relative', width: 132, height: 132 }}>
-              <div className="bl-clip" style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '3px solid #9AA98A' }}><Photo slot="v-bride" focus="center 28%" alt={'Foto ' + cfg.brideFull} fallback={initial(cfg.brideName)} /></div>
-            </div>
-          </div>
-        </div>
+          </article>
+        ))}
+      </div>
+      <div className="ig-couple-divider" aria-hidden="true">
+        <span /><Orn slot="ig-rose" style={{ inset: 0, width: '100%', height: '100%' }} /><span />
       </div>
     </section>
   );
@@ -693,6 +665,12 @@ function Events({ cfg, t, dateLabel }: S & { dateLabel: string }) {
 
 function Story({ cfg, t, lang }: S & { lang: Lang }) {
   const c = cfg as unknown as Record<string, string>;
+  const englishFallback = [
+    { title: 'First Meeting', body: 'One campus project brought together two people who did not yet know it was the beginning of everything.' },
+    { title: 'Walking Together', body: 'Solo and Jakarta taught us the meaning of waiting and choosing one another with intention.' },
+    { title: 'The Proposal', body: 'In a garden filled with flowers, one question was answered with one word.' },
+    { title: 'Our Wedding Day', body: 'The same ribbon now binds two families together as one.' }
+  ];
   const orns = ['orn-story-1', 'orn-story-2', 'orn-story-3', 'orn-story-4'];
   const flutter = ['7s', '7s .5s', '8s', '8s .6s'];
   const chapters = [1, 2, 3, 4]
@@ -702,8 +680,8 @@ function Story({ cfg, t, lang }: S & { lang: Lang }) {
       return {
         n,
         year: c['story' + n + 'Year'],
-        title: lang === 'en' ? c['story' + n + 'TitleEn'] || titleId : titleId,
-        body: lang === 'en' ? c['story' + n + 'BodyEn'] || bodyId : bodyId
+        title: lang === 'en' ? c['story' + n + 'TitleEn'] || englishFallback[n - 1].title : titleId,
+        body: lang === 'en' ? c['story' + n + 'BodyEn'] || englishFallback[n - 1].body : bodyId
       };
     })
     .filter(ch => ch.title || ch.body);
@@ -989,16 +967,16 @@ function giftCards(cfg: WeddingConfig, t: Copy, lang: Lang) {
   const cards: { key: string; slot: string; label: string; kind: string; value: string; holder: string; bg: string; fg: string; btnBg: string; btnFg: string; size: number; copyLabel: string }[] = [];
   if (cfg.bank1Acct) cards.push({ key: 'b1', slot: 'orn-gift-1', label: cfg.bank1Name || 'Bank', kind: t.transfer, value: cfg.bank1Acct, holder: cfg.bank1Holder ? t.holderPrefix + cfg.bank1Holder : '', bg: 'linear-gradient(155deg,' + SAGE + ',' + DEEP + ')', fg: PAPER, btnBg: GOLD, btnFg: DEEP, size: 27, copyLabel: t.copy });
   if (cfg.bank2Acct) cards.push({ key: 'b2', slot: 'orn-gift-2', label: cfg.bank2Name || 'Bank', kind: t.transfer, value: cfg.bank2Acct, holder: cfg.bank2Holder ? t.holderPrefix + cfg.bank2Holder : '', bg: 'linear-gradient(155deg,#B88974,' + RED + ')', fg: CARD, btnBg: CARD, btnFg: RED, size: 27, copyLabel: t.copy });
-  if (cfg.giftAddress) cards.push({ key: 'addr', slot: 'orn-gift-3', label: cfg.giftAddressLabel || (lang === 'en' ? 'Send a Gift' : 'Kirim Hadiah'), kind: t.addressKind, value: cfg.giftAddress, holder: cfg.giftAddressHolder, bg: CARD, fg: INK, btnBg: RED, btnFg: CARD, size: 17, copyLabel: t.copyAddr });
+  if (cfg.giftAddress) cards.push({ key: 'addr', slot: 'orn-gift-3', label: lang === 'en' ? 'Send a Gift' : cfg.giftAddressLabel || 'Kirim Hadiah', kind: t.addressKind, value: cfg.giftAddress, holder: cfg.giftAddressHolder, bg: CARD, fg: INK, btnBg: RED, btnFg: CARD, size: 17, copyLabel: t.copyAddr });
   return cards;
 }
 
 function GiftSection({ cfg, t, onOpen }: S & { onOpen: () => void }) {
   if (!cfg.bank1Acct && !cfg.bank2Acct && !cfg.giftAddress) return null;
   return (
-    <div style={{ position: 'relative', padding: '74px 24px 46px', color: PAPER }}>
-      <Orn slot="orn-amplop" className="bl-center-x" style={{ left: '50%', top: 24, translate: '-50% 0', width: 190, height: 107, opacity: .3, animation: 'vFloat 11s ease-in-out infinite' }} />
-      <div style={{ position: 'relative', textAlign: 'center', paddingTop: 24 }}>
+    <div className="ig-gift" style={{ color: PAPER }}>
+      <Orn slot="v-envelope-open" className="ig-gift-envelope" style={{ left: '50%', top: 14, translate: '-50% 0', width: 225, height: 204 }} />
+      <div className="ig-gift-copy">
         <Kicker color="#FFFFFF">{t.giftKicker}</Kicker>
         <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 43 }}>{t.giftTitle}</h2>
         <p style={{ maxWidth: 330, margin: '12px auto 0', font: "400 12.5px/1.8 var(--f-body)", opacity: .82, textWrap: 'pretty' } as CSSProperties}>{t.giftBody}</p>
@@ -1070,19 +1048,15 @@ function Hashtag({ tag, t }: { tag: string; t: Copy }) {
 function Closing({ cfg, t, coupleShort }: S & { coupleShort: string }) {
   const year = String(safeDate(cfg.dateISO).getFullYear());
   return (
-    <section className="bl-sec bl-gilded" data-screen-label="Penutup" style={{ position: 'relative', padding: '80px 26px 34px', background: SAGE, color: PAPER, textAlign: 'center' }}>
-      <CornerOrn slot="orn-penutup-l" at="bl" width="40%" inset={0} opacity={.55} secs={14} />
-      <CornerOrn slot="orn-penutup-l" at="br" width="40%" inset={0} opacity={.55} secs={14} />
-      <div style={{ position: 'relative' }}>
-        <div style={{ position: 'relative', width: 120, height: 106, margin: '0 auto 18px', filter: 'invert(1)', animation: 'vFloat 7s ease-in-out infinite' }}>
-          <Orn slot="v-monogram" style={{ inset: 0, width: '100%', height: '100%' }} />
-        </div>
+    <section className="bl-sec bl-gilded ig-closing" data-screen-label="Penutup">
+      <div className="ig-closing-copy">
+        <div className="ig-closing-mark" aria-hidden="true"><Orn slot="ig-rose" style={{ inset: 0, width: '100%', height: '100%' }} /></div>
         <Hashtag tag={cfg.hashtag} t={t} />
         <p style={{ maxWidth: 290, margin: '0 auto', font: "400 12.5px/1.9 var(--f-body)", opacity: .84, textWrap: 'pretty' } as CSSProperties}>{t.closing}</p>
         <div className="bl-display bl-couple-name" style={{ marginTop: 18, fontSize: 56, lineHeight: 1.1 }}>{coupleShort}</div>
         <div style={{ marginTop: 8, font: "400 10.5px/1 var(--f-ui)", letterSpacing: '.09em', textTransform: 'uppercase', opacity: .72 }}>{t.withFamily}</div>
       </div>
-      <div style={{ position: 'relative', marginTop: 46, padding: '16px 0 78px', borderTop: '1px solid rgba(250,243,231,.2)', display: 'grid', gap: 6, justifyItems: 'center' }}>
+      <div className="ig-closing-footer">
         <div style={{ font: "300 9px/1.6 var(--f-ui)", letterSpacing: '.14em', textTransform: 'uppercase', opacity: .62 }}>{t.watermark}</div>
         <div className="bl-batang" style={{ fontSize: 12, opacity: .5 }}>{coupleShort} &middot; {year}</div>
       </div>

@@ -9,6 +9,23 @@ const A = '/assets/';
     Corner pieces are drawn for the bottom-right corner; the page mirrors them
     for the other corners so every corner is the same bouquet. */
 export const SLOT_SRC: Record<string, string> = {
+  'v-hero-curtains': A + 'ivory-garden/hero-curtains-v2.webp',
+  'v-hero-trees': A + 'ivory-garden/garden-trees-v1.png',
+  'v-hero-side-garden': A + 'ivory-garden/garden-side-cluster-v1.png',
+  'v-hero-grass-carpet': A + 'ivory-garden/grass-carpet-v1.webp',
+  'v-hero-shrubs': A + 'ivory-garden/garden-shrubs-v1.webp',
+  'v-couple-illustration': A + 'ivory-garden/couple-clean-v2.webp',
+  'v-groom-illustration': A + 'ivory-garden/groom-portrait-v2.webp',
+  'v-bride-illustration': A + 'ivory-garden/bride-portrait-v2.webp',
+  'v-envelope-closed': A + 'ivory-garden/envelope-closed.webp',
+  'v-envelope-open': A + 'ivory-garden/envelope-open.webp',
+  'ig-scallop-frame': A + 'ivory-garden/scallop-frame.webp',
+  'ig-bouquet': A + 'ivory-garden/bouquet.webp',
+  'ig-urn': A + 'ivory-garden/urn.webp',
+  'ig-rose': A + 'ivory-garden/rose.webp',
+  'ig-floral-swag': A + 'ivory-garden/floral-swag.webp',
+  'ig-lavender': A + 'ivory-garden/lavender.webp',
+  'ig-butterfly-garden': A + 'ivory-garden/butterfly-garden.webp',
   'orn-cover-ring': A + 'mix-wreath.webp',
   'orn-cover-corner': A + 'mix-corner.webp',
   'orn-hero-ring': A + 'mix-wreath.webp',
@@ -88,6 +105,25 @@ export const THREAD_X: (number | null)[] = [null, null, -26.0, -24.5, -22.0, -18
 export const THREAD = { width: 180, height: 980, top: 140, row: 210 };
 
 export const SLOTS: { group: string; items: SlotDef[] }[] = [
+  { group: 'Ivory Garden Pavilion', items: [
+    { slot: 'v-hero-curtains', label: 'Tirai ivory transparan', kind: 'orn', ratio: '2/3' },
+    { slot: 'v-hero-trees', label: 'Pohon watercolor transparan', kind: 'orn', ratio: '3/2' },
+    { slot: 'v-hero-side-garden', label: 'Garden bunga sisi curtain', kind: 'orn', ratio: '2/3' },
+    { slot: 'v-hero-grass-carpet', label: 'Karpet rumput watercolor', kind: 'orn', ratio: '2/1' },
+    { slot: 'v-hero-shrubs', label: 'Semak watercolor', kind: 'orn', ratio: '3/1' },
+    { slot: 'v-couple-illustration', label: 'Ilustrasi pasangan', kind: 'photo', ratio: '2/3' },
+    { slot: 'v-groom-illustration', label: 'Portrait wajah mempelai pria', kind: 'photo', ratio: '1/1' },
+    { slot: 'v-bride-illustration', label: 'Portrait wajah mempelai wanita', kind: 'photo', ratio: '1/1' },
+    { slot: 'v-envelope-closed', label: 'Amplop tertutup', kind: 'orn', ratio: '15/14' },
+    { slot: 'v-envelope-open', label: 'Amplop terbuka', kind: 'orn', ratio: '10/9' },
+    { slot: 'ig-scallop-frame', label: 'Bingkai watercolor scallop', kind: 'orn', ratio: '4/5' },
+    { slot: 'ig-bouquet', label: 'Buket ivory', kind: 'orn', ratio: '1/1' },
+    { slot: 'ig-urn', label: 'Standing flower', kind: 'orn', ratio: '3/4' },
+    { slot: 'ig-rose', label: 'Mawar ivory', kind: 'orn', ratio: '1/1' },
+    { slot: 'ig-floral-swag', label: 'Untaian bunga blush', kind: 'orn', ratio: '2/1' },
+    { slot: 'ig-lavender', label: 'Rumpun lavender blush', kind: 'orn', ratio: '5/4' },
+    { slot: 'ig-butterfly-garden', label: 'Bunga & kupu-kupu', kind: 'orn', ratio: '5/4' }
+  ] },
   { group: 'Sampul (cover)', items: [
     { slot: 'v-cover-round', label: 'Foto bulat tengah (opsional)', kind: 'photo', ratio: '1/1' },
     { slot: 'orn-cover-ring', label: 'Lingkaran bunga di belakang foto', kind: 'orn', ratio: '1/1' },
