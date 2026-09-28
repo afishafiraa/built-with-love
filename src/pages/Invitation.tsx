@@ -23,7 +23,7 @@ const Assets = createContext<Record<string, string>>({});
    type, card and ornament colour. */
 /* Ivory Blossom Garden: warm olive and taupe echo the dress, while muted gold
    supplies a little celebratory light without turning the invitation yellow. */
-const SAGE = '#747963', DEEP = '#5A604D', PAPER = '#F3EADB', CARD = '#FFF9EF';
+const SAGE = '#686F4D', DEEP = '#50573B', PAPER = '#F3EADB', CARD = '#FFF9EF';
 const INK = '#3E352C', RED = '#A06B5B', RED_TEXT = '#8B594A', GOLD = '#C9A15D', GOLD_LIGHT = '#FFEAB0';
 const MIN_LOADING_MS = 2400;
 
@@ -33,13 +33,13 @@ type Flip = 'x' | 'y' | 'xy';
 const FLIP: Record<Flip, string> = { x: 'scaleX(-1)', y: 'scaleY(-1)', xy: 'scale(-1,-1)' };
 
 /* The flip sits on the <img> so the wrapper's sway/float animation can't cancel it. */
-function Orn({ slot, style, className, flip }: { slot: string; style: CSSProperties; className?: string; flip?: Flip }) {
+function Orn({ slot, style, className, flip, eager = false, priority = false }: { slot: string; style: CSSProperties; className?: string; flip?: Flip; eager?: boolean; priority?: boolean }) {
   const assets = useContext(Assets);
   const src = slotSrc(assets, slot);
   if (!src) return null;
   return (
     <div className={'bl-orn' + (className ? ' ' + className : '')} style={style}>
-      <img src={src} alt="" loading="lazy" decoding="async" style={flip ? { transform: FLIP[flip] } : undefined} />
+      <img src={src} alt="" loading={eager || priority ? 'eager' : 'lazy'} fetchPriority={priority ? 'high' : 'auto'} decoding="async" style={flip ? { transform: FLIP[flip] } : undefined} />
     </div>
   );
 }
@@ -332,7 +332,7 @@ export default function Invitation() {
           <Quote t={t} />
           <Couple cfg={cfg} t={t} />
           <Seam from={PAPER} orn />
-          <EventLocation cfg={cfg} t={t} dateLabel={dateLabel} />
+          <EventLocation cfg={cfg} t={t} dateLabel={dateLabel} lang={lang} />
           <Seam from={SAGE} />
           <Story cfg={cfg} t={t} lang={lang} />
           <Seam from={PAPER} />
@@ -343,7 +343,7 @@ export default function Invitation() {
           <Closing cfg={cfg} t={t} coupleShort={coupleShort} />
 
           <div className="bl-col" style={{ position: 'fixed', bottom: 'calc(16px + env(safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', zIndex: 58, pointerEvents: 'none' }}>
-            <nav style={{ display: 'flex', alignItems: 'center', gap: 2, padding: 6, background: CARD, border: '1px solid rgba(116,121,99,.16)', borderRadius: 999, boxShadow: '0 12px 34px rgba(62,53,44,.20)', pointerEvents: 'auto' }}>
+            <nav style={{ display: 'flex', alignItems: 'center', gap: 2, padding: 6, background: CARD, border: '1px solid rgba(104,111,77,.16)', borderRadius: 999, boxShadow: '0 12px 34px rgba(62,53,44,.20)', pointerEvents: 'auto' }}>
               <button className="bl-dock-btn" onClick={go('Mempelai')} title={t.coupleTitle} aria-label={t.coupleTitle}><DockIcon name="couple" /></button>
               <button className="bl-dock-btn" onClick={go('Acara')} title={t.navEvents} aria-label={t.navEvents}><DockIcon name="event" /></button>
               <button className="bl-dock-btn" onClick={go('Story')} title={t.navStory} aria-label={t.navStory}><DockIcon name="story" /></button>
@@ -415,7 +415,7 @@ function InvitationLoading({ cfg, coupleShort, t }: { cfg: WeddingConfig; couple
 function InvitationState({ title, body, retry = false }: { title: string; body: string; retry?: boolean }) {
   return (
     <main className="app-min-screen" style={{ display: 'grid', placeItems: 'center', padding: 28, background: PAPER, color: INK, textAlign: 'center', fontFamily: 'system-ui' }}>
-      <div style={{ boxSizing: 'border-box', width: '100%', maxWidth: 390, padding: '38px 28px', borderRadius: 24, background: CARD, border: '1px solid rgba(116,121,99,.18)', boxShadow: '0 24px 70px rgba(62,53,44,.12)' }}>
+      <div style={{ boxSizing: 'border-box', width: '100%', maxWidth: 390, padding: '38px 28px', borderRadius: 24, background: CARD, border: '1px solid rgba(104,111,77,.18)', boxShadow: '0 24px 70px rgba(62,53,44,.12)' }}>
         <div aria-hidden="true" style={{ width: 9, height: 9, margin: '0 auto 19px', borderRadius: '50%', background: GOLD, boxShadow: '0 0 0 7px rgba(201,161,93,.12), 0 0 24px rgba(201,161,93,.7)' }} />
         <h1 style={{ margin: 0, fontSize: 28, fontWeight: 500 }}>{title}</h1>
         <p role="status" style={{ margin: '12px auto 0', maxWidth: 310, fontSize: 14, lineHeight: 1.7, opacity: .72 }}>{body}</p>
@@ -465,7 +465,7 @@ function Cover({ t, coupleShort, guestName, langLabel, onOpen, onToggleLang }: S
           <div className="bl-display bl-couple-name ig-cover-name">{coupleShort}</div>
         </div>
         <div className="ig-cover-envelope">
-          <Orn slot="v-envelope-closed" style={{ inset: 0, width: '100%', height: '100%' }} />
+          <Orn slot="v-envelope-closed" priority style={{ inset: 0, width: '100%', height: '100%' }} />
           <div className="ig-envelope-addressee">
             <span>{t.guestGreeting}</span>
             <strong className="bl-display">{guestName || t.guestDefault}</strong>
@@ -481,16 +481,16 @@ function Cover({ t, coupleShort, guestName, langLabel, onOpen, onToggleLang }: S
 function Hero({ cfg, t }: S) {
   return (
     <section className="bl-sec bl-gilded bl-hero ig-hero" data-screen-label="Hero">
-      <Orn slot="v-hero-trees" className="ig-hero-trees" style={{ left: '50%', bottom: '12%', translate: '-50% 0', width: '112%', height: '60%' }} />
-      <Orn slot="v-hero-shrubs" className="ig-hero-shrub ig-hero-shrub-left" style={{ left: '-9%', bottom: '16%', width: '70%', height: '25%' }} />
-      <Orn slot="v-hero-shrubs" className="ig-hero-shrub ig-hero-shrub-right" flip="x" style={{ right: '-9%', bottom: '16%', width: '70%', height: '25%' }} />
-      <Orn slot="v-hero-grass-carpet" className="ig-hero-carpet" style={{ left: '50%', bottom: '-1%', translate: '-50% 0', width: '96%', height: '32%' }} />
-      <Orn slot="v-hero-curtains" className="ig-hero-curtains" style={{ inset: 0, width: '100%', height: '100%' }} />
-      <Orn slot="v-hero-side-garden" className="ig-hero-side-garden ig-hero-side-garden-left" style={{ left: '-2%', bottom: 0, width: '40%', height: '53%' }} />
-      <Orn slot="v-hero-side-garden" className="ig-hero-side-garden ig-hero-side-garden-right" flip="x" style={{ right: '-2%', bottom: 0, width: '40%', height: '53%' }} />
-      <Orn slot="ig-lavender" className="ig-hero-grass ig-hero-grass-left" style={{ left: '-3%', bottom: '2%', width: '34%', height: '19%' }} />
-      <Orn slot="ig-lavender" className="ig-hero-grass ig-hero-grass-right" flip="x" style={{ right: '-3%', bottom: '2%', width: '34%', height: '19%' }} />
-      <Orn slot="v-couple-illustration" className="ig-hero-couple" style={{ left: '50%', bottom: 0, translate: '-50% 0', width: '76%', height: '71%' }} />
+      <Orn slot="v-hero-trees" eager className="ig-hero-trees" style={{ left: '50%', bottom: '12%', translate: '-50% 0', width: '112%', height: '60%' }} />
+      <Orn slot="v-hero-shrubs" eager className="ig-hero-shrub ig-hero-shrub-left" style={{ left: '-9%', bottom: '16%', width: '70%', height: '25%' }} />
+      <Orn slot="v-hero-shrubs" eager className="ig-hero-shrub ig-hero-shrub-right" flip="x" style={{ right: '-9%', bottom: '16%', width: '70%', height: '25%' }} />
+      <Orn slot="v-hero-grass-carpet" eager className="ig-hero-carpet" style={{ left: '50%', bottom: '-1%', translate: '-50% 0', width: '96%', height: '32%' }} />
+      <Orn slot="v-hero-curtains" priority className="ig-hero-curtains" style={{ inset: 0, width: '100%', height: '100%' }} />
+      <Orn slot="v-hero-side-garden" eager className="ig-hero-side-garden ig-hero-side-garden-left" style={{ left: '-2%', bottom: 0, width: '40%', height: '53%' }} />
+      <Orn slot="v-hero-side-garden" eager className="ig-hero-side-garden ig-hero-side-garden-right" flip="x" style={{ right: '-2%', bottom: 0, width: '40%', height: '53%' }} />
+      <Orn slot="ig-lavender" eager className="ig-hero-grass ig-hero-grass-left" style={{ left: '-3%', bottom: '2%', width: '34%', height: '19%' }} />
+      <Orn slot="ig-lavender" eager className="ig-hero-grass ig-hero-grass-right" flip="x" style={{ right: '-3%', bottom: '2%', width: '34%', height: '19%' }} />
+      <Orn slot="v-couple-illustration" priority className="ig-hero-couple" style={{ left: '50%', bottom: 0, translate: '-50% 0', width: '76%', height: '71%' }} />
       <div className="ig-hero-title">
         <div className="ig-hero-kicker">{t.weddingOf}</div>
         <h1 className="bl-display bl-couple-name" aria-label={`${cfg.groomName} ${t.and} ${cfg.brideName}`}>
@@ -600,16 +600,16 @@ function Countdown({ iso, t }: { iso: string; t: Copy }) {
   );
 }
 
-function EventLocation({ cfg, t, dateLabel }: S & { dateLabel: string }) {
+function EventLocation({ cfg, t, dateLabel, lang }: S & { dateLabel: string; lang: Lang }) {
   return (
     <section className="bl-sec bl-gilded" data-screen-label="Acara" style={{ position: 'relative', background: SAGE, color: PAPER }}>
-      <Events cfg={cfg} t={t} dateLabel={dateLabel} />
+      <Events cfg={cfg} t={t} dateLabel={dateLabel} lang={lang} />
       <Location cfg={cfg} t={t} />
     </section>
   );
 }
 
-function Events({ cfg, t, dateLabel }: S & { dateLabel: string }) {
+function Events({ cfg, t, dateLabel, lang }: S & { dateLabel: string; lang: Lang }) {
   const dt = safeDate(cfg.dateISO);
   const q = encodeURIComponent(cfg.mapsQuery || cfg.venue + ', ' + cfg.city);
   const cal = (d: Date) => d.getUTCFullYear() + two(d.getUTCMonth() + 1) + two(d.getUTCDate()) + 'T' + two(d.getUTCHours()) + two(d.getUTCMinutes()) + '00Z';
@@ -628,6 +628,12 @@ function Events({ cfg, t, dateLabel }: S & { dateLabel: string }) {
     encodeURIComponent(title) +
     '&dates=' + cal(start) + '/' + cal(end) + '&location=' + q;
   const a = splitTime(cfg.akadTime), r = splitTime(cfg.resepsiTime);
+  /* Keep the mobile line break intentional and locale-aware. Indonesian
+     breaks after the weekday ("Minggu, / 3 Januari 2027"); English keeps its
+     date order and breaks after the numbered day. Wider screens stay inline. */
+  const dateParts = lang === 'id'
+    ? dateLabel.match(/^([^,]+,)\s+(.+)$/)
+    : dateLabel.match(/^(.*?\b\d{1,2}(?:st|nd|rd|th)?[,]?)\s+(.+)$/i);
   const ceremony = (label: string, name: string, time: { hour: string; zone: string }, accent: string) => (
     <div className="bl-event-card" style={{ padding: '19px 16px 17px', borderRadius: 16, background: 'rgba(250,243,231,.10)', border: '1px solid rgba(201,161,93,.3)' }}>
       <div style={{ font: "600 10.5px/1 var(--f-ui)", letterSpacing: '.06em', textTransform: 'uppercase', color: '#FFFFFF' }}>{label}</div>
@@ -644,12 +650,14 @@ function Events({ cfg, t, dateLabel }: S & { dateLabel: string }) {
       <Orn slot="orn-acara-ring" className="bl-center-x" style={{ left: '50%', top: 24, translate: '-50% 0', width: 252, height: 252, opacity: .18, animation: 'vSpin 170s linear infinite' }} />
       <div style={{ position: 'relative' }}>
         <Kicker color="#FFFFFF" style={{ letterSpacing: '.16em' }}>{t.eventKicker}</Kicker>
-        <h2 className="bl-event-date" style={{ margin: '10px 0 0', fontSize: 33, lineHeight: 1.12 }}>{dateLabel}</h2>
-        <div style={{ marginTop: 8, font: "400 13px/1.6 var(--f-body)", color: 'rgba(255,249,239,.86)' }}>{cfg.venue}</div>
+        <h2 className="bl-event-date ig-event-date" aria-label={dateLabel}>
+          {dateParts ? <><span>{dateParts[1]}</span>{' '}<span>{dateParts[2]}</span></> : dateLabel}
+        </h2>
+        <div className="ig-event-venue">{cfg.venue}</div>
         <Countdown iso={cfg.dateISO} t={t} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 12px 1fr', alignItems: 'stretch', gap: 10, marginTop: 30 }}>
+        <div className="ig-event-grid">
           {ceremony(t.akadLabel, t.akadName, a, GOLD_LIGHT)}
-          <div aria-hidden="true" style={{ display: 'grid', placeItems: 'center' }}><span style={{ width: 1, height: '72%', background: 'rgba(201,161,93,.55)' }} /></div>
+          <div className="ig-event-divider" aria-hidden="true"><span /></div>
           {ceremony(t.resepsiLabel, t.resepsiName, r, GOLD_LIGHT)}
         </div>
         <div style={{ marginTop: 22 }}>
@@ -690,7 +698,7 @@ function Story({ cfg, t, lang }: S & { lang: Lang }) {
     <section className="bl-sec" data-screen-label="Story" style={{ position: 'relative', padding: '64px 0 56px' }}>
       <div style={{ position: 'relative', textAlign: 'center', padding: '0 26px 22px' }}>
         <Kicker>{t.storyKicker}</Kicker>
-        <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 46 }}>{t.storyTitle}</h2>
+        <h2 className="bl-display ig-section-title">{t.storyTitle}</h2>
         <div className="bl-batang" style={{ marginTop: 6, fontSize: 13, opacity: .62 }}>{t.storySub}</div>
       </div>
       <div style={{ position: 'relative', padding: '0 18px' }}>
@@ -802,25 +810,25 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
   };
 
   const choice = (on: boolean, bg: string, fg: string): CSSProperties => ({
-    minHeight: 45, padding: 15, border: '1px solid rgba(116,121,99,.16)', background: on ? bg : CARD, color: on ? fg : INK,
+    minHeight: 45, padding: 15, border: '1px solid rgba(104,111,77,.16)', background: on ? bg : CARD, color: on ? fg : INK,
     borderRadius: 11, font: "400 10px/1 var(--f-ui)", letterSpacing: '.1em', textTransform: 'uppercase', cursor: 'pointer', transition: 'background .25s, color .25s'
   });
-  const round: CSSProperties = { width: 45, height: 45, border: '1px solid rgba(116,121,99,.2)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "500 15px/1 var(--f-ui)" };
+  const round: CSSProperties = { width: 45, height: 45, border: '1px solid rgba(104,111,77,.2)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "500 15px/1 var(--f-ui)" };
 
   return (
     <div style={{ position: 'relative', padding: '52px 24px 78px' }}>
       <div style={{ position: 'relative' }}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <Kicker color="#FFFFFF">RSVP</Kicker>
-          <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 43 }}>{t.rsvpTitle}</h2>
+          <h2 className="bl-display ig-section-title">{t.rsvpTitle}</h2>
           <div style={{ marginTop: 6, font: "400 12px/1.7 var(--f-body)", opacity: .78 }}>{t.rsvpSub}</div>
         </div>
         {!done ? (
           <div className="bl-reveal-card" style={{ display: 'grid', gap: 11, padding: 22, background: CARD, color: INK, borderRadius: 20, boxShadow: '0 18px 42px rgba(33,36,28,.28)' }}>
             <input className="bl-field" value={name} onChange={e => setName(e.target.value)} placeholder={t.namePh} aria-label={t.namePh} autoComplete="name" />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-              <button onClick={() => setAttend('yes')} aria-pressed={attend === 'yes'} style={choice(attend === 'yes', SAGE, PAPER)}>{t.attend}</button>
-              <button onClick={() => setAttend('no')} aria-pressed={attend === 'no'} style={choice(attend === 'no', RED, CARD)}>{t.notAttend}</button>
+              <button className="ig-rsvp-choice" onClick={() => setAttend('yes')} aria-pressed={attend === 'yes'} style={choice(attend === 'yes', SAGE, PAPER)}>{t.attend}</button>
+              <button className="ig-rsvp-choice" onClick={() => setAttend('no')} aria-pressed={attend === 'no'} style={choice(attend === 'no', RED, CARD)}>{t.notAttend}</button>
             </div>
             {attend !== 'no' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 9, alignItems: 'center', padding: '4px 2px' }}>
@@ -855,13 +863,13 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
               {attend === 'no' ? t.wontAttend : t.willAttend.replace('{n}', String(guests))}
             </div>
             {attend === 'yes' && guest.id && (
-              <div style={{ margin: '18px auto 0', padding: '16px 16px 12px', width: 'max-content', background: PAPER, border: '1px solid rgba(116,121,99,.14)', borderRadius: 16 }}>
+              <div style={{ margin: '18px auto 0', padding: '16px 16px 12px', width: 'max-content', background: PAPER, border: '1px solid rgba(104,111,77,.14)', borderRadius: 16 }}>
                 <div className="bl-kicker" style={{ marginBottom: 10 }}>{t.qrTitle}</div>
                 <QRCodeCanvas value={location.origin + '/checkin?g=' + encodeURIComponent(guest.id)} size={132} marginSize={1} fgColor={DEEP} bgColor={PAPER} />
                 <div style={{ marginTop: 8, maxWidth: 150, font: "400 10.5px/1.5 var(--f-body)", opacity: .7 }}>{t.qrNote}</div>
               </div>
             )}
-            <button className="bl-btn" onClick={() => setDone(false)} style={{ marginTop: 14, padding: '10px 20px', background: 'transparent', border: '1px solid rgba(116,121,99,.3)', font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.1em' }}>{t.change}</button>
+            <button className="bl-btn" onClick={() => setDone(false)} style={{ marginTop: 14, padding: '10px 20px', background: 'transparent', border: '1px solid rgba(104,111,77,.3)', font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.1em' }}>{t.change}</button>
           </div>
         )}
       </div>
@@ -938,10 +946,10 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
       <div style={{ position: 'relative' }}>
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <Kicker>{t.wishKicker}</Kicker>
-          <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 43 }}>{t.wishTitle}</h2>
+          <h2 className="bl-display ig-section-title">{t.wishTitle}</h2>
           <div style={{ marginTop: 6, font: "400 12px/1.7 var(--f-body)", opacity: .7 }}>{t.wishSub}</div>
         </div>
-        <div className="bl-reveal-card" style={{ display: 'grid', gap: 11, padding: 22, background: CARD, border: '1px solid rgba(116,121,99,.12)', borderRadius: 20 }}>
+        <div className="bl-reveal-card" style={{ display: 'grid', gap: 11, padding: 22, background: CARD, border: '1px solid rgba(104,111,77,.12)', borderRadius: 20 }}>
           <input className="bl-field" value={name} onChange={e => setName(e.target.value)} placeholder={t.namePh} aria-label={t.namePh} />
           <textarea className="bl-field" value={text} onChange={e => { setText(e.target.value); requestId.current = ''; }} rows={3} placeholder={t.wishPh} aria-label={t.wishPh} maxLength={600} />
           {note && <div className="bl-msg" style={{ color: note === t.wishPending ? SAGE : RED }}>{note}</div>}
@@ -949,8 +957,8 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
         </div>
         <div style={{ marginTop: 22, display: 'grid', gap: 10 }}>
           {list.map(w => (
-            <div key={w.id} className="sv-wish bl-reveal-card" style={{ padding: '16px 18px', background: CARD, border: '1px solid rgba(116,121,99,.1)', borderRadius: 14 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
+            <div key={w.id} className="sv-wish bl-reveal-card" style={{ padding: '16px 18px', background: CARD, border: '1px solid rgba(104,111,77,.1)', borderRadius: 14 }}>
+              <div className="ig-wish-meta">
                 <span style={{ font: "400 11px/1 var(--f-ui)", letterSpacing: '.12em', color: RED }}>{w.name}</span>
                 <span style={{ font: "400 10px/1 var(--f-ui)", letterSpacing: '.06em', textTransform: 'uppercase', opacity: .52 }}>{fmtWhen(w.createdAt, t)}</span>
               </div>
@@ -978,7 +986,7 @@ function GiftSection({ cfg, t, onOpen }: S & { onOpen: () => void }) {
       <Orn slot="v-envelope-open" className="ig-gift-envelope" style={{ left: '50%', top: 14, translate: '-50% 0', width: 225, height: 204 }} />
       <div className="ig-gift-copy">
         <Kicker color="#FFFFFF">{t.giftKicker}</Kicker>
-        <h2 className="bl-display" style={{ margin: '6px 0 0', fontSize: 43 }}>{t.giftTitle}</h2>
+        <h2 className="bl-display ig-section-title">{t.giftTitle}</h2>
         <p style={{ maxWidth: 330, margin: '12px auto 0', font: "400 12.5px/1.8 var(--f-body)", opacity: .82, textWrap: 'pretty' } as CSSProperties}>{t.giftBody}</p>
         <button className="bl-btn bl-compact-btn" onClick={onOpen} style={{ marginTop: 22, padding: '12px 24px', background: CARD, color: SAGE, border: '1px solid rgba(201,161,93,.46)', boxShadow: '0 10px 24px rgba(33,36,28,.2)', animation: 'vBeat 5s 2s ease-in-out infinite' }}>{t.giftOpen}</button>
       </div>
@@ -1004,7 +1012,7 @@ function GiftSheet({ cfg, t, lang, onClose }: S & { lang: Lang; onClose: () => v
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(33,36,28,.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', animation: 'vScrim .35s both' }} />
       <div style={{ position: 'relative', maxHeight: '84%', overflowY: 'auto', background: PAPER, borderRadius: '26px 26px 0 0', padding: '20px 22px 28px', animation: 'vSheet .42s cubic-bezier(.2,.9,.25,1) both' }}>
         <div style={{ width: 42, height: 4, borderRadius: 2, background: 'rgba(51,48,42,.18)', margin: '0 auto 16px' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+        <div className="ig-sheet-heading">
           <div>
             <div style={{ font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', color: RED }}>{t.giftKicker}</div>
             <div className="bl-display" style={{ marginTop: 2, fontSize: 36, lineHeight: 1.1 }}>{t.giftTitle}</div>
@@ -1015,11 +1023,11 @@ function GiftSheet({ cfg, t, lang, onClose }: S & { lang: Lang; onClose: () => v
           {giftCards(cfg, t, lang).map(g => (
             <div className="bl-clip" key={g.key} style={{ position: 'relative', padding: 20, background: g.bg, color: g.fg, borderRadius: 18 }}>
               <Orn slot={g.slot} style={{ right: -24, bottom: -20, width: 104, height: 104, opacity: .22 }} />
-              <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+              <div className="ig-gift-card-head">
                 <span style={{ font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.1em', textTransform: 'uppercase', opacity: .9 }}>{g.label}</span>
                 <span style={{ font: "400 10px/1 var(--f-ui)", letterSpacing: '.06em', textTransform: 'uppercase', opacity: .72 }}>{g.kind}</span>
               </div>
-              <div className="bl-serif" style={{ position: 'relative', marginTop: 12, fontSize: g.size, lineHeight: 1.25, letterSpacing: '.02em', whiteSpace: 'pre-line' }}>{g.value.trim()}</div>
+              <div className="bl-serif ig-gift-value" style={{ position: 'relative', marginTop: 12, fontSize: g.size, lineHeight: 1.25, letterSpacing: '.02em', whiteSpace: 'pre-line' }}>{g.value.trim()}</div>
               {g.holder && <div style={{ position: 'relative', marginTop: 6, font: "400 12px/1.6 var(--f-body)", opacity: .8 }}>{g.holder}</div>}
               <button className="bl-btn" onClick={() => doCopy(g.key, g.value)} style={{ position: 'relative', marginTop: 16, width: '100%', padding: 13, background: g.btnBg, color: g.btnFg, borderRadius: 10, letterSpacing: '.12em' }}>
                 {copied === g.key ? t.copied : g.copyLabel}

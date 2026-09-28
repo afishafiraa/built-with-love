@@ -10,10 +10,10 @@ const A = '/assets/';
     for the other corners so every corner is the same bouquet. */
 export const SLOT_SRC: Record<string, string> = {
   'v-hero-curtains': A + 'ivory-garden/hero-curtains-v2.webp',
-  'v-hero-trees': A + 'ivory-garden/garden-trees-v1.png',
-  'v-hero-side-garden': A + 'ivory-garden/garden-side-cluster-v1.png',
-  'v-hero-grass-carpet': A + 'ivory-garden/grass-carpet-v1.webp',
-  'v-hero-shrubs': A + 'ivory-garden/garden-shrubs-v1.webp',
+  'v-hero-trees': A + 'ivory-garden/garden-trees-fast.webp',
+  'v-hero-side-garden': A + 'ivory-garden/garden-side-cluster-fast.webp',
+  'v-hero-grass-carpet': A + 'ivory-garden/grass-carpet-fast.webp',
+  'v-hero-shrubs': A + 'ivory-garden/garden-shrubs-fast.webp',
   'v-couple-illustration': A + 'ivory-garden/couple-clean-v2.webp',
   'v-groom-illustration': A + 'ivory-garden/groom-portrait-v2.webp',
   'v-bride-illustration': A + 'ivory-garden/bride-portrait-v2.webp',

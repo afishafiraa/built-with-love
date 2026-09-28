@@ -178,7 +178,7 @@ function CheckInInner() {
   const outlineStyle = { ...actionStyle, background: 'transparent', color: '#FFF9EF', border: '1px solid rgba(255,249,239,.38)' } as const;
 
   return (
-    <main className="app-min-screen" style={{ display: 'grid', placeItems: 'center', background: '#747963', color: '#FFF9EF', fontFamily: 'system-ui', padding: 24, textAlign: 'center' }}>
+    <main className="app-min-screen" style={{ display: 'grid', placeItems: 'center', background: '#686F4D', color: '#FFF9EF', fontFamily: 'system-ui', padding: 24, textAlign: 'center' }}>
       <div style={{ boxSizing: 'border-box', width: '100%', maxWidth: 410, padding: '30px 24px', border: '1px solid rgba(255,249,239,.28)', borderRadius: 22, background: 'rgba(74,83,67,.42)', boxShadow: '0 24px 70px rgba(34,38,29,.2)' }}>
         <div style={{ font: '500 10px/1 system-ui', letterSpacing: '.3em', textTransform: 'uppercase', color: '#D8B873' }}>Check-in</div>
         <h1 style={{ margin: '17px 0 8px', fontSize: name ? 32 : 27, fontWeight: 500, textTransform: 'capitalize' }}>{name || (state === 'scanning' ? 'Scan QR tamu' : 'Meja penerima tamu')}</h1>
