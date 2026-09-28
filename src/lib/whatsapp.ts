@@ -3,21 +3,28 @@ import type { WeddingConfig } from '../types';
 
 export function waInviteText(guestName: string, link: string, c: WeddingConfig = DEFAULT_CONFIG) {
   return [
+    'Kepada Yth.',
+    'Bapak/Ibu/Saudara/I',
+    (guestName || 'Bapak/Ibu/Saudara/i'),
+    '',
     'Assalamualaikum Wr. Wb.',
+    'Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk dapat hadir, dan memberikan doa restu pada acara pernikahan:',
     '',
-    'Yth. ' + (guestName || 'Bapak/Ibu/Saudara/i'),
+    '💍 ' + c.groomFull + ' & ' + c.brideFull,
     '',
-    'Tanpa mengurangi rasa hormat, kami mengundang Anda untuk hadir di acara pernikahan kami:',
+    'Yang insya Allah akan dilangsungkan pada : ',
+    '🗓️ Tanggal : ' + c.dateLabel,
+    '🕗 Pukul : 09:00 WIB - Selesai',
+    '📍 Lokasi : ' + c.venue + ', ' + c.city,
     '',
-    c.groomFull + ' & ' + c.brideFull,
-    c.dateLabel,
-    c.venue + ', ' + c.city,
-    '',
-    'Undangan lengkap:',
+    'Info lengkap dari acara, bisa kunjungi:',
     link,
     '',
-    'Merupakan kebahagiaan bagi kami apabila Anda berkenan hadir.',
-    'Terima kasih.'
+    'Suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i beserta keluarga berkenan untuk dapat hadir dan memberikan doa restu kepada kami, dan kami ucapkan Terima Kasih.',
+    '',
+    'Hormat kami,',
+    c.groomFull + ', ' + c.brideFull + ' & Keluarga 🤍',
+    '',
   ].join('\n');
 }
 

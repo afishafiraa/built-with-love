@@ -11,6 +11,7 @@
     "check:database": "node scripts/check-database.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",
     "security:generate": "node scripts/generate-secrets.mjs",
+    "security:set-password": "node scripts/hash-password.mjs",
     "security:check": "node scripts/check-security.mjs",
     "typecheck:server": "tsc -p tsconfig.server.json",
     "lint": "eslint .",

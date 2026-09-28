@@ -154,11 +154,14 @@ button:disabled { cursor: default !important; opacity: .45; }
 textarea.bl-field { line-height: 1.6; resize: none; }
 
 .bl-dock-btn {
-  height: 34px; padding: 0 11px; border: 0; background: transparent; border-radius: 999px; cursor: pointer;
-  color: #747963; font: 600 9px/1 var(--f-ui); letter-spacing: .08em; text-transform: uppercase;
-  transition: background .3s, color .3s;
+  width: 42px; height: 38px; padding: 0; display: grid; place-items: center; border: 0;
+  background: transparent; border-radius: 999px; cursor: pointer; color: #747963;
+  transition: background .3s, color .3s, transform .2s;
 }
 .bl-dock-btn:hover { background: #747963; color: #FFF9EF; }
+.bl-dock-btn:active { transform: scale(.92); }
+.bl-dock-btn:focus-visible { outline: 2px solid #C9A15D; outline-offset: 2px; }
+.bl-dock-icon { display: block; width: 20px; height: 20px; overflow: visible; }
 
 /* Music / language: round chips stacked above the right end of the dock. */
 .bl-icon-btn {
@@ -205,6 +208,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 }
 @media (hover: hover) and (pointer: fine) {
   .bl-btn:hover, .bl-icon-btn:hover, .bl-dock-btn:hover, .bl-event-save:hover { transform: translateY(-3px); }
+  .ig-cover-button:hover { transform: translateX(-50%) translateY(-3px); }
   .bl-event-save:hover { background: #C9A15D; color: #3E352C !important; }
   .bl-event-card:hover { animation: none; transform: translateY(-6px) rotate(-.6deg); background: rgba(250,243,231,.16); box-shadow: 0 15px 26px rgba(90,96,77,.18); }
   .sv-wish:hover { transform: translateY(-4px) rotate(.25deg); box-shadow: 0 12px 24px rgba(90,96,77,.12); }
@@ -249,6 +253,140 @@ textarea.bl-field { line-height: 1.6; resize: none; }
     radial-gradient(circle at 24% 76%, #C9A15D 0 .9px, transparent 2px);
   background-size: 184px 216px, 238px 264px, 206px 246px, 270px 292px;
   animation: vCoverGlitter 4.8s ease-in-out infinite;
+}
+
+/* Ivory Garden Pavilion ---------------------------------------------------
+   Cover is intentionally quiet. The full garden is reserved for the hero and
+   built from independent layers so its entrance feels natural. */
+.ig-cover {
+  isolation: isolate; display: grid; place-items: center; box-sizing: border-box;
+  min-height: 650px; padding: max(58px, env(safe-area-inset-top)) 26px max(26px, env(safe-area-inset-bottom));
+  color: #3E352C;
+  background-color: #F3EADB;
+  background-image: linear-gradient(rgba(243,234,219,.92),rgba(243,234,219,.92)), url(/assets/paper-texture.webp);
+  background-size: auto, 320px 320px;
+  background-blend-mode: normal, multiply;
+}
+.ig-cover-content {
+  position: relative; z-index: 1; width: min(100%, 352px); height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-sizing: border-box; text-align: center;
+}
+.ig-cover-copy { animation: vGardenRise .9s .12s cubic-bezier(.2,.9,.25,1) both; }
+.ig-cover-kicker {
+  font: 600 9.5px/1.5 var(--f-ui); letter-spacing: .19em; text-transform: uppercase; color: #8B594A;
+}
+.ig-cover-name { margin-top: 10px; font-size: 55px; line-height: .95; color: #5A604D; }
+.ig-cover-envelope {
+  position: relative; width: min(84vw, 330px); aspect-ratio: 1.08; margin: 27px auto 0;
+  animation: vEnvelopeArrive 1.05s .28s cubic-bezier(.18,1,.32,1) both;
+  filter: drop-shadow(0 18px 24px rgba(90,96,77,.16));
+}
+.ig-envelope-addressee {
+  position: absolute; z-index: 2; left: 22%; right: 22%; top: 24%; display: grid; gap: 4px;
+  color: #5A604D; text-align: center; text-shadow: 0 1px rgba(255,249,239,.72);
+}
+.ig-envelope-addressee span { font: 600 8px/1.4 var(--f-ui); letter-spacing: .11em; text-transform: uppercase; }
+.ig-envelope-addressee strong { font-size: 23px; line-height: 1; font-weight: 400; color: #8B594A; }
+.ig-cover-button {
+  position: absolute; z-index: 3; left: 50%; bottom: 1%; min-width: 154px; padding: 11px 18px;
+  transform: translateX(-50%); color: #FFF9EF; background: #747963;
+  border: 1px solid rgba(201,161,93,.82); box-shadow: 0 9px 20px rgba(90,96,77,.23);
+}
+.ig-cover-button:active { transform: translateX(-50%) scale(.97); }
+.ig-cover-rule { display: flex; align-items: center; gap: 9px; width: 108px; margin-top: 30px; opacity: .7; }
+.ig-cover-rule::before, .ig-cover-rule::after { content: ''; height: 1px; flex: 1; background: #C9A15D; }
+.ig-cover-rule span { width: 5px; height: 5px; border: 1px solid #C9A15D; transform: rotate(45deg); }
+
+.ig-hero {
+  position: relative; isolation: isolate; overflow: hidden; min-height: 690px; box-sizing: border-box;
+  color: #3E352C; background: #F3EADB;
+}
+.ig-hero::after {
+  content: ''; position: absolute; z-index: 0; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 39%, rgba(255,249,239,.94), rgba(243,234,219,.58) 48%, rgba(243,234,219,.96) 82%);
+}
+.ig-hero-trees { z-index: 1; animation: vTreeReveal 1.35s .18s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-trees > img { object-fit: contain; object-position: center bottom; opacity: .42; filter: saturate(.58) sepia(.08) brightness(1.08); }
+.ig-hero-curtains { z-index: 6; animation: vCurtainReveal 1.08s 2.05s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-curtains > img { object-fit: cover; object-position: center top; }
+.ig-hero-carpet { z-index: 3; animation: vGroundReveal 1.12s 1.42s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-carpet > img { object-fit: fill; object-position: center bottom; opacity: .8; filter: saturate(.72) sepia(.06); }
+.ig-hero-shrub { z-index: 2; }
+.ig-hero-shrub > img { object-fit: contain; object-position: center bottom; opacity: .82; filter: saturate(.7) sepia(.05); }
+.ig-hero-shrub-left { animation: vGardenFromLeft 1.18s .82s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-shrub-right { animation: vGardenFromRight 1.18s .94s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-side-garden { z-index: 7; opacity: .9; filter: drop-shadow(0 14px 13px rgba(62,53,44,.11)); }
+.ig-hero-side-garden > img { object-fit: contain; object-position: center bottom; opacity: .94; filter: saturate(.76) sepia(.05); }
+.ig-hero-side-garden-left { animation: vGardenFromLeft 1.22s 2.75s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-side-garden-right { animation: vGardenFromRight 1.22s 2.87s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-grass { z-index: 4; }
+.ig-hero-grass-left { animation: vGardenFromLeft 1.12s 2.56s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-grass-right { animation: vGardenFromRight 1.12s 2.66s cubic-bezier(.2,.9,.25,1) both; }
+.ig-hero-couple { z-index: 5; filter: drop-shadow(0 18px 16px rgba(90,96,77,.13)); animation: vCharacterFade 1.65s 3.55s ease-out both; }
+.ig-hero-title { position: absolute; z-index: 8; top: max(86px, 11vh); left: 36px; right: 36px; text-align: center; animation: vFade .9s 4.43s both; }
+.ig-hero-kicker { margin-bottom: 8px; font: 600 10px/1 var(--f-ui); letter-spacing: .18em; text-transform: uppercase; color: #A06B5B; }
+.ig-hero-title h1 { display: grid; justify-items: center; margin: 0; font-size: 48px; line-height: .72; color: #5A604D; }
+.ig-hero-title h1 strong { font: inherit; }
+.ig-hero-title h1 span { display: block; margin: .15em 0 .08em; font-size: .42em; line-height: 1; color: #A06B5B; }
+
+.ig-couple-section { position: relative; padding: 148px 20px 72px; }
+.ig-couple-swag { opacity: .72; mix-blend-mode: multiply; }
+.ig-section-heading { position: relative; text-align: center; margin-bottom: 30px; }
+.ig-section-heading h2 { margin: 6px 0 0; font-size: 48px; }
+.ig-section-heading p { max-width: 350px; margin: 13px auto 0; font-size: 13.5px; line-height: 1.85; opacity: .78; text-wrap: pretty; }
+.ig-portrait-grid { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.ig-portrait-card {
+  position: relative; min-width: 0; padding: 0 5px 14px; text-align: center;
+}
+.ig-portrait-art { position: relative; aspect-ratio: 318 / 395; overflow: hidden; }
+.ig-portrait-frame { z-index: 2; opacity: .92; }
+.ig-portrait-frame > img { object-fit: fill; }
+.ig-portrait-window { position: absolute; z-index: 3; left: 11%; top: 7.5%; width: 78%; height: 65%; overflow: hidden; }
+.ig-portrait-media { display: block; width: 100%; height: 100%; }
+.ig-portrait-media.is-photo { object-fit: cover; object-position: center 22%; }
+.ig-portrait-media.is-illustration { object-fit: cover; object-position: center top; transform: scale(1.06); transform-origin: center bottom; filter: drop-shadow(0 7px 9px rgba(90,96,77,.09)); }
+.ig-portrait-copy { position: relative; display: grid; grid-template-rows: 48px 18px 42px auto; align-items: start; margin-top: 10px; padding: 0 3px; }
+.ig-portrait-copy .bl-full-name { display: flex; align-items: flex-start; justify-content: center; font-size: 18px; line-height: 1.12; }
+.ig-portrait-role { margin: 0; font: 600 9px/1.25 var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: #A06B5B; }
+.ig-portrait-parents { display: flex; align-items: flex-start; justify-content: center; margin: 0; font: 400 10.5px/1.5 var(--f-body); opacity: .76; }
+.ig-portrait-copy .bl-ig { align-self: start; justify-content: center; margin: 9px auto 0; padding: 5px 9px; font-size: 8.5px; }
+.ig-couple-divider { display: grid; grid-template-columns: 1fr 56px 1fr; align-items: center; gap: 10px; width: 68%; margin: 32px auto 0; }
+.ig-couple-divider > span { height: 1px; background: linear-gradient(90deg, transparent, #C9A15D); }
+.ig-couple-divider > span:last-child { background: linear-gradient(90deg, #C9A15D, transparent); }
+.ig-couple-divider .bl-orn { position: relative; width: 56px !important; height: 56px !important; opacity: .72; }
+
+.ig-gift { position: relative; min-height: 420px; padding: 74px 24px 46px; box-sizing: border-box; }
+.ig-gift-envelope { opacity: .72; filter: drop-shadow(0 12px 15px rgba(33,36,28,.18)); animation: vFloat 10s ease-in-out infinite; }
+.ig-gift-copy { position: relative; z-index: 1; padding-top: 142px; text-align: center; }
+
+.ig-closing { position: relative; padding: 78px 26px 34px; background: #747963; color: #F3EADB; text-align: center; }
+.ig-closing-copy { position: relative; }
+.ig-closing-mark { position: relative; width: 74px; height: 74px; margin: 0 auto 20px; opacity: .84; }
+.ig-closing-copy .bl-hashtag { font-size: 27px !important; }
+.ig-closing-footer { position: relative; margin-top: 42px; padding: 16px 0 78px; border-top: 1px solid rgba(250,243,231,.2); display: grid; gap: 6px; justify-items: center; }
+
+.ig-opening {
+  overflow: hidden; background: transparent;
+}
+.ig-opening-paper {
+  position: absolute; top: 0; bottom: 0; width: 51%;
+  background-color: #F3EADB;
+  background-image: linear-gradient(rgba(243,234,219,.9),rgba(243,234,219,.9)), url(/assets/paper-texture.webp);
+  background-size: auto, 320px 320px;
+}
+.ig-opening-paper-left { left: 0; box-shadow: 12px 0 28px rgba(62,53,44,.14); animation: vPaperOpenLeft 1.26s cubic-bezier(.72,0,.22,1) both; }
+.ig-opening-paper-right { right: 0; box-shadow: -12px 0 28px rgba(62,53,44,.14); animation: vPaperOpenRight 1.26s cubic-bezier(.72,0,.22,1) both; }
+.ig-opening-seam { position: absolute; z-index: 2; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(201,161,93,.62); animation: vPaperSeam 1.05s ease-out both; }
+
+@media (max-width: 379px) {
+  .ig-cover { padding-left: 18px; padding-right: 18px; }
+  .ig-cover-name { font-size: 49px; }
+  .ig-hero-title h1 { font-size: 43px; }
+}
+@media (max-width: 339px) {
+  .ig-portrait-grid { grid-template-columns: 1fr; gap: 24px; padding: 0 30px; }
+  .ig-portrait-copy .bl-full-name { font-size: 21px; }
 }
 
 /* The token/config handshake is normally brief, but it still belongs to the
@@ -335,6 +473,17 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 @keyframes vTitlePlay { 0% { opacity: 0; transform: translateY(34px) rotate(2.5deg) scale(.82) } 58% { opacity: 1; transform: translateY(-6px) rotate(-1deg) scale(1.04) } 78% { transform: translateY(2px) rotate(.4deg) scale(.99) } 100% { opacity: 1; transform: none } }
 @keyframes vTextPlay { 0% { opacity: 0; transform: translateY(20px) scale(.94) } 72% { opacity: 1; transform: translateY(-3px) scale(1.02) } 100% { opacity: 1; transform: none } }
 @keyframes vCardPlay { 0% { opacity: 0; transform: translateY(32px) rotate(-2.5deg) scale(.88) } 55% { opacity: 1; transform: translateY(-7px) rotate(1deg) scale(1.03) } 78% { transform: translateY(3px) rotate(-.25deg) scale(.995) } 100% { opacity: 1; transform: none } }
+@keyframes vCurtainReveal { from { opacity: 0; transform: translateY(-5%) scaleX(1.08) } to { opacity: 1; transform: none } }
+@keyframes vTreeReveal { from { opacity: 0; transform: translateY(18px) scale(.97) } to { opacity: 1; transform: none } }
+@keyframes vGroundReveal { from { opacity: 0; transform: translateY(15px) } to { opacity: 1; transform: none } }
+@keyframes vGardenFromLeft { from { opacity: 0; transform: translateX(-24px) } to { opacity: 1; transform: none } }
+@keyframes vGardenFromRight { from { opacity: 0; transform: translateX(24px) } to { opacity: 1; transform: none } }
+@keyframes vCharacterFade { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+@keyframes vGardenRise { from { opacity: 0; transform: translateY(28px) scale(.97) } to { opacity: 1; transform: none } }
+@keyframes vEnvelopeArrive { from { opacity: 0; transform: translateY(32px) rotate(-3deg) scale(.88) } to { opacity: 1; transform: none } }
+@keyframes vPaperOpenLeft { 0% { transform: translateX(0) rotateY(0) } 100% { transform: translateX(-102%) rotateY(-4deg) } }
+@keyframes vPaperOpenRight { 0% { transform: translateX(0) rotateY(0) } 100% { transform: translateX(102%) rotateY(4deg) } }
+@keyframes vPaperSeam { 0%, 18% { opacity: .8 } 100% { opacity: 0 } }
 
 /* IntersectionObserver supplies this entrance in browsers without view()
    timelines (including older Samsung Internet builds). */
