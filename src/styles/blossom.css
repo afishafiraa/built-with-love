@@ -426,6 +426,33 @@ textarea.bl-field { line-height: 1.6; resize: none; }
   .ig-section-title { font-size: 46px; }
 }
 
+/* 375 × 667 is the composition baseline. Taller phones need the full curtain
+   width preserved instead of cover-cropped, while the landscape layer rises
+   independently so it does not sink as viewport height grows. */
+@media (min-height: 701px) {
+  /* A small top/side bleed prevents sub-pixel seams around the full-frame
+     curtain on tall screens without changing the 375 × 667 baseline. */
+  .ig-hero-curtains {
+    inset: -8px -17px 0 !important;
+    width: auto !important;
+    height: auto !important;
+  }
+  .ig-hero-curtains > img { object-fit: fill; }
+  .ig-hero-trees { bottom: clamp(112px, 16vh, 158px) !important; }
+}
+
+/* Tablet / tall-window mode: the invitation becomes a scrollable web page.
+   Hero composition gets a deliberate canvas instead of stretching to the full
+   device height, and uses a little more horizontal room where available. */
+@media (min-width: 700px) {
+  .bl-page, .bl-col { max-width: 560px; }
+}
+@media (min-height: 1000px) {
+  .bl-hero { height: 820px; min-height: 820px; }
+  .ig-hero-trees { bottom: 112px !important; }
+  .ig-hero-title { top: 86px; }
+}
+
 /* The token/config handshake is normally brief, but it still belongs to the
    invitation experience. This lightweight loader uses only CSS so it appears
    immediately even on an older phone or a slow connection. */
@@ -525,8 +552,9 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 /* IntersectionObserver supplies this entrance in browsers without view()
    timelines (including older Samsung Internet builds). */
 @media (prefers-reduced-motion: no-preference) {
-  .bl-will-reveal { opacity: 0; transform: translateY(24px) scale(.985); }
-  .bl-will-reveal.bl-revealed { opacity: 1; transform: none; transition: opacity .68s ease var(--reveal-delay, 0ms), transform .72s cubic-bezier(.2,.9,.25,1) var(--reveal-delay, 0ms); }
+  /* Section surfaces and their background colours are present from the first
+     paint. Motion belongs only to content and decorative assets. */
+  .bl-will-reveal, .bl-will-reveal.bl-revealed { opacity: 1; transform: none; }
   /* The staging is intentionally springy, rather than a nearly invisible
      fade, so each text group and card feels like it has arrived to celebrate. */
   .bl-will-reveal:not(.bl-revealed) .bl-reveal-kicker,
