@@ -199,8 +199,15 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 .ig-event-grid { display: grid; grid-template-columns: minmax(0,1fr) 12px minmax(0,1fr); align-items: stretch; gap: 10px; margin-top: 30px; }
 .ig-event-divider { display: grid; place-items: center; }
 .ig-event-divider span { width: 1px; height: 72%; background: rgba(201,161,93,.55); }
-.ig-event-grid .bl-event-card { min-width: 0; }
+.ig-event-grid .bl-event-card {
+  min-width: 0; display: grid;
+  grid-template-rows: minmax(11px, auto) minmax(70px, auto) auto;
+  align-content: start;
+}
 .ig-event-grid .bl-display { text-wrap: balance; overflow-wrap: break-word; }
+.ig-event-card-name { align-self: start; }
+.ig-event-card-time { align-self: end; }
+.bl-seam { overflow: visible; }
 .bl-calendar-actions { display: flex; justify-content: center; }
 .bl-event-save {
   width: 100%; max-width: 190px; min-height: 40px; box-sizing: border-box; display: grid; place-items: center; padding: 3px 18px;

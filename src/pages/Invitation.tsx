@@ -105,6 +105,7 @@ const SCALLOP_CURVE = 'M0,0 ' + ('q' + SCALLOP_W / 2 + ',' + SCALLOP_D * 2 + ' '
 function Scallop({ color }: { color: string }) {
   const isPaper = color === PAPER;
   const textureId = 'bl-sand-' + useId().replace(/:/g, '');
+  const fill = isPaper ? 'url(#' + textureId + ')' : color;
   return (
     <svg viewBox={'0 0 ' + SCALLOP_N * SCALLOP_W + ' ' + (SCALLOP_D + 1)} preserveAspectRatio="none" aria-hidden="true"
       style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: SCALLOP_D + 1, display: 'block' }}>
@@ -116,8 +117,11 @@ function Scallop({ color }: { color: string }) {
           <circle cx="236" cy="11" r=".65" fill={GOLD} opacity=".3" />
         </pattern>
       </defs>}
-      <path d={SCALLOP_CURVE + 'L0,0 Z'} fill={isPaper ? 'url(#' + textureId + ')' : color} />
-      <path d={SCALLOP_CURVE} fill="none" stroke="rgba(201,161,93,.42)" strokeWidth={1} vectorEffect="non-scaling-stroke" />
+      {/* The thin cap overlaps the preceding section and prevents a sub-pixel
+          hairline where the SVG and the section rectangle meet. */}
+      <rect x="0" y="0" width={SCALLOP_N * SCALLOP_W} height="1.5" fill={fill} />
+      <path d={SCALLOP_CURVE + 'L0,0 Z'} fill={fill} />
+      <path d={SCALLOP_CURVE} fill="none" stroke="rgba(201,161,93,.16)" strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -126,12 +130,13 @@ function Scallop({ color }: { color: string }) {
    at every seam made the scroll feel crowded. */
 const SEAM_W = '34%';
 function Seam({ from, offset = 0, orn = false }: { from: string; offset?: number; orn?: boolean }) {
+  const to = from === PAPER ? SAGE : PAPER;
   return (
-    <div aria-hidden="true" style={{ position: 'relative', height: 0, zIndex: 5, top: offset }}>
+    <div aria-hidden="true" className="bl-seam" style={{ position: 'relative', height: SCALLOP_D + 1, zIndex: 20, top: offset, marginTop: -1, background: to }}>
       <Scallop color={from} />
       {orn && <>
-        <Orn slot="orn-seam" className="bl-natural-ratio bl-seam-left" style={{ left: 0, top: 0, width: SEAM_W, aspectRatio: '822 / 560', translate: '0 -50%', transformOrigin: 'left center', opacity: .8, animation: 'vCorner 13s ease-in-out infinite' }} />
-        <Orn slot="orn-seam" className="bl-natural-ratio bl-seam-right" flip="x" style={{ right: 0, top: 0, width: SEAM_W, aspectRatio: '822 / 560', translate: '0 -50%', transformOrigin: 'right center', opacity: .8, animation: 'vCornerR 13s ease-in-out infinite' }} />
+        <Orn slot="orn-seam" className="bl-natural-ratio bl-seam-left" style={{ left: 0, top: 0, zIndex: 2, width: SEAM_W, aspectRatio: '822 / 560', translate: '0 -50%', transformOrigin: 'left center', opacity: .8, animation: 'vCorner 13s ease-in-out infinite' }} />
+        <Orn slot="orn-seam" className="bl-natural-ratio bl-seam-right" flip="x" style={{ right: 0, top: 0, zIndex: 2, width: SEAM_W, aspectRatio: '822 / 560', translate: '0 -50%', transformOrigin: 'right center', opacity: .8, animation: 'vCornerR 13s ease-in-out infinite' }} />
       </>}
     </div>
   );
@@ -636,9 +641,9 @@ function Events({ cfg, t, dateLabel, lang }: S & { dateLabel: string; lang: Lang
     : dateLabel.match(/^(.*?\b\d{1,2}(?:st|nd|rd|th)?[,]?)\s+(.+)$/i);
   const ceremony = (label: string, name: string, time: { hour: string; zone: string }, accent: string) => (
     <div className="bl-event-card" style={{ padding: '19px 16px 17px', borderRadius: 16, background: 'rgba(250,243,231,.10)', border: '1px solid rgba(201,161,93,.3)' }}>
-      <div style={{ font: "600 10.5px/1 var(--f-ui)", letterSpacing: '.06em', textTransform: 'uppercase', color: '#FFFFFF' }}>{label}</div>
-      <div className="bl-display" style={{ marginTop: 7, fontSize: 34, lineHeight: 1.02 }}>{name}</div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginTop: 14, color: accent }}>
+      <div className="ig-event-card-label" style={{ font: "600 10.5px/1 var(--f-ui)", letterSpacing: '.06em', textTransform: 'uppercase', color: '#FFFFFF' }}>{label}</div>
+      <div className="bl-display ig-event-card-name" style={{ marginTop: 7, fontSize: 34, lineHeight: 1.02 }}>{name}</div>
+      <div className="ig-event-card-time" style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginTop: 14, color: accent }}>
         <div className="bl-serif" style={{ fontSize: 31, lineHeight: 1 }}>{time.hour}</div>
         {time.zone && <div style={{ font: "500 10px/1 var(--f-ui)", letterSpacing: '.07em', textTransform: 'uppercase' }}>{time.zone}</div>}
       </div>
