@@ -23,7 +23,7 @@ export function waInviteText(guestName: string, link: string, c: WeddingConfig =
     'Suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i beserta keluarga berkenan untuk dapat hadir dan memberikan doa restu kepada kami, dan kami ucapkan Terima Kasih.',
     '',
     'Hormat kami,',
-    c.groomFull + ', ' + c.brideFull + ' & Keluarga 🤍',
+    c.groomName + ', ' + c.brideName + ' & Keluarga 🤍',
     '',
   ].join('\n');
 }
