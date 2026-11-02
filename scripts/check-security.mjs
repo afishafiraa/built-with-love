@@ -8,7 +8,8 @@ const banned = [
 ];
 const secretKeys = [
   ...banned, 'SUPABASE_SECRET_KEY',
-  'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_PASSWORD_HASH', 'SESSION_SECRET'
+  'SUPABASE_SERVICE_ROLE_KEY', 'ADMIN_PASSWORD_HASH', 'SESSION_SECRET',
+  'CRON_SECRET', 'KEEPALIVE_SECRET'
 ];
 const files = [];
 function collect(dir) {

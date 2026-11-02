@@ -9,4 +9,6 @@ console.log('\nSecurity values baru — simpan password di password manager:\n')
 console.log('ADMIN_PASSWORD=' + password);
 console.log('ADMIN_PASSWORD_HASH=' + ['scrypt', N, r, p, salt.toString('base64url'), hash.toString('base64url')].join('$'));
 console.log('SESSION_SECRET=' + randomBytes(48).toString('base64url'));
+console.log('CRON_SECRET=' + randomBytes(48).toString('base64url'));
+console.log('KEEPALIVE_SECRET=' + randomBytes(48).toString('base64url'));
 console.log('\nADMIN_PASSWORD hanya dipakai saat login; jangan masukkan nilainya ke Vercel.\n');
