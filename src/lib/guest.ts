@@ -4,7 +4,7 @@ import type { InviteParam } from './invite';
 import { api, backendReady } from './api';
 
 type GuestStatus = 'none' | 'loading' | 'valid' | 'invalid' | 'error';
-type GuestState = InviteParam & { name: string; status: GuestStatus };
+type GuestState = InviteParam & { name: string; status: GuestStatus; rsvp: 'yes' | 'no' | null; guests: number };
 
 export const slug = (s: string) =>
   s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
@@ -17,6 +17,8 @@ function readGuestParam(): GuestState {
   return {
     ...parsed,
     name: '',
+    rsvp: null,
+    guests: 0,
     status: parsed.supplied ? (parsed.key && backendReady ? 'loading' : 'invalid') : 'none'
   };
 }
@@ -31,16 +33,26 @@ export function useGuest(track = true) {
     if (!guest.key) return;
     if (!backendReady) return;
     let alive = true;
+    const applyGuest = (g: Awaited<ReturnType<typeof api.bootstrap>>) => {
+      if (!alive) return;
+      if (g.guest?.name) {
+        setGuest(cur => ({ ...cur, id: g.guest!.id, name: String(g.guest!.name),
+          rsvp: g.guest!.rsvp === 'yes' || g.guest!.rsvp === 'no' ? g.guest!.rsvp : null,
+          guests: Number(g.guest!.guests) || 0, status: 'valid' }));
+      } else setGuest(cur => ({ ...cur, id: '', inviteToken: '', name: '', rsvp: null, guests: 0, status: 'invalid' }));
+    };
     api.bootstrap(guest.key)
       .then(g => {
-        if (!alive) return;
-        if (g.guest?.name) {
-          setGuest(cur => ({ ...cur, id: g.guest!.id, name: String(g.guest!.name), status: 'valid' }));
-          if (track) api.track({ inviteKey: guest.key, event: 'open' });
-        } else setGuest(cur => ({ ...cur, id: '', inviteToken: '', name: '', status: 'invalid' }));
+        applyGuest(g);
+        if (alive && g.guest?.name && track) api.track({ inviteKey: guest.key, event: 'open' });
       })
       .catch(() => { if (alive) setGuest(cur => ({ ...cur, status: 'error' })); });
-    return () => { alive = false; };
+    const onSynced = (event: Event) => {
+      if ((event as CustomEvent<string>).detail !== guest.key) return;
+      api.refreshBootstrap(guest.key).then(applyGuest).catch(() => {});
+    };
+    window.addEventListener('wedding-rsvp-synced', onSynced);
+    return () => { alive = false; window.removeEventListener('wedding-rsvp-synced', onSynced); };
   }, [guest.key, track]);
   return guest;
 }

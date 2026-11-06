@@ -9,6 +9,11 @@ html, body, #root { min-height: 100%; margin: 0; }
 body { min-width: 280px; }
 button, a, input, textarea, select { touch-action: manipulation; }
 
+.app-screen :focus-visible, .app-min-screen :focus-visible {
+  outline: 3px solid #50573B;
+  outline-offset: 3px;
+}
+
 /* `vh` works on old browsers; supported browsers override it with the dynamic
    viewport so mobile address bars and keyboards do not crop full-screen UI. */
 .app-min-screen { min-height: 100vh; }

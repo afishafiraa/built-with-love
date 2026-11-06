@@ -11,8 +11,9 @@ const SLOT_DEF = Object.fromEntries(SLOTS.flatMap(g => g.items).map(it => [it.sl
 import { BODY_FONTS, DISPLAY_FONTS } from '../config/fonts';
 import { MUSIC_TRACKS } from '../config/music';
 import type { SlotDef } from '../config/slots';
-import { fetchPublished, loadCached, loadDraft, publish, saveDraft } from '../lib/config';
-import { backendReady } from '../lib/api';
+import { cachePublished, fetchPublished, loadCached, loadDraft, publish, saveDraft } from '../lib/config';
+import { api, backendReady } from '../lib/api';
+import type { ConfigVersion } from '../lib/api';
 import { copyText } from '../lib/clipboard';
 import { uploadAsset, uploadMode } from '../lib/upload';
 import { uploadAudio } from '../lib/audio-upload';
@@ -64,6 +65,12 @@ const GROUPS: { title: string; hint: string; isLang?: boolean; musicUpload?: boo
     { key: 'address', label: 'Alamat lengkap', area: true, wide: true },
     { key: 'mapsQuery', label: 'Kata kunci Google Maps', wide: true, note: 'Yang dicari di peta, mis. "Gedung Serbaguna Melati, Yogyakarta".' }
   ] },
+  { title: 'Info hari acara', hint: 'Opsional · tanpa dress code', fields: [
+    { key: 'dayParking', label: 'Akses / parkir (Indonesia)', area: true, wide: true },
+    { key: 'dayParkingEn', label: 'Access / parking (English)', area: true, wide: true },
+    { key: 'dayContactName', label: 'Nama kontak panitia' },
+    { key: 'dayContactPhone', label: 'Nomor kontak panitia', ph: '08...' }
+  ] },
   { title: 'Love story', hint: 'Indonesia & English · kosongkan untuk menyembunyikan', fields: [1, 2, 3, 4].flatMap(n => [
     { key: ('story' + n + 'Year') as Key, label: 'Babak ' + n + ' — tahun' },
     { key: ('story' + n + 'Title') as Key, label: 'Babak ' + n + ' — judul Indonesia' },
@@ -94,6 +101,23 @@ export default function Studio() {
 
 type PubState = 'idle' | 'publishing' | 'done' | 'error';
 
+const FIELD_LABELS = Object.fromEntries(GROUPS.flatMap(group => group.fields.map(field => [field.key, field.label])));
+
+function configDifferences(current: WeddingConfig, older: WeddingConfig) {
+  const changes: { label: string; current: string; older: string }[] = [];
+  for (const key of Object.keys(current) as (keyof WeddingConfig)[]) {
+    if (key === 'assets') {
+      const slots = new Set([...Object.keys(current.assets), ...Object.keys(older.assets)]);
+      for (const slot of slots) {
+        if (current.assets[slot] !== older.assets[slot]) changes.push({ label: `Aset: ${SLOT_DEF[slot]?.label || slot}`, current: current.assets[slot] ? 'Gambar kustom' : 'Bawaan', older: older.assets[slot] ? 'Gambar kustom' : 'Bawaan' });
+      }
+    } else if (current[key] !== older[key]) {
+      changes.push({ label: FIELD_LABELS[key] || key, current: String(current[key] || '—'), older: String(older[key] || '—') });
+    }
+  }
+  return changes;
+}
+
 function StudioInner() {
   const [cfg, setCfg] = useState<WeddingConfig>(() => loadDraft() || loadCached());
   const [publishedJson, setPublishedJson] = useState(() => JSON.stringify(loadCached()));
@@ -103,9 +127,16 @@ function StudioInner() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [pub, setPub] = useState<PubState>('idle');
   const [pubErr, setPubErr] = useState('');
+  const [publishNote, setPublishNote] = useState('');
+  const [history, setHistory] = useState<ConfigVersion[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyBusy, setHistoryBusy] = useState(false);
+  const [historyError, setHistoryError] = useState('');
+  const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewGuest, setPreviewGuest] = useState('Budi Santoso');
-  const previewSrc = '/?preview=1' + (previewGuest.trim() ? '&to=' + encodeURIComponent(slug(previewGuest)) : '');
+  const [previewDay, setPreviewDay] = useState(false);
+  const previewSrc = '/?preview=1' + (previewGuest.trim() ? '&to=' + encodeURIComponent(slug(previewGuest)) : '') + (previewDay ? '&previewDay=1' : '');
   const narrow = useNarrow(980);
 
   // Pull the published copy once; start from it when there is no local draft yet.
@@ -121,8 +152,24 @@ function StudioInner() {
   }, []);
 
   const dirty = JSON.stringify(cfg) !== publishedJson;
+  const selectedHistory = history.find(version => version.id === selectedVersion);
+  const differences = selectedHistory
+    ? configDifferences(mergeConfig(JSON.parse(publishedJson) as Partial<WeddingConfig>), mergeConfig(selectedHistory.config))
+    : [];
+
+  const loadHistory = async () => {
+    if (!backendReady) return;
+    setHistoryBusy(true); setHistoryError('');
+    try {
+      const versions = await api.listConfigVersions();
+      setHistory(versions);
+      setSelectedVersion(cur => cur && versions.some(version => version.id === cur) ? cur : versions[0]?.id || null);
+    } catch (error) { setHistoryError(error instanceof Error ? error.message : 'Gagal memuat riwayat.'); }
+    finally { setHistoryBusy(false); }
+  };
   const englishKeys: (keyof WeddingConfig)[] = [
     'dateLabelEn',
+    ...(cfg.dayParking.trim() ? ['dayParkingEn' as keyof WeddingConfig] : []),
     'story1TitleEn', 'story1BodyEn',
     'story2TitleEn', 'story2BodyEn',
     'story3TitleEn', 'story3BodyEn',
@@ -155,8 +202,22 @@ function StudioInner() {
       setPub('error'); setPubErr('ada gambar yang diunggah saat mode lokal. Unggah ulang gambar itu sekarang (Supabase sudah aktif) lalu terbitkan lagi.'); return;
     }
     setPub('publishing'); setPubErr('');
-    try { await publish(cfg); setPublishedJson(JSON.stringify(cfg)); setPub('done'); }
+    try { await publish(cfg, publishNote.trim()); setPublishedJson(JSON.stringify(cfg)); setPublishNote(''); setPub('done'); if (historyOpen) await loadHistory(); }
     catch (e) { setPub('error'); setPubErr((e as Error).message); }
+  };
+
+  const onRestore = async (version: ConfigVersion) => {
+    if (!window.confirm(`Pulihkan versi #${version.id}? Draf saat ini akan diganti dan tamu langsung melihat versi lama.`)) return;
+    setHistoryBusy(true); setHistoryError('');
+    try {
+      const restored = mergeConfig(await api.restoreConfigVersion(version.id));
+      cachePublished(restored);
+      update(restored);
+      setPublishedJson(JSON.stringify(restored));
+      setPub('done');
+      await loadHistory();
+    } catch (error) { setHistoryError(error instanceof Error ? error.message : 'Gagal memulihkan versi.'); }
+    finally { setHistoryBusy(false); }
   };
 
   const onReset = () => {
@@ -194,10 +255,13 @@ function StudioInner() {
           {narrow && <button onClick={() => setShowPreview(false)} aria-label="Tutup pratinjau" style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.2)', background: PAPER, borderRadius: '50%', cursor: 'pointer', font: "300 18px/1 'Archivo'", color: INK }}>&times;</button>}
         </div>
       </div>
-      <div style={{ padding: '12px 22px', borderBottom: '1px solid rgba(47,44,38,.12)', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ padding: '12px 22px', borderBottom: '1px solid rgba(47,44,38,.12)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <label htmlFor="st-preview-guest" style={{ ...label, whiteSpace: 'nowrap' }}>Tamu contoh</label>
         <input id="st-preview-guest" value={previewGuest} onChange={e => setPreviewGuest(e.target.value)} placeholder="Nama tamu" className="st-in"
-          style={{ ...input, padding: '9px 12px', fontSize: 13 }} />
+          style={{ ...input, flex: '1 1 140px', minWidth: 0, padding: '9px 12px', fontSize: 13 }} />
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', fontSize: 11 }}>
+          <input type="checkbox" checked={previewDay} onChange={e => setPreviewDay(e.target.checked)} /> Hari H
+        </label>
       </div>
       <div style={{ minHeight: 0, display: 'grid', placeItems: 'center', padding: 22, overflow: 'hidden' }}>
         <div style={{ boxSizing: 'border-box', height: '100%', maxHeight: 818, maxWidth: '100%', aspectRatio: '408/818', borderRadius: 34, overflow: 'hidden', border: '9px solid ' + INK, boxShadow: '0 26px 60px rgba(47,44,38,.32)', background: '#FBF6EC' }}>
@@ -232,6 +296,44 @@ function StudioInner() {
         </div>
 
         <div role="status" style={{ marginTop: 18, padding: '10px 14px', borderRadius: 12, background: status.bg, color: status.color, font: "300 12px/1.5 'Archivo'" }}>{status.text}</div>
+
+        <div style={{ marginTop: 14, display: 'flex', alignItems: 'end', flexWrap: 'wrap', gap: 10 }}>
+          <label style={{ display: 'grid', gap: 5, flex: '1 1 230px' }}>
+            <span style={label}>Catatan versi saat terbit (opsional)</span>
+            <input value={publishNote} onChange={e => setPublishNote(e.target.value)} maxLength={120} placeholder="Contoh: Perbaikan jam acara" style={input} />
+          </label>
+          <button type="button" onClick={() => { const next = !historyOpen; setHistoryOpen(next); if (next) loadHistory(); }} disabled={!backendReady} style={pill}>
+            {historyOpen ? 'Tutup riwayat' : 'Riwayat terbitan'}
+          </button>
+        </div>
+
+        {historyOpen && <div style={{ ...card, marginTop: 16 }}>
+          <GroupHead title="Riwayat terbitan" hint="30 versi terbaru" />
+          <p style={{ font: "300 12px/1.6 'Archivo'", opacity: .7 }}>Pilih versi untuk membandingkannya dengan undangan yang sedang terbit. Pemulihan akan membuat versi baru sehingga perubahan tetap tercatat.</p>
+          {historyError && <p role="alert" style={{ color: RED, fontSize: 12 }}>{historyError}</p>}
+          {historyBusy && <p role="status" style={{ fontSize: 12 }}>Memuat riwayat…</p>}
+          {!historyBusy && !history.length && <p style={{ fontSize: 12 }}>Belum ada riwayat terbitan. Riwayat dimulai setelah migration terbaru diterapkan dan Studio menerbitkan versi berikutnya.</p>}
+          <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+            {history.map(version => <button key={version.id} type="button" onClick={() => setSelectedVersion(version.id)}
+              aria-pressed={selectedVersion === version.id}
+              style={{ ...pill, borderRadius: 10, textTransform: 'none', letterSpacing: 0, whiteSpace: 'normal', textAlign: 'left', background: selectedVersion === version.id ? '#E3E8DC' : 'transparent' }}>
+              #{version.id} · {new Date(version.createdAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })} {version.note ? `· ${version.note}` : ''}
+            </button>)}
+          </div>
+          {selectedHistory && <div style={{ marginTop: 16, borderTop: '1px solid rgba(47,44,38,.14)', paddingTop: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 600 }}>{differences.length ? `${differences.length} perbedaan dari versi terbit saat ini` : 'Versi ini sama dengan yang sedang terbit'}</div>
+            {!!differences.length && <div style={{ maxHeight: 280, overflowY: 'auto', marginTop: 10, display: 'grid', gap: 8 }}>
+              {differences.map((change, index) => <div key={`${change.label}-${index}`} style={{ padding: 10, borderRadius: 8, background: '#F3EFE5', fontSize: 11.5, lineHeight: 1.5, overflowWrap: 'anywhere' }}>
+                <strong>{change.label}</strong>
+                <div>Saat ini: {change.current.length > 160 ? change.current.slice(0, 160) + '…' : change.current}</div>
+                <div>Versi #{selectedHistory.id}: {change.older.length > 160 ? change.older.slice(0, 160) + '…' : change.older}</div>
+              </div>)}
+            </div>}
+            <button type="button" onClick={() => onRestore(selectedHistory)} disabled={historyBusy || !differences.length} style={{ ...pill, marginTop: 12, color: PAPER, background: SAGE, borderColor: SAGE, opacity: historyBusy || !differences.length ? .5 : 1 }}>
+              Pulihkan versi #{selectedHistory.id}
+            </button>
+          </div>}
+        </div>}
 
         <div style={{ display: 'flex', gap: 6, margin: '22px 0 22px', padding: 5, background: PANEL, borderRadius: 999, width: 'max-content' }}>
           {(['content', 'assets'] as const).map(k => (

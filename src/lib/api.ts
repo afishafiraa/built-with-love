@@ -5,15 +5,17 @@ import type { Guest, WeddingConfig, Wish } from '../types';
 
 type PublicBootstrap = {
   config: Partial<WeddingConfig> | null;
-  guest: { id: string; name: string } | null;
+  guest: { id: string; name: string; rsvp?: 'yes' | 'no' | null; guests?: number } | null;
 };
+
+export type ConfigVersion = { id: number; config: Partial<WeddingConfig>; note: string; createdAt: string };
 
 /** Explicit demo mode is useful for visual-only Vite development without APIs. */
 export const backendReady = import.meta.env.VITE_DEMO_MODE !== 'true';
 
 const ADMIN_ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'createAudioUpload', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
+  'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'listConfigVersions', 'restoreConfigVersion', 'dashboardData'
 ]);
 
 const ATTEMPTS: Record<string, number> = { bootstrap: 1, dashboardData: 1, rsvp: 5, addWish: 1, track: 1 };
@@ -86,6 +88,10 @@ export const api = {
     }
     return bootstrapRequests.get(inviteKey)!;
   },
+  refreshBootstrap: (inviteKey: string) => {
+    bootstrapRequests.delete(inviteKey);
+    return api.bootstrap(inviteKey);
+  },
   dashboardData: async () => {
     const data = await call<{ guests: Record<string, unknown>[]; wishes: Record<string, unknown>[]; config: Partial<WeddingConfig> | null }>('dashboardData');
     return { guests: data.guests.map(toGuest), wishes: data.wishes.map(toWish), config: data.config };
@@ -107,7 +113,9 @@ export const api = {
   moderateWish: (id: string, status: 'approved' | 'hidden') => call<void>('moderateWish', { id, status }),
   deleteWish: (id: string) => call<boolean>('deleteWish', { id }),
   getConfig: () => call<Partial<WeddingConfig> | null>('getConfig'),
-  saveConfig: (config: WeddingConfig) => call<void>('saveConfig', { config }),
+  saveConfig: (config: WeddingConfig, note = '') => call<number>('saveConfig', { config, note }),
+  listConfigVersions: () => call<ConfigVersion[]>('listConfigVersions'),
+  restoreConfigVersion: (id: number) => call<Partial<WeddingConfig>>('restoreConfigVersion', { id }),
   track: (payload: { inviteKey: string; event: string }) =>
     backendReady && payload.inviteKey ? call<void>('track', payload).catch(() => {}) : Promise.resolve()
 };

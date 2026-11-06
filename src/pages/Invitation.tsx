@@ -11,7 +11,7 @@ import { copyText } from '../lib/clipboard';
 import { useGuest } from '../lib/guest';
 import { useMusic } from '../lib/music';
 import { api, backendReady } from '../lib/api';
-import { queueRsvp, startOutbox } from '../lib/outbox';
+import { clearQueuedRsvp, queueRsvp, startOutbox } from '../lib/outbox';
 import type { Lang, WeddingConfig } from '../types';
 
 /* Blossom Garden v2 — a faithful port of the Claude Design prototype, wired to
@@ -24,8 +24,7 @@ const Assets = createContext<Record<string, string>>({});
 /* Ivory Blossom Garden: warm olive and taupe echo the dress, while muted gold
    supplies a little celebratory light without turning the invitation yellow. */
 const SAGE = '#686F4D', DEEP = '#50573B', PAPER = '#F3EADB', CARD = '#FFF9EF';
-const INK = '#3E352C', RED = '#A06B5B', RED_TEXT = '#8B594A', GOLD = '#C9A15D', GOLD_LIGHT = '#FFEAB0';
-const MIN_LOADING_MS = 2400;
+const INK = '#3E352C', RED = '#8B594A', RED_TEXT = '#8B594A', GOLD = '#C9A15D', GOLD_LIGHT = '#FFEAB0';
 
 /* ---------- small building blocks ---------- */
 
@@ -185,6 +184,16 @@ function safeDate(iso: string) {
   return isNaN(d.getTime()) ? new Date('2027-01-03T09:00:00+07:00') : d;
 }
 
+function isWeddingDay(iso: string) {
+  const eventDay = iso.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  if (!eventDay) return false;
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit'
+  }).formatToParts(new Date());
+  const part = (type: string) => parts.find(item => item.type === type)?.value || '';
+  return `${part('year')}-${part('month')}-${part('day')}` === eventDay;
+}
+
 function fmtWhen(iso: string, t: Copy) {
   const ms = Date.now() - new Date(iso).getTime();
   if (isNaN(ms) || ms < 60000) return t.justNow;
@@ -229,7 +238,9 @@ function useSectionReveal(active: boolean) {
 }
 
 const go = (label: string) => () => {
-  document.querySelector('[data-screen-label="' + label + '"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelector('[data-screen-label="' + label + '"]')?.scrollIntoView({
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start'
+  });
 };
 
 /* ---------- page ---------- */
@@ -244,7 +255,7 @@ export default function Invitation() {
   const [closed, setClosed] = useState(true);
   const [opening, setOpening] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
-  const [minimumLoadElapsed, setMinimumLoadElapsed] = useState(preview);
+  const [eventDay, setEventDay] = useState(() => isWeddingDay(cfg.dateISO));
   const music = useMusic(cfg.musicUrl, cfg.musicTitle);
   const progress = useScrollProgress();
   useSectionReveal(!closed);
@@ -253,19 +264,20 @@ export default function Invitation() {
   const bride = cfg.brideName || 'Mumu';
   const coupleShort = groom + ' & ' + bride;
   const dateLabel = lang === 'en' ? cfg.dateLabelEn || cfg.dateLabel : cfg.dateLabel;
+  const showDayCard = eventDay
+    || (preview && new URLSearchParams(location.search).has('previewDay'));
   const weddingHashtag = (() => {
     const clean = String(cfg.hashtag || '').trim().replace(/\s+/g, '');
     return clean ? (clean.startsWith('#') ? clean : '#' + clean) : '#' + groom + bride;
   })();
 
-  // Keep the opening loader visible long enough to feel intentional even when
-  // Supabase and cached assets answer immediately. Slow connections still wait
-  // for their real data; this is a minimum, never an artificial maximum.
   useEffect(() => {
-    if (preview) return;
-    const timer = window.setTimeout(() => setMinimumLoadElapsed(true), MIN_LOADING_MS);
-    return () => window.clearTimeout(timer);
-  }, [preview]);
+    const refreshDay = () => setEventDay(isWeddingDay(cfg.dateISO));
+    refreshDay();
+    const interval = window.setInterval(refreshDay, 60_000);
+    document.addEventListener('visibilitychange', refreshDay);
+    return () => { window.clearInterval(interval); document.removeEventListener('visibilitychange', refreshDay); };
+  }, [cfg.dateISO]);
 
   useEffect(() => {
     document.title = preview || guest.status === 'valid'
@@ -278,7 +290,7 @@ export default function Invitation() {
 
   // Deliver any RSVP a previous visit could not send (see lib/outbox.ts).
   useEffect(() => {
-    if (preview || guest.status === 'valid') startOutbox();
+    if (preview || guest.status === 'valid') return startOutbox();
   }, [guest.status, preview]);
 
   // No scrolling behind the cover or the gift sheet.
@@ -302,7 +314,7 @@ export default function Invitation() {
   if (!preview && !guest.supplied) {
     return <InvitationState title="Undangan bersifat pribadi" body="Silakan buka tautan pribadi yang dikirimkan oleh pengantin." />;
   }
-  if (!preview && (!minimumLoadElapsed || !configReady || guest.status === 'loading')) {
+  if (!preview && (!configReady || guest.status === 'loading')) {
     // Never expose committed placeholder names while the private published
     // config is still crossing the network.
     return <InvitationLoading cfg={cfg} coupleShort="Hanif & Afi" t={t} />;
@@ -334,6 +346,7 @@ export default function Invitation() {
           <Hero cfg={cfg} t={t} />
           <Ticker text={weddingHashtag} />
           <Seam from={SAGE} />
+          {showDayCard && <DayCard cfg={cfg} t={t} lang={lang} dateLabel={dateLabel} guest={guest} />}
           <Quote t={t} />
           <Couple cfg={cfg} t={t} />
           <Seam from={PAPER} orn />
@@ -350,7 +363,7 @@ export default function Invitation() {
           <div className="bl-col" style={{ position: 'fixed', bottom: 'calc(16px + env(safe-area-inset-bottom))', display: 'flex', justifyContent: 'center', zIndex: 58, pointerEvents: 'none' }}>
             <nav style={{ display: 'flex', alignItems: 'center', gap: 2, padding: 6, background: CARD, border: '1px solid rgba(104,111,77,.16)', borderRadius: 999, boxShadow: '0 12px 34px rgba(62,53,44,.20)', pointerEvents: 'auto' }}>
               <button className="bl-dock-btn" onClick={go('Mempelai')} title={t.coupleTitle} aria-label={t.coupleTitle}><DockIcon name="couple" /></button>
-              <button className="bl-dock-btn" onClick={go('Acara')} title={t.navEvents} aria-label={t.navEvents}><DockIcon name="event" /></button>
+              <button className="bl-dock-btn" onClick={go(showDayCard ? 'Hari Ini' : 'Acara')} title={showDayCard ? t.todayKicker : t.navEvents} aria-label={showDayCard ? t.todayKicker : t.navEvents}><DockIcon name="event" /></button>
               <button className="bl-dock-btn" onClick={go('Story')} title={t.navStory} aria-label={t.navStory}><DockIcon name="story" /></button>
               <button className="bl-dock-btn" onClick={go('RSVP')} title="RSVP" aria-label="RSVP"><DockIcon name="rsvp" /></button>
             </nav>
@@ -579,6 +592,44 @@ function Couple({ cfg, t }: S) {
   );
 }
 
+function DayCard({ cfg, t, lang, dateLabel, guest }: S & { lang: Lang; dateLabel: string; guest: GuestInfo }) {
+  const [copied, setCopied] = useState(false);
+  const parking = lang === 'en' ? cfg.dayParkingEn || cfg.dayParking : cfg.dayParking;
+  const address = cfg.address?.trim() || [cfg.venue, cfg.city].filter(Boolean).join(', ');
+  const mapQuery = cfg.mapsQuery || address;
+  const phone = cfg.dayContactPhone.replace(/[^+\d]/g, '');
+  return (
+    <section className="bl-sec bl-day-section" data-screen-label="Hari Ini" aria-label={t.todayKicker}>
+      <div className="bl-day-card bl-reveal-card">
+        <Kicker>{t.todayKicker}</Kicker>
+        <h2 className="bl-display bl-day-title">{t.todayTitle}</h2>
+        <p className="bl-day-date">{dateLabel}</p>
+        <div className="bl-day-times">
+          <div><span>{t.akadName}</span><strong>{cfg.akadTime}</strong></div>
+          <div><span>{t.resepsiName}</span><strong>{cfg.resepsiTime}</strong></div>
+        </div>
+        <div className="bl-day-info">
+          <span className="bl-day-label">{t.todayAddress}</span>
+          <strong>{cfg.venue}</strong>
+          <p>{address}</p>
+          <div className="bl-day-actions">
+            <a href={'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(mapQuery)} target="_blank" rel="noopener noreferrer">{t.todayMap}</a>
+            <button type="button" onClick={async () => { if (await copyText(address)) { setCopied(true); window.setTimeout(() => setCopied(false), 2000); } }}>{copied ? t.copied : t.todayCopy}</button>
+          </div>
+        </div>
+        {(parking || cfg.dayContactName || phone) && <div className="bl-day-extra">
+          {parking && <div><span className="bl-day-label">{t.todayParking}</span><p>{parking}</p></div>}
+          {(cfg.dayContactName || phone) && <div><span className="bl-day-label">{t.todayContact}</span><p>{cfg.dayContactName}{cfg.dayContactName && phone ? ' · ' : ''}{phone && <a href={'tel:' + phone}>{cfg.dayContactPhone}</a>}</p></div>}
+        </div>}
+        {guest.rsvp === 'yes' && guest.id && <div className="bl-day-qr">
+          <QRCodeCanvas value={location.origin + '/checkin?g=' + encodeURIComponent(guest.id)} size={116} marginSize={1} fgColor={DEEP} bgColor={CARD} />
+          <div><strong>{t.qrTitle}</strong><p>{t.qrNote}</p></div>
+        </div>}
+      </div>
+    </section>
+  );
+}
+
 function Countdown({ iso, t }: { iso: string; t: Copy }) {
   const calc = () => {
     let ms = safeDate(iso).getTime() - Date.now();
@@ -747,7 +798,7 @@ function Location({ cfg, t }: S) {
   );
 }
 
-type GuestInfo = { id: string; key: string; name: string };
+type GuestInfo = { id: string; key: string; name: string; status: string; rsvp: 'yes' | 'no' | null; guests: number };
 
 function GiftRsvpSection({ cfg, t, guest, preview, onOpenGift }: S & {
   guest: GuestInfo; preview: boolean; onOpenGift: () => void;
@@ -779,18 +830,30 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
   const saved = useMemo<RsvpSaved | null>(() => {
     try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
   }, [key]);
-  const [name, setName] = useState(saved?.name || guest.name);
-  useAutoName(guest.name, name, setName, !!saved);
-  const [attend, setAttend] = useState<'yes' | 'no' | null>(saved?.attend || null);
+  const [name, setName] = useState(preview ? saved?.name || guest.name : guest.name);
+  useAutoName(guest.name, name, setName, !!saved && preview);
+  const [attend, setAttend] = useState<'yes' | 'no' | null>(preview ? saved?.attend || null : guest.rsvp);
   // One invitation may confirm no more than two people. Clamp old local values
   // too, so an answer saved before this limit cannot be re-submitted above it.
-  const [guests, setGuests] = useState(() => Math.min(2, Math.max(1, saved?.guests || 1)));
-  const [done, setDone] = useState(!!saved);
+  const [guests, setGuests] = useState(() => Math.min(2, Math.max(1, (preview ? saved?.guests : guest.guests) || 1)));
+  const [done, setDone] = useState(preview ? !!saved : !!guest.rsvp);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   // Separate from `err`: only a failed send is worth offering a retry for,
   // a missing name is not.
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (preview || guest.status !== 'valid') return;
+    if (guest.rsvp) {
+      setAttend(guest.rsvp);
+      setGuests(Math.min(2, Math.max(1, guest.guests || 1)));
+      setName(guest.name);
+      setDone(true);
+    } else {
+      setDone(false);
+    }
+  }, [guest.guests, guest.name, guest.rsvp, guest.status, preview]);
 
   const submit = async () => {
     if (!name.trim()) return setErr(t.needName);
@@ -800,10 +863,12 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
     try {
       if (!preview && backendReady) {
         await api.rsvp({ inviteKey: guest.key, name: name.trim(), rsvp: attend, guests: attend === 'yes' ? guests : 0 });
+        clearQueuedRsvp(guest.key);
       }
       const rec: RsvpSaved = { name: name.trim(), attend, guests };
       try { localStorage.setItem(key, JSON.stringify(rec)); } catch { /* ignore */ }
       setDone(true);
+      if (!preview && backendReady) window.dispatchEvent(new CustomEvent('wedding-rsvp-synced', { detail: guest.key }));
     } catch {
       // Park it so the answer is not lost if this guest never comes back to retry.
       if (!preview && backendReady) {
@@ -850,7 +915,7 @@ function Rsvp({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boole
                 {err}
                 {failed && (
                   <button onClick={submit} disabled={busy}
-                    style={{ marginLeft: 8, padding: '5px 12px', background: CARD, border: '1px solid currentColor', borderRadius: 999, color: 'inherit', font: "400 10px/1 var(--f-ui)", letterSpacing: '.14em', textTransform: 'uppercase', cursor: busy ? 'default' : 'pointer' }}>
+                    style={{ marginLeft: 8, minHeight: 44, padding: '5px 12px', background: CARD, border: '1px solid currentColor', borderRadius: 999, color: 'inherit', font: "400 10px/1 var(--f-ui)", letterSpacing: '.14em', textTransform: 'uppercase', cursor: busy ? 'default' : 'pointer' }}>
                     {t.retry}
                   </button>
                 )}
@@ -1001,18 +1066,32 @@ function GiftSection({ cfg, t, onOpen }: S & { onOpen: () => void }) {
 
 function GiftSheet({ cfg, t, lang, onClose }: S & { lang: Lang; onClose: () => void }) {
   const [copied, setCopied] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); onCloseRef.current(); }
+      if (e.key !== 'Tab' || !dialogRef.current) return;
+      const controls = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled)'));
+      if (!controls.length) return;
+      const first = controls[0], last = controls[controls.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    return () => { window.removeEventListener('keydown', onKey); previousFocus?.focus(); };
+  }, []);
   const doCopy = async (key: string, value: string) => {
     if (!await copyText(key === 'addr' ? value : value.replace(/\s/g, ''))) return;
     setCopied(key);
     window.setTimeout(() => setCopied(c => (c === key ? null : c)), 1800);
   };
   return (
-    <div className="bl-col" role="dialog" aria-modal="true" aria-label={t.giftTitle}
+    <div ref={dialogRef} className="bl-col" role="dialog" aria-modal="true" aria-label={t.giftTitle}
       style={{ position: 'fixed', top: 0, bottom: 0, zIndex: 88, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(33,36,28,.55)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)', animation: 'vScrim .35s both' }} />
       <div style={{ position: 'relative', maxHeight: '84%', overflowY: 'auto', background: PAPER, borderRadius: '26px 26px 0 0', padding: '20px 22px 28px', animation: 'vSheet .42s cubic-bezier(.2,.9,.25,1) both' }}>
@@ -1022,7 +1101,7 @@ function GiftSheet({ cfg, t, lang, onClose }: S & { lang: Lang; onClose: () => v
             <div style={{ font: "500 10.5px/1 var(--f-ui)", letterSpacing: '.08em', textTransform: 'uppercase', color: RED }}>{t.giftKicker}</div>
             <div className="bl-display" style={{ marginTop: 2, fontSize: 36, lineHeight: 1.1 }}>{t.giftTitle}</div>
           </div>
-          <button onClick={onClose} aria-label="Tutup" style={{ width: 44, height: 44, border: '1px solid rgba(51,48,42,.18)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "300 15px/1 var(--f-ui)" }}>&times;</button>
+          <button ref={closeRef} onClick={onClose} aria-label={lang === 'en' ? 'Close' : 'Tutup'} style={{ width: 44, height: 44, border: '1px solid rgba(51,48,42,.18)', background: CARD, borderRadius: '50%', cursor: 'pointer', font: "300 15px/1 var(--f-ui)" }}>&times;</button>
         </div>
         <div style={{ marginTop: 18, display: 'grid', gap: 12 }}>
           {giftCards(cfg, t, lang).map(g => (

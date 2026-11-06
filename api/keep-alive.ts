@@ -34,7 +34,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   }
 
   try {
-    await callBackend('getConfig');
+    const config = await callBackend('getConfig');
+    if (!config) return send(res, 503, { error: 'Published invitation config is missing.' });
     return send(res, 200, { ok: true, checkedAt: new Date().toISOString() });
   } catch (error) {
     return sendBackendError(res, error);

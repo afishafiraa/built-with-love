@@ -25,6 +25,7 @@ export const isPreview = () => new URLSearchParams(location.search).has('preview
 
 export function loadCached(): WeddingConfig { return mergeConfig(read(CACHE_KEY)); }
 export function loadDraft(): WeddingConfig | null { const d = read(DRAFT_KEY); return d ? mergeConfig(d) : null; }
+export function cachePublished(cfg: WeddingConfig) { write(CACHE_KEY, cfg); }
 
 /** Save the Studio draft and push it to any open preview (same-origin iframes and tabs). */
 export function saveDraft(cfg: WeddingConfig | null) {
@@ -45,9 +46,9 @@ export async function fetchPublished(inviteKey = ''): Promise<WeddingConfig> {
   return cfg;
 }
 
-export async function publish(cfg: WeddingConfig) {
-  await api.saveConfig(cfg);
-  write(CACHE_KEY, cfg);
+export async function publish(cfg: WeddingConfig, note = '') {
+  await api.saveConfig(cfg, note);
+  cachePublished(cfg);
 }
 
 /** Config for the invitation page. In `?preview` mode it follows the Studio draft live. */
