@@ -5,7 +5,7 @@ import { api, backendReady } from '../lib/api';
 import { downloadCsv } from '../lib/csv';
 import { guestLink, slug } from '../lib/guest';
 import { copyText } from '../lib/clipboard';
-import { isValidWaNumber, waInviteText, waLink, waNumber } from '../lib/whatsapp';
+import { isValidWaNumber, waInviteText, waLink, waNumber, whatsAppTarget } from '../lib/whatsapp';
 import { loadCached } from '../lib/config';
 import { mergeConfig } from '../config/invitation';
 import AdminGate from '../components/AdminGate';
@@ -157,6 +157,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const [waBusy, setWaBusy] = useState(false);
   const [waError, setWaError] = useState('');
   const [waNotice, setWaNotice] = useState('');
+  const [waCopiedText, setWaCopiedText] = useState('');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'pending-rsvp' | 'attending' | 'not-attending' | 'pending-wa' | 'checked-in'>('all');
   const hasValidPhone = (g: Guest) => isValidWaNumber(g.phone);
@@ -165,6 +166,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const missingPhone = guests.filter(g => !hasValidPhone(g)).length;
   const missingToken = guests.filter(g => !hasInviteLink(g)).length;
   const currentWa = waQueue[waIndex] || null;
+  const currentWaText = currentWa ? waInviteText(currentWa.name, guestLink(location.origin, currentWa.id, currentWa.inviteToken), cfg) : '';
   const visibleGuests = useMemo(() => {
     const needle = query.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
     return guests.filter(g => {
@@ -195,12 +197,13 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
     setWaOpened(false);
     setWaError('');
     setWaNotice('');
+    setWaCopiedText('');
   };
   const advanceWa = () => {
     if (waIndex + 1 >= waQueue.length) {
       setWaQueue([]);
       setWaIndex(0);
-      setWaNotice('Antrean selesai. Tamu yang sudah dikonfirmasi tidak akan masuk pengiriman berikutnya.');
+      setWaNotice(waQueue.length > 1 ? 'Antrean selesai. Status WhatsApp hanya diperbarui untuk pesan yang kamu konfirmasi sudah dikirim.' : '');
     } else {
       setWaIndex(i => i + 1);
       setWaOpened(false);
@@ -303,27 +306,31 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
           setAddBusy(false);
         }
       }} style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="Nama tamu" maxLength={80} autoComplete="name"
+        <input value={name} onChange={e => setName(e.target.value)} placeholder="Nama tamu" aria-label="Nama tamu" maxLength={80} autoComplete="name"
           style={{ flex: '1 1 200px', padding: 11, border: '1px solid rgba(47,44,38,.18)', borderRadius: 9 }} />
-        <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="08..." inputMode="tel" autoComplete="tel" maxLength={24}
-          style={{ width: 150, padding: 11, border: '1px solid rgba(47,44,38,.18)', borderRadius: 9 }} />
+        <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Nomor WA (opsional)" aria-label="Nomor WhatsApp (opsional)" inputMode="tel" autoComplete="tel" maxLength={24}
+          style={{ width: 190, padding: 11, border: '1px solid rgba(47,44,38,.18)', borderRadius: 9 }} />
         <button disabled={addBusy || !name.trim()} style={{ ...btn, background: sage, color: paper, borderColor: sage, opacity: addBusy || !name.trim() ? .55 : 1 }}>
           {addBusy ? 'Menambah…' : 'Tambah'}
         </button>
       </form>
+      <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.6 }}>Nomor WhatsApp boleh dikosongkan. Isi pesan dan tautan pribadi tetap bisa disalin untuk dibagikan lewat email, DM, atau platform lain.</p>
       {addError && <div role="alert" style={{ margin: '0 0 12px', color: red, fontSize: 12 }}>{addError}</div>}
       {deleteError && <div role="alert" style={{ margin: '0 0 12px', color: red, fontSize: 12 }}>{deleteError}</div>}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '4px 0 14px', padding: '12px 14px', background: '#E3E8DC', borderRadius: 12, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>Antrean WhatsApp pribadi</div>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>Bagikan undangan pribadi</div>
           <div style={{ marginTop: 3, fontSize: 11, opacity: .62 }}>
             {pendingWa.length} belum dikirim{missingPhone ? ` · ${missingPhone} tanpa nomor valid` : ''}{missingToken ? ` · ${missingToken} tanpa invite token` : ''}
           </div>
         </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <button type="button" onClick={() => startWaQueue(visibleGuests.filter(hasInviteLink))} disabled={!visibleGuests.some(hasInviteLink) || waBusy} style={btn}>Preview &amp; salin pesan</button>
         <button type="button" onClick={() => startWaQueue(pendingWa)} disabled={!pendingWa.length || waBusy}
           style={{ ...btn, background: pendingWa.length ? sage : 'rgba(74,83,67,.12)', color: pendingWa.length ? paper : ink, borderColor: pendingWa.length ? sage : 'transparent' }}>
-          {pendingWa.length ? `Mulai kirim (${pendingWa.length})` : 'Semua sudah dikirim'}
+          {pendingWa.length ? `Antrean WhatsApp (${pendingWa.length})` : 'Tidak ada antrean WhatsApp'}
         </button>
+        </div>
       </div>
       {(waError || waNotice) && <div role="status" style={{ margin: '0 0 12px', color: waError ? red : sage, fontSize: 12 }}>{waError || waNotice}</div>}
       <div style={{ display: 'grid', gap: 10, margin: '2px 0 14px' }}>
@@ -372,7 +379,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
                       </>}
                 </td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>
-                  {hasValidPhone(g) && hasInviteLink(g) && !g.waSentAt && <button type="button" onClick={() => startWaQueue([g])} style={waBtn}>WhatsApp</button>}
+                  {hasInviteLink(g) && <button type="button" onClick={() => startWaQueue([g])} style={waBtn}>Preview pesan</button>}
                   {g.waSentAt && <button type="button" onClick={() => resetWaSent(g)} disabled={waBusy} style={mini}>Batalkan tanda WA</button>}
                   <button disabled={!link} onClick={async () => {
                     if (!link) return;
@@ -416,8 +423,8 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
                 style={{ boxSizing: 'border-box', display: 'block', width: '100%', marginTop: 7, padding: 12, border: '1px solid rgba(47,44,38,.18)', borderRadius: 9 }} />
             </label>
             <label style={{ display: 'block', marginTop: 13, fontSize: 12, fontWeight: 600 }}>
-              Nomor HP
-              <input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="08..." inputMode="tel"
+              Nomor WhatsApp (opsional)
+              <input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="Boleh dikosongkan" inputMode="tel"
                 style={{ boxSizing: 'border-box', display: 'block', width: '100%', marginTop: 7, padding: 12, border: '1px solid rgba(47,44,38,.18)', borderRadius: 9 }} />
             </label>
             <div style={{ marginTop: 9, fontSize: 11, lineHeight: 1.55, opacity: .58 }}>
@@ -437,18 +444,18 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
 
       {currentWa && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 40, background: 'rgba(33,36,28,.68)', display: 'grid', placeItems: 'center', padding: 20 }}>
-          <div role="dialog" aria-modal="true" aria-label="Antrean WhatsApp" style={{ boxSizing: 'border-box', width: '100%', maxWidth: 520, maxHeight: '88vh', overflowY: 'auto', background: paper, borderRadius: 18, padding: 22, boxShadow: '0 24px 80px rgba(0,0,0,.32)' }}>
+          <div role="dialog" aria-modal="true" aria-label="Preview pesan undangan" style={{ boxSizing: 'border-box', width: '100%', maxWidth: 520, maxHeight: '88vh', overflowY: 'auto', background: paper, borderRadius: 18, padding: 22, boxShadow: '0 24px 80px rgba(0,0,0,.32)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14 }}>
               <div>
-                <div style={{ font: '500 10px/1 system-ui', letterSpacing: '.14em', textTransform: 'uppercase', color: sage }}>WhatsApp {waIndex + 1} dari {waQueue.length}</div>
+                <div style={{ font: '500 10px/1 system-ui', letterSpacing: '.14em', textTransform: 'uppercase', color: sage }}>Preview pesan {waIndex + 1} dari {waQueue.length}</div>
                 <h2 style={{ margin: '7px 0 0', fontSize: 22 }}>{currentWa.name}</h2>
-                <div style={{ marginTop: 3, fontSize: 12, opacity: .6 }}>+{waNumber(currentWa.phone)}</div>
+                <div style={{ marginTop: 3, fontSize: 12, lineHeight: 1.5, color: sage }}>{hasValidPhone(currentWa) ? '+' + waNumber(currentWa.phone) : currentWa.phone?.trim() ? 'Nomor WhatsApp belum valid. Isi pesan tetap bisa disalin.' : 'Tanpa nomor WhatsApp. Isi pesan tetap bisa disalin.'}</div>
               </div>
-              <button type="button" onClick={() => { setWaQueue([]); setWaError(''); }} aria-label="Tutup antrean"
+              <button type="button" onClick={() => { setWaQueue([]); setWaError(''); }} aria-label="Tutup preview pesan"
                 style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.18)', background: 'transparent', borderRadius: '50%', cursor: 'pointer' }}>&times;</button>
             </div>
             <div style={{ marginTop: 16, padding: 14, maxHeight: 210, overflowY: 'auto', whiteSpace: 'pre-wrap', background: '#F3EFE5', border: '1px solid rgba(47,44,38,.1)', borderRadius: 10, fontSize: 12.5, lineHeight: 1.6 }}>
-              {waInviteText(currentWa.name, guestLink(location.origin, currentWa.id, currentWa.inviteToken), cfg)}
+              {currentWaText}
             </div>
             {(!cfg.dateLabel.trim() || !cfg.akadTime.trim() || !cfg.resepsiTime.trim() || !cfg.venue.trim()) && (
               <div role="alert" style={{ marginTop: 10, padding: 10, background: '#F5E7D8', color: '#714516', borderRadius: 9, fontSize: 12, lineHeight: 1.5 }}>
@@ -456,8 +463,10 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
               </div>
             )}
             {waError && <div role="alert" style={{ marginTop: 10, color: red, fontSize: 12 }}>{waError}</div>}
-            <button type="button" onClick={() => {
-              const popup = window.open(waLink(currentWa.phone || '', waInviteText(currentWa.name, guestLink(location.origin, currentWa.id, currentWa.inviteToken), cfg)), '_blank');
+            <button type="button" disabled={!hasValidPhone(currentWa)} onClick={() => {
+              if (!hasValidPhone(currentWa)) return;
+              const target = whatsAppTarget(navigator.userAgent, navigator.maxTouchPoints);
+              const popup = window.open(waLink(currentWa.phone || '', currentWaText, target), '_blank');
               if (popup) {
                 popup.opener = null;
                 setWaOpened(true);
@@ -466,17 +475,26 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
                 setWaOpened(false);
                 setWaError('WhatsApp tidak terbuka. Izinkan pop-up untuk situs ini lalu coba lagi.');
               }
-            }} style={{ ...btn, width: '100%', marginTop: 16, padding: 14, background: '#317B58', borderColor: '#317B58', color: '#fff' }}>
+            }} style={{ ...btn, width: '100%', marginTop: 16, padding: 14, background: hasValidPhone(currentWa) ? '#317B58' : '#E5E4DC', borderColor: hasValidPhone(currentWa) ? '#317B58' : '#C5C7BB', color: hasValidPhone(currentWa) ? '#fff' : '#56594D', cursor: hasValidPhone(currentWa) ? 'pointer' : 'not-allowed' }}>
               {waOpened ? 'Buka WhatsApp lagi' : 'Buka WhatsApp'}
             </button>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 8, marginTop: 9 }}>
-              <button type="button" onClick={advanceWa} disabled={waBusy} style={{ ...btn, padding: 13 }}>Lewati</button>
-              <button type="button" onClick={confirmWaSent} disabled={!waOpened || waBusy}
+            <button type="button" onClick={async () => {
+              if (await copyText(currentWaText)) {
+                setWaCopiedText(currentWaText);
+                setWaError('');
+              } else setWaError('Pesan belum tersalin. Pilih teks preview lalu salin secara manual.');
+            }} style={{ ...btn, width: '100%', marginTop: 9 }}>
+              {waCopiedText === currentWaText ? 'Isi pesan tersalin' : 'Salin isi pesan'}
+            </button>
+            <p role={waCopiedText === currentWaText ? 'status' : undefined} style={{ margin: '8px 0 0', fontSize: 12, lineHeight: 1.6 }}>{waCopiedText === currentWaText ? 'Isi pesan, emoji, dan tautan pribadi sudah disalin. Tempelkan ke email, DM Instagram, atau platform lain.' : 'Salin seluruh isi pesan beserta tautan pribadi untuk dibagikan melalui platform pilihanmu.'}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: hasValidPhone(currentWa) ? '1fr 1.4fr' : '1fr', gap: 8, marginTop: 12 }}>
+              <button type="button" onClick={advanceWa} disabled={waBusy} style={{ ...btn, padding: 13 }}>{waQueue.length === 1 ? 'Selesai' : waCopiedText === currentWaText ? 'Tamu berikutnya' : 'Lewati'}</button>
+              {hasValidPhone(currentWa) && <button type="button" onClick={confirmWaSent} disabled={!waOpened || waBusy}
                 style={{ ...btn, padding: 13, background: waOpened ? sage : 'rgba(74,83,67,.12)', borderColor: waOpened ? sage : 'transparent', color: waOpened ? paper : ink }}>
                 {waBusy ? 'Menyimpan…' : 'Sudah dikirim & lanjut'}
-              </button>
+              </button>}
             </div>
-            {!waOpened && <div style={{ marginTop: 9, textAlign: 'center', fontSize: 11, opacity: .55 }}>Buka WhatsApp terlebih dahulu, kirim pesannya, lalu kembali ke halaman ini.</div>}
+            {hasValidPhone(currentWa) && !waOpened && <div style={{ marginTop: 9, textAlign: 'center', fontSize: 11, color: '#626558' }}>Status WhatsApp diperbarui setelah kamu membuka dan mengonfirmasi pengiriman.</div>}
           </div>
         </div>
       )}

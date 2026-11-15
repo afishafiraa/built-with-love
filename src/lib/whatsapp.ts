@@ -1,35 +1,34 @@
 import { DEFAULT_CONFIG } from '../config/invitation';
 import type { WeddingConfig } from '../types';
+import { whatsappMessageUrl } from './whatsapp-url';
+import type { WhatsAppTarget } from './whatsapp-url';
+export { whatsAppTarget } from './whatsapp-url';
 
 export function waInviteText(guestName: string, link: string, c: WeddingConfig = DEFAULT_CONFIG) {
-  const schedule = [
-    c.akadTime?.trim() && `Akad ${c.akadTime.trim()}`,
-    c.resepsiTime?.trim() && `Resepsi ${c.resepsiTime.trim()}`
-  ].filter(Boolean).join(' · ');
-  const location = [c.venue, c.city].map(part => part?.trim()).filter(Boolean).join(', ');
   return [
     'Kepada Yth.',
     'Bapak/Ibu/Saudara/I',
     (guestName || 'Bapak/Ibu/Saudara/i'),
     '',
-    'Assalamualaikum Wr. Wb.',
+    'Assalamualaikum Warahmatullahi Wabarakatuh.',
     'Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk dapat hadir, dan memberikan doa restu pada acara pernikahan:',
     '',
     '💍 ' + c.groomFull + ' & ' + c.brideFull,
     '',
     'Yang insya Allah akan dilangsungkan pada : ',
     c.dateLabel?.trim() ? '🗓️ Tanggal : ' + c.dateLabel.trim() : undefined,
-    schedule ? '🕗 Waktu : ' + schedule : undefined,
-    location ? '📍 Lokasi : ' + location : undefined,
     '',
-    'Info lengkap dari acara, bisa kunjungi:',
+    'Berikut link undangan kami untuk info lengkap dari acara bisa kunjungi :',
     link,
     '',
-    'Suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i beserta keluarga berkenan untuk dapat hadir dan memberikan doa restu kepada kami, dan kami ucapkan Terima Kasih.',
+    'Suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i beserta keluarga berkenan untuk dapat hadir dan memberikan doa restu kepada kami.',
+    '',
+    'Mohon maaf perihal undangan hanya di bagikan melalui pesan ini. Terima kasih banyak atas perhatiannya.',
     '',
     'Hormat kami,',
     c.groomName + ', ' + c.brideName + ' & Keluarga 🤍',
     '',
+    'Wassalamualaikum Warahmatullahi Wabarakatuh.'
   ].filter(line => line !== undefined).join('\n');
 }
 
@@ -53,8 +52,8 @@ export function isValidWaNumber(phone: string | number | null | undefined) {
   return /^62\d{8,13}$/.test(waNumber(phone));
 }
 
-export function waLink(phone: string | number | null | undefined, text: string) {
-  return 'https://wa.me/' + waNumber(phone) + '?text=' + encodeURIComponent(text);
+export function waLink(phone: string | number | null | undefined, text: string, target: WhatsAppTarget = 'app') {
+  return whatsappMessageUrl(waNumber(phone), text, target);
 }
 
 /** Ping the couple when an RSVP lands (opens WA on the guest's device is intrusive —

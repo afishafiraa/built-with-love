@@ -75,3 +75,12 @@ test('installed history returns stored versions unchanged', async () => {
   responses.push({ status: 200, body: [{ id: 17, data: config, note: 'Stored note', created_at: '2026-11-15T00:00:00Z' }] });
   assert.deepEqual(await callSupabase('listConfigVersions'), [{ id: 17, config, note: 'Stored note', createdAt: '2026-11-15T00:00:00Z' }]);
 });
+
+test('a guest without a WhatsApp number still gets a private invitation token', async () => {
+  responses.push({ status: 200, body: null }, { status: 201, body: { id: 'guest-no-phone', invite_token: '12345678' } });
+  assert.deepEqual(await callSupabase('upsertGuest', { guest: { id: 'guest-no-phone', name: 'Test guest without phone', phone: '', invited: 2 } }), { id: 'guest-no-phone', inviteToken: '12345678' });
+  assert.equal(requests[1].path, '/rest/v1/guests');
+  assert.equal(requests[1].body.phone, '');
+  assert.match(requests[1].body.invite_token, /^\d{8}$/);
+  assert.equal(requests[1].body.name, 'Test guest without phone');
+});
