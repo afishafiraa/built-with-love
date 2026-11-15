@@ -288,6 +288,10 @@ export async function callSupabase(action: string, payload: JsonRecord = {}) {
   if (action === 'listConfigVersions') {
     const result = await client.from('invitation_config_versions')
       .select('id,data,note,created_at').order('id', { ascending: false }).limit(30);
+    if (result.error?.code === 'PGRST205' || result.error?.code === '42P01') {
+      console.warn(JSON.stringify({ scope: 'supabase', action, code: result.error.code, mode: 'history_not_installed' }));
+      return [];
+    }
     const rows = value(action, result as DatabaseResult<ConfigVersionRow[]>) || [];
     return rows.map(row => ({ id: Number(row.id), config: row.data, note: row.note, createdAt: row.created_at }));
   }
@@ -296,6 +300,14 @@ export async function callSupabase(action: string, payload: JsonRecord = {}) {
       p_data: payload.config as JsonRecord,
       p_note: stringValue(payload.note)
     });
+    if (result.error?.code === 'PGRST202') {
+      // Older databases can publish safely before the optional history migration.
+      // Permission, network, and other database errors must still fail normally.
+      console.warn(JSON.stringify({ scope: 'supabase', action, code: result.error.code, mode: 'legacy_config' }));
+      const legacy = await client.from('invitation_config').upsert({ id: 1, data: payload.config as JsonRecord }, { onConflict: 'id' });
+      value(action, legacy as DatabaseResult<null>);
+      return null;
+    }
     return value(action, result as DatabaseResult<number>);
   }
   if (action === 'restoreConfigVersion') {

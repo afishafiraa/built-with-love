@@ -113,7 +113,7 @@ export const api = {
   moderateWish: (id: string, status: 'approved' | 'hidden') => call<void>('moderateWish', { id, status }),
   deleteWish: (id: string) => call<boolean>('deleteWish', { id }),
   getConfig: () => call<Partial<WeddingConfig> | null>('getConfig'),
-  saveConfig: (config: WeddingConfig, note = '') => call<number>('saveConfig', { config, note }),
+  saveConfig: (config: WeddingConfig, note = '') => call<number | null>('saveConfig', { config, note }),
   listConfigVersions: () => call<ConfigVersion[]>('listConfigVersions'),
   restoreConfigVersion: (id: number) => call<Partial<WeddingConfig>>('restoreConfigVersion', { id }),
   track: (payload: { inviteKey: string; event: string }) =>

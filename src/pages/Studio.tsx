@@ -312,7 +312,7 @@ function StudioInner() {
           <p style={{ font: "300 12px/1.6 'Archivo'", opacity: .7 }}>Pilih versi untuk membandingkannya dengan undangan yang sedang terbit. Pemulihan akan membuat versi baru sehingga perubahan tetap tercatat.</p>
           {historyError && <p role="alert" style={{ color: RED, fontSize: 12 }}>{historyError}</p>}
           {historyBusy && <p role="status" style={{ fontSize: 12 }}>Memuat riwayat…</p>}
-          {!historyBusy && !history.length && <p style={{ fontSize: 12 }}>Belum ada riwayat terbitan. Riwayat dimulai setelah migration terbaru diterapkan dan Studio menerbitkan versi berikutnya.</p>}
+          {!historyBusy && !historyError && !history.length && <p style={{ fontSize: 12 }}>Riwayat terbitan belum tersedia. Kamu tetap bisa menerbitkan perubahan undangan.</p>}
           <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
             {history.map(version => <button key={version.id} type="button" onClick={() => setSelectedVersion(version.id)}
               aria-pressed={selectedVersion === version.id}
