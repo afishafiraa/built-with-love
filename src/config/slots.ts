@@ -9,6 +9,7 @@ const A = '/assets/';
     Corner pieces are drawn for the bottom-right corner; the page mirrors them
     for the other corners so every corner is the same bouquet. */
 export const SLOT_SRC: Record<string, string> = {
+  'v-theatre-garden': A + 'ivory-garden/theatre-garden-v1.jpg',
   'v-hero-curtains': A + 'ivory-garden/hero-curtains-v2.webp',
   'v-hero-trees': A + 'ivory-garden/garden-trees-fast.webp',
   'v-hero-side-garden': A + 'ivory-garden/garden-side-cluster-fast.webp',
@@ -106,6 +107,7 @@ export const THREAD = { width: 180, height: 980, top: 140, row: 210 };
 
 export const SLOTS: { group: string; items: SlotDef[] }[] = [
   { group: 'Ivory Garden Pavilion', items: [
+    { slot: 'v-theatre-garden', label: 'Latar Romantic Garden Theatre', kind: 'orn', ratio: '2/3' },
     { slot: 'v-hero-curtains', label: 'Tirai ivory transparan', kind: 'orn', ratio: '2/3' },
     { slot: 'v-hero-trees', label: 'Pohon watercolor transparan', kind: 'orn', ratio: '3/2' },
     { slot: 'v-hero-side-garden', label: 'Garden bunga sisi curtain', kind: 'orn', ratio: '2/3' },
@@ -169,7 +171,7 @@ export const SLOTS: { group: string; items: SlotDef[] }[] = [
   ] },
   { group: 'Penutup', items: [
     { slot: 'orn-penutup-l', label: 'Sudut bawah — kiri & kanan (dicerminkan)', kind: 'orn', ratio: '5/4' },
-    { slot: 'v-monogram', label: 'Monogram / logo', kind: 'orn', ratio: '1/1' }
+    { slot: 'v-monogram', label: 'Monogram / logo — cover & penutup', kind: 'orn', ratio: '800/714' }
   ] },
   { group: 'Kelopak berjatuhan', items: [
     { slot: 'petal-a', label: 'Kelopak 1', kind: 'petal', ratio: '1/1' },

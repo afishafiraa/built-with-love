@@ -51,7 +51,7 @@ html.bl-document body { background: #686F4D; }
 }
 .bl-root a { color: #50573B; text-decoration: none; }
 .bl-root a:hover { color: #A06B5B; }
-.bl-root input, .bl-root textarea, .bl-root button { color: inherit; }
+:where(.bl-root) input, :where(.bl-root) textarea, :where(.bl-root) button { color: inherit; }
 /* `:where()` keeps this reset at zero specificity, so component typography
    such as the compact dock and CTA buttons can override it. Older browsers
    ignore this optional reset and use each control's explicit font instead. */
@@ -145,7 +145,7 @@ html.bl-document body { background: #686F4D; }
 }
 .bl-btn:active { transform: scale(.97); }
 .bl-btn:disabled { opacity: .6; cursor: default; }
-.bl-compact-btn { min-height: 40px; font-size: 9px; letter-spacing: .12em; }
+.bl-compact-btn { min-height: 44px; font-size: 13px; letter-spacing: .04em; }
 button:disabled { cursor: default !important; opacity: .45; }
 
 .bl-field {
@@ -236,7 +236,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
 .bl-seam { overflow: visible; }
 .bl-calendar-actions { display: flex; justify-content: center; }
 .bl-event-save {
-  width: 100%; max-width: 190px; min-height: 40px; box-sizing: border-box; display: grid; place-items: center; padding: 3px 18px;
+  width: 100%; max-width: 220px; min-height: 44px; box-sizing: border-box; display: grid; place-items: center; padding: 8px 18px;
   text-align: center; background: #FFF9EF; border: 1px solid #FFF9EF; color: #50573B !important;
   border-radius: 999px; box-shadow: 0 10px 24px rgba(62,53,44,.16);
   font: 600 10px/1.25 var(--f-ui); letter-spacing: .08em; text-transform: uppercase;
@@ -452,7 +452,7 @@ textarea.bl-field { line-height: 1.6; resize: none; }
   .ig-event-grid .bl-event-card { text-align: center; }
   .ig-event-grid .bl-event-card > div:last-child { justify-content: center; }
   .ig-couple-section { padding-left: 16px; padding-right: 16px; }
-  .bl-dock-btn { width: 39px; }
+  .bl-dock-btn { width: 44px; }
 }
 @media (min-width: 420px) {
   .ig-section-heading h2 { font-size: 50px; }
