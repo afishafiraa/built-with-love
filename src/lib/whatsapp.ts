@@ -2,6 +2,11 @@ import { DEFAULT_CONFIG } from '../config/invitation';
 import type { WeddingConfig } from '../types';
 
 export function waInviteText(guestName: string, link: string, c: WeddingConfig = DEFAULT_CONFIG) {
+  const schedule = [
+    c.akadTime?.trim() && `Akad ${c.akadTime.trim()}`,
+    c.resepsiTime?.trim() && `Resepsi ${c.resepsiTime.trim()}`
+  ].filter(Boolean).join(' · ');
+  const location = [c.venue, c.city].map(part => part?.trim()).filter(Boolean).join(', ');
   return [
     'Kepada Yth.',
     'Bapak/Ibu/Saudara/I',
@@ -13,9 +18,9 @@ export function waInviteText(guestName: string, link: string, c: WeddingConfig =
     '💍 ' + c.groomFull + ' & ' + c.brideFull,
     '',
     'Yang insya Allah akan dilangsungkan pada : ',
-    '🗓️ Tanggal : ' + c.dateLabel,
-    '🕗 Pukul : 09:00 WIB - Selesai',
-    '📍 Lokasi : ' + c.venue + ', ' + c.city,
+    c.dateLabel?.trim() ? '🗓️ Tanggal : ' + c.dateLabel.trim() : undefined,
+    schedule ? '🕗 Waktu : ' + schedule : undefined,
+    location ? '📍 Lokasi : ' + location : undefined,
     '',
     'Info lengkap dari acara, bisa kunjungi:',
     link,
@@ -25,7 +30,7 @@ export function waInviteText(guestName: string, link: string, c: WeddingConfig =
     'Hormat kami,',
     c.groomName + ', ' + c.brideName + ' & Keluarga 🤍',
     '',
-  ].join('\n');
+  ].filter(line => line !== undefined).join('\n');
 }
 
 /**

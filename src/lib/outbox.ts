@@ -44,6 +44,11 @@ export function queueRsvp(entry: Omit<PendingRsvp, 'queuedAt'>) {
   write(list);
 }
 
+/** A newer confirmed answer takes precedence over an older queued answer. */
+export function clearQueuedRsvp(inviteKey: string) {
+  write(read().filter(entry => entry.inviteKey !== inviteKey));
+}
+
 /**
  * Deliver everything queued. Returns how many got through.
  * Entries that still fail stay queued for the next attempt.
@@ -53,23 +58,22 @@ async function flushOutbox(): Promise<number> {
   const list = read();
   if (!list.length) return 0;
 
-  const stuck: PendingRsvp[] = [];
   let sent = 0;
 
   for (const p of list) {
+    if (!read().some(current => current.inviteKey === p.inviteKey && current.queuedAt === p.queuedAt)) continue;
     try {
       await api.rsvp({ inviteKey: p.inviteKey, name: p.name, rsvp: p.rsvp, guests: p.guests });
       sent++;
+      write(read().filter(current => current.inviteKey !== p.inviteKey || current.queuedAt !== p.queuedAt));
       // Now that it is really recorded, let the invitation show its "answered" state.
       try {
         localStorage.setItem(p.key, JSON.stringify({ name: p.name, attend: p.rsvp, guests: p.guests }));
       } catch { /* ignore */ }
-    } catch {
-      stuck.push(p);
-    }
+      window.dispatchEvent(new CustomEvent('wedding-rsvp-synced', { detail: p.inviteKey }));
+    } catch { /* leave this entry queued for the next attempt */ }
   }
 
-  write(stuck);
   return sent;
 }
 

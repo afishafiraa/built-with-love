@@ -450,6 +450,11 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
             <div style={{ marginTop: 16, padding: 14, maxHeight: 210, overflowY: 'auto', whiteSpace: 'pre-wrap', background: '#F3EFE5', border: '1px solid rgba(47,44,38,.1)', borderRadius: 10, fontSize: 12.5, lineHeight: 1.6 }}>
               {waInviteText(currentWa.name, guestLink(location.origin, currentWa.id, currentWa.inviteToken), cfg)}
             </div>
+            {(!cfg.dateLabel.trim() || !cfg.akadTime.trim() || !cfg.resepsiTime.trim() || !cfg.venue.trim()) && (
+              <div role="alert" style={{ marginTop: 10, padding: 10, background: '#F5E7D8', color: '#714516', borderRadius: 9, fontSize: 12, lineHeight: 1.5 }}>
+                Lengkapi tanggal, jam akad, jam resepsi, dan tempat di Studio sebelum mengirim pesan.
+              </div>
+            )}
             {waError && <div role="alert" style={{ marginTop: 10, color: red, fontSize: 12 }}>{waError}</div>}
             <button type="button" onClick={() => {
               const popup = window.open(waLink(currentWa.phone || '', waInviteText(currentWa.name, guestLink(location.origin, currentWa.id, currentWa.inviteToken), cfg)), '_blank');

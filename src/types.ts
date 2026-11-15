@@ -15,6 +15,8 @@ export interface WeddingConfig {
   dateISO: string; dateLabel: string; dateLabelEn: string;
   akadTime: string; resepsiTime: string;
   venue: string; city: string; address: string; mapsQuery: string;
+  /** Optional practical details shown on the wedding-day card. */
+  dayParking: string; dayParkingEn: string; dayContactName: string; dayContactPhone: string;
   story1Year: string; story1Title: string; story1Body: string;
   story2Year: string; story2Title: string; story2Body: string;
   story3Year: string; story3Title: string; story3Body: string;

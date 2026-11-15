@@ -5,14 +5,19 @@ import { actionName, guestCode, guestId, optionalText, text } from '../server/va
 
 const ACTIONS = new Set([
   'listGuests', 'getGuestById', 'uploadImage', 'createAudioUpload', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'listWishes', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
+  'markGuestWaSent', 'checkIn', 'listWishes', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'listConfigVersions', 'restoreConfigVersion', 'dashboardData'
 ]);
 
 // dashboardData performs three parallel database reads.
 export const maxDuration = 30;
 
 function payloadFor(action: string, body: Record<string, unknown>) {
-  if (action === 'listGuests' || action === 'getConfig' || action === 'dashboardData') return {};
+  if (action === 'listGuests' || action === 'getConfig' || action === 'listConfigVersions' || action === 'dashboardData') return {};
+  if (action === 'restoreConfigVersion') {
+    const id = Number(body.id);
+    if (!Number.isSafeInteger(id) || id < 1) throw new Error('invalid version id');
+    return { id };
+  }
   if (action === 'listWishes') return { all: true };
   if (action === 'getGuestById' || action === 'checkIn') return { guestId: guestCode(body.guestId) };
   if (action === 'deleteGuest') return { id: guestId(body.id) };
@@ -39,7 +44,7 @@ function payloadFor(action: string, body: Record<string, unknown>) {
   if (action === 'saveConfig') {
     if (!body.config || typeof body.config !== 'object' || Array.isArray(body.config)) throw new Error('config required');
     if (JSON.stringify(body.config).length > 49_000) throw new Error('config too large');
-    return { config: body.config };
+    return { config: body.config, note: optionalText(body.note, 120) };
   }
   if (action === 'uploadImage') {
     const mime = optionalText(body.mime, 60).toLowerCase();

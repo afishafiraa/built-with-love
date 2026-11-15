@@ -8,11 +8,12 @@ const adminApi = read('api/admin.ts');
 const data = read('server/data.ts');
 const supabase = read('server/supabase.ts');
 const migration = read('supabase/migrations/202609160001_initial_schema.sql');
+const featureMigration = read('supabase/migrations/202611060001_rsvp_and_config_history.sql');
 
 const publicActions = ['bootstrap', 'getGuest', 'listWishes', 'rsvp', 'addWish', 'track'];
 const adminActions = [
   'listGuests', 'getGuestById', 'uploadImage', 'createAudioUpload', 'upsertGuest', 'deleteGuest',
-  'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'dashboardData'
+  'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'listConfigVersions', 'restoreConfigVersion', 'dashboardData'
 ];
 const serverActions = [...new Set([...publicActions, ...adminActions])];
 
@@ -46,6 +47,11 @@ for (const rpc of ['invitation_bootstrap', 'public_wishes', 'submit_rsvp', 'subm
   requireText(migration, `function public.${rpc}`, `migration belum mendefinisikan RPC ${rpc}`);
 }
 requireText(migration, 'revoke all on table public.guests', 'akses anon/authenticated harus dicabut');
+for (const rpc of ['invitation_bootstrap', 'publish_invitation_config', 'restore_invitation_config_version']) {
+  requireText(featureMigration, `function public.${rpc}`, `migration fitur belum mendefinisikan ${rpc}`);
+}
+requireText(featureMigration, "'rsvp', v_guest.rsvp", 'bootstrap harus mengembalikan RSVP yang sudah tervalidasi');
+requireText(featureMigration, 'revoke all on table public.invitation_config_versions', 'riwayat terbitan harus private');
 
 if (failed) process.exit(1);
 console.log(`✓ Contract ${publicActions.length} public + ${adminActions.length} admin action sinkron dengan Supabase.`);

@@ -9,4 +9,6 @@ tsconfig.tsbuildinfo
 src/config/invitation.local.ts
 .env*
 !.env.example
+!.env.monitor.example
+.monitor-state.json
 .migration/

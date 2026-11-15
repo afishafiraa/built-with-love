@@ -10,17 +10,21 @@
     "preview": "vite preview",
     "check:database": "node scripts/check-database.mjs",
     "check:contracts": "node scripts/check-contracts.mjs",
+    "monitor:check": "node --env-file=.env.monitor scripts/monitor-availability.mjs",
+    "monitor:test-email": "node --env-file=.env.monitor scripts/monitor-availability.mjs --test-email",
+    "monitor:test-policy": "node --test scripts/monitor-policy.test.mjs",
     "security:generate": "node scripts/generate-secrets.mjs",
     "security:set-password": "node scripts/hash-password.mjs",
     "security:check": "node scripts/check-security.mjs",
     "typecheck:server": "tsc -p tsconfig.server.json",
     "lint": "eslint .",
-    "preflight": "npm run lint && npm run typecheck:server && npm run check:contracts && npm run build && npm run security:check"
+    "preflight": "npm run lint && npm run typecheck:server && npm run check:contracts && npm run monitor:test-policy && npm run build && npm run security:check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
     "@zxing/browser": "0.1.5",
     "@zxing/library": "0.21.3",
+    "nodemailer": "^7.0.13",
     "qrcode.react": "^4.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

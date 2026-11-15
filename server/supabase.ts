@@ -13,6 +13,7 @@ type WishRow = {
   status: string; request_id: string;
 };
 type ConfigRow = { id: number; data: JsonRecord; updated_at: string };
+type ConfigVersionRow = { id: number; data: JsonRecord; note: string; created_at: string };
 type EventRow = { id: number; at: string; guest_id: string | null; event: string };
 type Table<Row> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: [] };
 type Database = {
@@ -21,6 +22,7 @@ type Database = {
       guests: Table<GuestRow>;
       wishes: Table<WishRow>;
       invitation_config: Table<ConfigRow>;
+      invitation_config_versions: Table<ConfigVersionRow>;
       events: Table<EventRow>;
     };
     Views: Record<string, never>;
@@ -31,6 +33,8 @@ type Database = {
       submit_wish: { Args: { p_invite_key: string; p_name: string; p_text: string; p_request_id: string }; Returns: string };
       mark_invitation_opened: { Args: { p_invite_key: string; p_event: string }; Returns: boolean };
       check_in_guest: { Args: { p_guest_code: string }; Returns: boolean };
+      publish_invitation_config: { Args: { p_data: JsonRecord; p_note: string }; Returns: number };
+      restore_invitation_config_version: { Args: { p_version_id: number }; Returns: JsonRecord };
     };
   };
 };
@@ -281,10 +285,22 @@ export async function callSupabase(action: string, payload: JsonRecord = {}) {
     return rows.length > 0;
   }
   if (action === 'getConfig') return readConfig();
+  if (action === 'listConfigVersions') {
+    const result = await client.from('invitation_config_versions')
+      .select('id,data,note,created_at').order('id', { ascending: false }).limit(30);
+    const rows = value(action, result as DatabaseResult<ConfigVersionRow[]>) || [];
+    return rows.map(row => ({ id: Number(row.id), config: row.data, note: row.note, createdAt: row.created_at }));
+  }
   if (action === 'saveConfig') {
-    const result = await client.from('invitation_config').upsert({ id: 1, data: payload.config as JsonRecord }, { onConflict: 'id' });
-    value(action, result as DatabaseResult<null>);
-    return null;
+    const result = await client.rpc('publish_invitation_config', {
+      p_data: payload.config as JsonRecord,
+      p_note: stringValue(payload.note)
+    });
+    return value(action, result as DatabaseResult<number>);
+  }
+  if (action === 'restoreConfigVersion') {
+    const result = await client.rpc('restore_invitation_config_version', { p_version_id: Number(payload.id) });
+    return value(action, result as DatabaseResult<JsonRecord>);
   }
   if (action === 'track') {
     const result = await client.rpc('mark_invitation_opened', {

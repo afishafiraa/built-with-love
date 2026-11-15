@@ -1,0 +1,364 @@
+/* Garden Theatre: watercolor scenery and contrasting stationery sections. */
+@font-face {
+  font-family: 'Caveat'; font-style: normal; font-weight: 700; font-display: swap;
+  src: url('/fonts/caveat/caveat-bold.ttf') format('truetype');
+}
+html.bl-document, html.bl-document body { background: #444C36; }
+html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
+.ig-theatre {
+  --garden-green: #444C36;
+  --f-handwriting: 'Caveat', 'Cookie', cursive;
+  --garden-ink: #3E352C;
+  --garden-deep: var(--garden-green);
+  --garden-paper: #F3EADB;
+  --garden-card: #FFF9EF;
+  --garden-rose: #805242;
+  --garden-line: #887B64;
+  background: var(--garden-green);
+  color: var(--garden-ink);
+  font: 500 15px/1.7 var(--f-body);
+}
+.ig-theatre *, .ig-theatre *::before, .ig-theatre *::after { box-sizing: border-box; }
+.ig-theatre :is(button, a[href], summary, select, label[for]) { cursor: pointer; }
+.ig-theatre :is(button, input, textarea, select):disabled { cursor: not-allowed !important; }
+.ig-theatre .bl-page {
+  max-width: 560px;
+  background-image: linear-gradient(#F3EADBF2, #F3EADBF2), url('/assets/paper-texture.webp');
+  background-size: auto, 320px 320px;
+  box-shadow: 0 0 0 1px #B59A6F50;
+}
+.ig-theatre .bl-col { max-width: 560px; }
+.ig-theatre .bl-gilded::before, .ig-theatre .bl-gilded::after { display: none; }
+.ig-theatre #invitation-content { padding-bottom: 0; }
+.ig-theatre :is(section[id], #rsvp) { scroll-margin-top: 12px; }
+.ig-theatre .bl-kicker { font-size: 11px; line-height: 1.5; letter-spacing: .12em; color: var(--garden-rose); }
+.ig-theatre .bl-btn {
+  min-height: 48px; padding: 12px 22px; border-radius: 7px;
+  font: 700 13px/1.5 var(--f-ui); letter-spacing: .015em; text-transform: none;
+  box-shadow: none; text-align: center;
+}
+.ig-theatre .bl-btn:hover { transform: translateY(-2px); }
+.ig-theatre .bl-btn:active { transform: translateY(1px); }
+.ig-theatre .bl-btn:disabled { transform: none; }
+.ig-theatre a.ig-primary-action, .ig-theatre .ig-primary-action {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%; background: var(--garden-deep); color: var(--garden-card);
+  border: 1px solid var(--garden-deep); text-decoration: none;
+}
+.ig-theatre .ig-primary-action:hover { background: #3C452D; color: var(--garden-card); }
+.ig-theatre .ig-secondary-action { background: transparent; border: 1px solid currentColor; color: inherit; }
+.ig-theatre .ig-text-action {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+  padding: 6px 4px; border: 0; background: none; color: inherit;
+  font: 600 13px/1.5 var(--f-ui); text-decoration: underline; text-underline-offset: 4px;
+}
+.ig-theatre .ig-text-action:hover { text-decoration-thickness: 2px; }
+.ig-theatre :is(p, h1, h2, h3, label, legend, a) { overflow-wrap: anywhere; }
+.ig-theatre .ig-editorial-title {
+  margin: 8px 0 0; font: 700 clamp(42px, 11vw, 58px)/1.08 var(--f-handwriting);
+  letter-spacing: -.015em; text-wrap: balance;
+}
+.ig-theatre .ig-section-heading { position: relative; margin: 0 auto 32px; text-align: center; }
+.ig-theatre .ig-section-heading p { max-width: 360px; margin: 18px auto 0; font-size: 14px; line-height: 1.85; opacity: 1; }
+
+/* Cover stays in document flow, including on short landscape viewports. */
+.ig-theatre .ig-cover {
+  position: relative; isolation: isolate; height: auto; min-height: 100svh;
+  display: block; padding: max(36px, env(safe-area-inset-top)) 26px 32px;
+  overflow: hidden; color: var(--garden-ink); background: var(--garden-paper);
+}
+.ig-theatre .ig-cover::before { content: ''; position: absolute; z-index: 1; inset: 12px; border: 1px solid #B39A705E; pointer-events: none; }
+.ig-theatre .ig-cover::after { content: ''; position: absolute; inset: 28px 24px 24px; z-index: 0; border: 1px solid #B39A7045; border-radius: 260px 260px 4px 4px; pointer-events: none; }
+.ig-theatre .ig-cover-garden { z-index: -1; opacity: .21; }
+.ig-cover-garden > img { object-fit: cover; object-position: center bottom; }
+.ig-theatre .ig-cover-content {
+  position: relative; z-index: 1; width: 100%; max-width: 390px; height: auto;
+  margin: 0 auto; padding: 6px 0 0; display: flex; flex-direction: column; align-items: center;
+}
+.ig-monogram { width: 100px; aspect-ratio: 800 / 714; background: var(--garden-deep); mask-size: contain; mask-position: center; mask-repeat: no-repeat; -webkit-mask-size: contain; -webkit-mask-position: center; -webkit-mask-repeat: no-repeat; }
+.ig-cover-monogram { flex: none; margin: 0 auto 24px; }
+.ig-theatre .ig-cover-copy { width: 100%; animation: gardenTitle .65s .08s both; }
+.ig-theatre .ig-cover-kicker { max-width: 250px; margin: auto; color: var(--garden-rose); font: 600 11px/1.7 var(--f-ui); letter-spacing: .08em; }
+.ig-theatre .ig-cover-name {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 12px;
+  margin: 12px 0 4px; font-size: clamp(52px, 13vw, 74px); line-height: 1.1; color: var(--garden-deep);
+}
+.ig-cover-name i { font: italic 400 .42em/1 'Fraunces', Georgia, serif; color: var(--garden-rose); }
+.ig-cover-date { display: block; margin-top: 12px; font: 500 13px/1.7 var(--f-body); }
+.ig-theatre .ig-cover-envelope {
+  width: min(100%, 305px); height: auto; aspect-ratio: 1.12;
+  margin: 6px auto -12px; animation: gardenLetter .8s .12s both;
+  filter: drop-shadow(0 13px 14px #3E352C25);
+}
+.ig-theatre .ig-envelope-addressee {
+  position: relative; inset: auto; display: grid; gap: 5px; max-width: 100%;
+  margin-top: 0; text-shadow: none; color: var(--garden-ink);
+}
+.ig-theatre .ig-envelope-addressee span { font: 500 11px/1.6 var(--f-ui); letter-spacing: .02em; text-transform: none; }
+.ig-theatre .ig-envelope-addressee strong { font: 500 22px/1.35 'Fraunces', Georgia, serif; color: var(--garden-deep); }
+.ig-theatre .ig-cover-button {
+  position: relative; left: auto; bottom: auto; transform: none; min-width: 200px;
+  margin: 20px 0 0; color: var(--garden-card); background: var(--garden-deep);
+  border: 1px solid #B49A6C; box-shadow: inset 0 0 0 3px var(--garden-green), inset 0 0 0 4px #B49A6C66;
+}
+.ig-theatre .ig-cover-button:hover { transform: translateY(-2px); }
+.ig-theatre .ig-cover-button:active { transform: translateY(1px); }
+.ig-theatre .ig-cover-rule { display: none; }
+.ig-corner-controls { position: fixed; z-index: 68; top: calc(14px + env(safe-area-inset-top)); right: max(14px, calc((100vw - 560px) / 2 + 14px)); display: grid; gap: 8px; }
+.ig-theatre .ig-corner-controls .bl-icon-btn { font: 700 11px/1 var(--f-ui); color: var(--garden-deep); box-shadow: 0 3px 14px #21241C18; background: #FFF9EFF2; }
+.ig-theatre .ig-corner-controls .bl-icon-btn[aria-pressed="true"] { background: var(--garden-rose); color: #FFF9EF; border-color: transparent; }
+.ig-bubble-nav {
+  position: fixed; z-index: 67; bottom: calc(14px + env(safe-area-inset-bottom)); left: 50%; translate: -50% 0;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; width: min(340px, calc(100% - 32px));
+  padding: 6px; border: 1px solid #FFF9EF; border-radius: 999px; background: #FFF9EFF2;
+  box-shadow: 0 8px 28px #21241C26, inset 0 1px 0 #FFFFFF;
+}
+@supports (backdrop-filter: blur(16px)) { .ig-bubble-nav { background: #FFF9EFDB; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); } }
+.ig-bubble-nav a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 44px; min-height: 52px; padding: 6px 3px; border-radius: 999px; color: var(--garden-deep); font: 600 10px/1.3 var(--f-ui); text-decoration: none; transition: color .25s, background .25s, transform .25s; }
+.ig-bubble-nav a:hover { background: #E3E5D5; }
+.ig-bubble-nav a:active { transform: scale(.94); }
+.ig-bubble-nav a[aria-current] { background: var(--garden-deep); color: #FFF9EF; }
+.ig-bubble-nav a[aria-current] span { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.ig-section-seam { position: relative; height: 13px; margin-top: -1px; z-index: 20; }
+.ig-section-seam > svg { display: block; width: 100%; height: 13px; }
+.ig-skip-link { position: fixed; top: -100px; left: 16px; z-index: 100; padding: 12px; background: #FFF9EF; }
+.ig-skip-link:focus { top: 8px; }
+
+.ig-theatre .ig-hero {
+  position: relative; height: min(850px, 100svh); min-height: 680px;
+  overflow: hidden; isolation: isolate; background: #F3EADB;
+}
+.ig-theatre .ig-hero::after { display: none; }
+.ig-theatre-backdrop {
+  z-index: 0; animation: gardenBackdrop .9s ease-out both;
+}
+.ig-theatre-backdrop > img { object-fit: cover; object-position: center center; }
+.ig-theatre .ig-hero-title {
+  z-index: 3; top: 12%; left: 30px; right: 30px; animation: gardenTitle .65s .12s both;
+}
+.ig-theatre .ig-hero-kicker { font: 600 clamp(15px, 4vw, 19px)/1.5 var(--f-ui); letter-spacing: .1em; color: var(--garden-rose); }
+.ig-theatre .ig-hero-title h1 {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 11px;
+  margin: 8px 0 0; font-size: clamp(54px, 14vw, 78px); line-height: 1.05; color: var(--garden-deep);
+}
+.ig-theatre .ig-hero-title h1 span { margin: 0; font: italic 400 .36em/1 'Fraunces', Georgia, serif; color: var(--garden-rose); }
+.ig-hero-date { display: block; max-width: 270px; margin: 12px auto 0; font: 600 12px/1.7 var(--f-ui); color: var(--garden-ink); }
+.ig-theatre .ig-hero-couple {
+  z-index: 4; bottom: calc(164px + env(safe-area-inset-bottom)); width: 76%; height: 46%;
+  filter: drop-shadow(0 7px 8px #5B543C25); animation: gardenCharacter .85s .26s both;
+}
+.ig-theatre .ig-hero-couple > img { object-fit: contain; object-position: center bottom; }
+.ig-theatre .ig-hero-invite {
+  position: absolute; z-index: 6; bottom: calc(104px + env(safe-area-inset-bottom)); left: 50%; translate: -50% 0;
+  display: flex; align-items: center; justify-content: center; min-height: 52px; min-width: 48px;
+  max-width: calc(100% - 48px); padding: 0 12px; border: 0;
+  background: transparent; color: #A47D3F; font: 700 12px/1.4 var(--f-ui);
+}
+.ig-scroll-cue { animation: gardenCueBounce 2.2s cubic-bezier(.45, 0, .55, 1) infinite; animation-play-state: paused; }
+.ig-hero-invite.is-animating .ig-scroll-cue { animation-play-state: running; }
+.ig-petals { position: fixed; z-index: 54; top: 0; bottom: 0; left: 50%; translate: -50% 0; width: min(560px, 100%); overflow: hidden; pointer-events: none; }
+.ig-petal-flight { position: absolute; top: -28px; animation: gardenPetal 14s linear infinite; animation-play-state: paused; }
+.ig-petals.is-animating .ig-petal-flight { animation-play-state: running; }
+.ig-ribbon-band { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 18px 24px; background: var(--garden-green); color: #FFF9EF; font: 500 17px/1.5 'Fraunces', Georgia, serif; text-align: center; }
+.ig-ribbon-band > span:first-child, .ig-ribbon-band > span:last-child { height: 1px; flex: 1; max-width: 55px; background: #D9C49C; }
+.ig-ribbon-band > span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
+
+.ig-quote { position: relative; padding: 72px 25px 28px; text-align: center; }
+.ig-quote-bouquet { top: 0; z-index: 2; }
+.ig-quote-paper { position: relative; padding: 68px 24px 32px; border: 1px solid #B49A6C80; border-radius: 130px 130px 4px 4px; }
+.ig-quote-paper::before { content: ''; position: absolute; inset: 7px; border: 1px solid #B49A6C45; border-radius: inherit; pointer-events: none; }
+.ig-quote blockquote { margin: 18px 0 0; font: 400 19px/1.8 'Fraunces', Georgia, serif; color: var(--garden-deep); }
+.ig-theatre .ig-couple-section { padding: 128px 24px 48px; }
+.ig-theatre .ig-couple-swag { top: 6px; opacity: .9; }
+.ig-theatre .ig-portrait-grid { display: grid; grid-template-columns: 1fr; gap: 34px; padding: 0; }
+.ig-theatre .ig-portrait-card { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 20px; padding: 0; text-align: left; }
+.ig-theatre .ig-portrait-art { width: 100%; aspect-ratio: 3 / 4; background: #DFE2D1; border: 6px solid #FFF9EF; border-radius: 130px 130px 6px 6px; outline: 1px solid #A8946D; }
+.ig-theatre .ig-portrait-art::after { content: ''; position: absolute; inset: 4px; border: 1px solid #A8946D80; border-radius: inherit; pointer-events: none; z-index: 5; }
+.ig-theatre .ig-portrait-window { inset: 0; width: 100%; height: 100%; }
+.ig-theatre .ig-portrait-media.is-illustration { transform: none; filter: none; object-position: center top; }
+.ig-theatre .ig-portrait-copy { display: flex; flex-direction: column; gap: 9px; min-width: 0; margin: 0; padding: 0; }
+.ig-theatre .ig-portrait-copy .bl-full-name { display: block; margin: 0; font-size: clamp(19px, 5vw, 24px); line-height: 1.2; }
+.ig-theatre .ig-portrait-role { font: 700 11px/1.5 var(--f-ui); letter-spacing: .05em; color: var(--garden-rose); }
+.ig-theatre .ig-portrait-parents { display: block; font: 500 13px/1.75 var(--f-body); opacity: 1; }
+.ig-theatre .ig-portrait-copy .bl-ig { margin: 0; align-self: start; padding: 7px 10px; font-size: 12px; }
+.ig-person-bride .ig-portrait-art { grid-column: 2; grid-row: 1; }
+.ig-person-bride .ig-portrait-copy { grid-column: 1; grid-row: 1; text-align: left; }
+.ig-person-bride .ig-portrait-copy .bl-ig { align-self: start; }
+.ig-theatre .ig-portrait-copy > * { width: 100%; }
+.ig-theatre .ig-portrait-copy .bl-ig { width: auto; max-width: 100%; }
+
+.ig-events { position: relative; background: var(--garden-green); color: #FFF9EF; }
+.ig-events-content { position: relative; padding: 148px 26px 28px; }
+.ig-event-florals { opacity: .96; }
+.ig-events .ig-section-heading { max-width: 360px; }
+.ig-agenda {
+  position: relative; margin-top: 36px; padding: 36px 28px 30px; color: var(--garden-ink); background: #FFF9EF;
+  border: 1px solid #C9B38C; border-radius: 130px 130px 4px 4px;
+}
+.ig-agenda::before { content: ''; position: absolute; inset: 7px; border: 1px solid #B39A7080; border-radius: inherit; pointer-events: none; }
+.ig-agenda-date { display: flex; align-items: center; justify-content: center; width: fit-content; max-width: 100%; margin: 0 auto 20px; gap: 10px; color: var(--garden-deep); }
+/* Caveat's right-leaning numerals extend beyond their advance width. Balance
+   the visible gaps, rather than leaving the month against the last digit. */
+.ig-agenda-date strong { flex: none; margin-left: -6px; padding-right: 8px; font: 700 clamp(82px, 23vw, 104px)/1 var(--f-handwriting); letter-spacing: 0; }
+.ig-agenda-date > span { flex: 0 1 auto; min-width: 0; max-width: 108px; font: 700 clamp(25px, 7vw, 32px)/1.05 var(--f-handwriting); text-align: right; overflow-wrap: anywhere; }
+.ig-agenda-date > .ig-date-context { text-align: left; }
+.ig-date-context > span { display: block; }
+.ig-date-context .ig-date-year { margin-top: 5px; font-size: .88em; letter-spacing: .03em; }
+.ig-ceremony { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; padding: 22px 0; border-top: 1px solid #B39A7080; }
+.ig-ceremony-order { padding-top: 4px; font: italic 400 26px/1 'Fraunces', Georgia, serif; color: var(--garden-rose); }
+.ig-ceremony-label { font: 600 11px/1.5 var(--f-ui); color: var(--garden-rose); }
+.ig-ceremony h3 { margin: 5px 0 8px; font: 700 36px/1.15 var(--f-handwriting); letter-spacing: -.015em; }
+.ig-ceremony-time { margin: 0; font: 500 30px/1.3 var(--f-ui); font-variant-numeric: tabular-nums; }
+.ig-ceremony-time span { font-size: 12px; }
+.ig-agenda-venue { border-top: 1px solid #B39A7080; padding-top: 24px; text-align: center; }
+.ig-agenda-venue h3 { margin: 0; font: 500 22px/1.35 'Fraunces', Georgia, serif; }
+.ig-agenda-venue p { margin: 8px 0 20px; font-size: 13px; }
+.ig-agenda-venue .ig-text-action { margin-top: 6px; }
+.ig-countdown-note { position: relative; margin: 38px auto 0; width: min(100%, 350px); }
+.ig-countdown-paper { position: relative; padding: 24px 10px 20px; transform: rotate(-1.5deg); background: #E9D8B6; color: #3E352C; border: 1px solid #887B64; border-radius: 2% 1% 3% 1%; box-shadow: 3px 4px 0 #21241C28; }
+.ig-countdown-paper::before { content: ''; position: absolute; width: 72px; height: 23px; top: -12px; left: calc(50% - 36px); background: #FFF9EF9E; border-inline: 1px dashed #B39A70; transform: rotate(4deg); }
+.ig-countdown-paper::after { content: ''; position: absolute; inset: 5px; border: 1px dashed #887B6470; border-radius: 1% 2% 1% 3%; pointer-events: none; }
+.ig-countdown-caption { margin: 0 0 15px; text-align: center; font: 700 29px/1.15 var(--f-handwriting); }
+.ig-countdown { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); width: 100%; }
+.ig-countdown > div { display: grid; gap: 7px; text-align: center; padding: 0 8px; }
+.ig-countdown > div + div { border-left: 1px solid #887B6480; }
+.ig-countdown strong { font: 700 clamp(30px, 8.5vw, 40px)/1 var(--f-handwriting); font-variant-numeric: tabular-nums; }
+.ig-countdown span { font: 600 11px/1.5 var(--f-ui); }
+.ig-location { padding: 4px 26px 52px; text-align: center; }
+.ig-location > p { margin: 12px auto 20px; max-width: 340px; font-size: 13px; }
+.ig-map-frame { height: 230px; overflow: hidden; border: 6px solid #FFF9EF; outline: 1px solid #C9B38C; background: #E4DECD; }
+
+.ig-story { padding: 74px 26px 46px; }
+.ig-story-chapters { position: relative; padding: 104px 0 0 48px; }
+.ig-story-thread { position: absolute; left: -10px; top: 0; width: 86px; height: 100%; object-fit: fill; pointer-events: none; }
+.ig-chapter { position: relative; min-height: 180px; margin-bottom: 30px; padding: 20px 20px 40px; background: #FFF9EFD9; border: 1px solid #BAA37D99; }
+.ig-chapter:nth-of-type(even) { margin-left: 15px; }
+.ig-chapter-pin { position: absolute; left: var(--thread-pin-x, -15px); top: 30px; translate: -50% -50%; width: 9px; height: 9px; border-radius: 50%; background: #8B594A; outline: 3px solid #F3EADB; }
+.ig-chapter-year { font: 600 12px/1.5 var(--f-ui); color: var(--garden-rose); }
+.ig-chapter h3 { margin: 7px 0 12px; font: 700 34px/1.15 var(--f-handwriting); letter-spacing: -.015em; }
+.ig-chapter p { margin: 0; font-size: 14px; line-height: 1.85; }
+
+.ig-reply-section { background: var(--garden-green); }
+.ig-reply { position: relative; padding: 88px 22px 26px; }
+.ig-reply-flowers { top: 8px; z-index: 2; }
+.ig-reply-paper { position: relative; padding: 32px 24px; border: 5px double #AA9167; background: #FFF9EF; color: var(--garden-ink); }
+.ig-form-heading { text-align: center; margin-bottom: 26px; }
+.ig-form-heading .ig-editorial-title { font-size: clamp(38px, 10vw, 49px); }
+.ig-form-heading p { margin: 16px 0 0; font-size: 14px; line-height: 1.8; }
+.ig-rsvp-form, .ig-wish-form { display: grid; gap: 21px; }
+.ig-field-group { display: grid; gap: 8px; }
+.ig-theatre :is(label, legend) { display: block; font: 700 13px/1.5 var(--f-ui); color: var(--garden-ink); }
+.ig-theatre .bl-field { min-height: 48px; border: 1px solid #887B64; border-radius: 5px; background: #FFF9EF; font: 500 16px/1.5 var(--f-ui); color: var(--garden-ink); padding: 12px; }
+.ig-theatre .bl-field::placeholder { color: #6A6053; }
+.ig-theatre textarea.bl-field { resize: vertical; }
+.ig-attendance { border: 0; min-width: 0; padding: 0; margin: 0; }
+.ig-attendance legend { padding: 0; margin-bottom: 9px; }
+.ig-attendance > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.ig-rsvp-choice { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; min-height: 48px; padding: 11px 8px; border: 1px solid #887B64; border-radius: 5px; font: 600 12px/1.5 var(--f-ui); background: #FFF9EF; }
+.ig-rsvp-choice[aria-pressed="true"] { background: var(--garden-green); color: #FFF9EF; border-color: var(--garden-green); }
+.ig-rsvp-choice:hover { box-shadow: inset 0 0 0 1px currentColor; }
+.ig-rsvp-choice:active { transform: translateY(1px); }
+.ig-guest-stepper { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ig-guest-stepper > div:first-child { min-width: 0; }
+.ig-guest-stepper span { display: block; font: 700 13px/1.5 var(--f-ui); }
+.ig-guest-stepper small { display: block; max-width: 155px; margin-top: 5px; font: 500 11px/1.6 var(--f-ui); }
+.ig-stepper { flex: none; display: flex; align-items: center; gap: 2px; }
+.ig-stepper button { width: 44px; height: 44px; background: #FFF9EF; border: 1px solid #887B64; border-radius: 50%; font: 500 20px/1 var(--f-ui); }
+.ig-stepper button:hover { background: #E8E9DC; }
+.ig-stepper button:active { transform: scale(.96); }
+.ig-stepper output { min-width: 23px; text-align: center; font: 600 19px/1 var(--f-ui); }
+.ig-theatre .bl-msg { margin: 0; color: #805242; font: 600 13px/1.7 var(--f-ui); text-align: left; }
+.ig-theatre .ig-rsvp-result { text-align: center; animation: gardenTitle .45s both; }
+.ig-result-title { margin: 14px 0; font: 500 28px/1.3 'Fraunces', Georgia, serif; }
+.ig-rsvp-result > p { font-size: 14px; }
+.ig-rsvp-result > button { margin-top: 15px; }
+.ig-theatre .ig-gift { display: grid; grid-template-columns: 128px minmax(0, 1fr); align-items: center; gap: 14px; min-height: 0; margin: 0 22px 0; padding: 24px 0 44px; color: #FFF9EF; }
+.ig-theatre .ig-gift-envelope { position: relative; inset: auto; translate: none; opacity: 1; filter: none; animation: none; }
+.ig-theatre .ig-gift-copy { padding: 0; text-align: left; }
+.ig-gift-copy .ig-editorial-title { font-size: 40px; }
+.ig-gift-copy p { margin: 12px 0 16px; font-size: 13px; line-height: 1.8; }
+.ig-gift-copy button { width: auto; }
+
+.ig-wishes { padding: 70px 26px 48px; }
+.ig-preview-note { padding: 12px 14px; margin: 0 0 24px; border: 1px dashed #887B64; font-size: 12px; color: var(--garden-deep); }
+.ig-wish-form { gap: 9px; }
+.ig-wish-form label:not(:first-child) { margin-top: 10px; }
+.ig-wish-form .ig-primary-action { margin-top: 12px; }
+.ig-wish-list { margin-top: 30px; }
+.ig-feed-state { padding: 20px 0; text-align: center; font-size: 13px; }
+.ig-wish-note { position: relative; padding: 22px 0; border-top: 1px solid #AB9776; }
+.ig-wish-meta h3 { margin: 0; font: 600 18px/1.4 'Fraunces', Georgia, serif; color: var(--garden-rose); }
+.ig-wish-meta time { font: 500 11px/1.5 var(--f-ui); color: #655747; }
+.ig-wish-note > p { margin: 12px 0 0; font-size: 14px; line-height: 1.85; white-space: pre-line; }
+.ig-theatre .ig-closing { padding-top: 60px; padding-bottom: calc(100px + env(safe-area-inset-bottom)); background: var(--garden-green); color: #FFF9EF; }
+.ig-closing .ig-hashtag-kicker { color: #FFF9EF; }
+.ig-closing .bl-hashtag { color: #FFEAB0; }
+.ig-theatre .ig-closing .ig-monogram { background: #E7D2A4; }
+.ig-theatre .ig-closing-mark { width: 100px; height: auto; aspect-ratio: 800 / 714; opacity: 1; }
+.ig-theatre .ig-closing-copy > p { font-size: 14px; }
+.ig-theatre .ig-closing-footer { padding-bottom: 32px; border-top-color: #FFF9EF55; font-size: 12px; }
+.ig-theatre .ig-closing-family { margin-top: 10px; font: 500 12px/1.6 var(--f-ui); }
+.ig-theatre .ig-closing-footer > div { font: 500 12px/1.6 var(--f-ui); }
+.ig-modal-scrim { position: absolute; inset: 0; width: 100%; border: 0; border-radius: 0; background: #21241C99; animation: vScrim .25s both; }
+.ig-gift-note { margin: 18px 0 0; font-size: 13px; line-height: 1.8; text-align: center; }
+.ig-theatre .ig-sheet-heading .bl-display { font-family: 'Fraunces', Georgia, serif; font-size: 30px; }
+.ig-theatre .ig-gift-card-head span { font-size: 12px !important; line-height: 1.5 !important; letter-spacing: .03em !important; opacity: 1 !important; }
+
+/* One reveal owner; section entrances stay separate from ambient petals. */
+@media (prefers-reduced-motion: no-preference) {
+  .ig-reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1); }
+  .ig-portrait-card.ig-reveal { transform: translateX(-22px) rotate(-1deg); }
+  .ig-person-bride.ig-reveal { transform: translateX(22px) rotate(1deg); }
+  .ig-agenda.ig-reveal { transform: translateY(30px) scale(.96); transition-duration: .9s; }
+  .ig-map-frame.ig-reveal { transform: translateY(20px) scale(.97); }
+  .ig-countdown-note.ig-reveal { transform: translateY(20px) rotate(3deg); }
+  .ig-section-heading.ig-reveal { transform: translateY(16px); }
+  .ig-reveal.is-visible { opacity: 1; transform: none; }
+}
+@keyframes gardenCueBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+@keyframes gardenTitle { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes gardenLetter { from { opacity: 0; transform: translateY(18px) rotate(-2deg); } to { opacity: 1; transform: none; } }
+@keyframes gardenCharacter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes gardenBackdrop { from { opacity: .5; } to { opacity: 1; } }
+@keyframes gardenPetal { 0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); } 10% { opacity: .65; } 85% { opacity: .55; } 100% { opacity: 0; transform: translate3d(var(--petal-drift), calc(100svh + 48px), 0) rotate(220deg); } }
+.ig-theatre .ig-opening-paper-left { animation-duration: .8s; }
+.ig-theatre .ig-opening-paper-right { animation-duration: .8s; }
+.ig-theatre .ig-opening-seam { animation-duration: .65s; }
+.ig-theatre .bl-event-card { animation: none; }
+.bl-wedding-loader :is(.bl-loader-halo, .bl-loader-dots span) { animation-iteration-count: 2; }
+.bl-wedding-loader .bl-loader-halo { animation-iteration-count: 1; }
+@media (max-width: 400px) {
+  .ig-theatre .ig-cover { padding-inline: 22px; }
+  .ig-theatre .ig-portrait-card { gap: 14px; }
+  .ig-theatre .ig-portrait-copy .bl-full-name { font-size: 20px; }
+  .ig-theatre .ig-portrait-parents { font-size: 13px; }
+  .ig-agenda { padding-inline: 22px; }
+  .ig-reply-paper { padding-inline: 19px; }
+  .ig-theatre .ig-gift { grid-template-columns: 90px minmax(0, 1fr); gap: 12px; }
+  .ig-theatre .ig-gift-envelope { max-width: 90px; }
+}
+@media (max-width: 359px) {
+  .ig-agenda-date { gap: 10px; }
+  .ig-agenda-date strong { font-size: 76px; }
+  .ig-agenda-date > span { font-size: 24px; }
+  .ig-theatre .ig-cover-name { gap: 0 8px; font-size: 51px; }
+  .ig-theatre .ig-couple-section { padding-inline: 18px; }
+  .ig-theatre .ig-portrait-copy .bl-full-name { font-size: 18px; }
+  .ig-guest-stepper { align-items: flex-start; flex-direction: column; }
+  .ig-chapter { padding-inline: 15px; }
+  .ig-chapter:nth-of-type(even) { margin-left: 0; }
+}
+@media (min-height: 850px) {
+  .ig-theatre .ig-cover-content { padding-top: 26px; }
+  .ig-theatre .ig-cover-envelope { width: 330px; margin-top: 16px; }
+}
+@media (max-height: 500px) and (min-width: 480px) {
+  .ig-theatre .ig-cover-content { max-width: 400px; }
+  .ig-cover-monogram { margin-top: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.bl-document { scroll-behavior: auto; }
+  .ig-theatre .ig-petals { display: none; }
+  .ig-theatre .ig-reveal { opacity: 1; transform: none; transition: none; }
+  .ig-theatre *, .ig-theatre *::before, .ig-theatre *::after { animation: none !important; transition: none !important; }
+}
