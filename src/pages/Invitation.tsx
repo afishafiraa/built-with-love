@@ -66,7 +66,7 @@ function Seam({ from, orn = false }: { from: string; orn?: boolean }) {
   return (
     <div className="ig-section-seam" aria-hidden="true" style={{ background: from === PAPER ? SAGE : PAPER }}>
       <svg viewBox="0 0 480 13" preserveAspectRatio="none"><path d={curve + 'L0,0 Z'} fill={from} /></svg>
-      {orn && <Orn slot="orn-seam" style={{ width: '36%', height: 90, left: 0, top: -45 }} />}
+      {orn && <Orn slot="orn-seam" style={{ width: '36%', height: 90, left: '50%', translate: '-50% 0', top: -45 }} />}
     </div>
   );
 }
@@ -247,7 +247,7 @@ export default function Invitation() {
           {showDayCard && <DayCard cfg={cfg} t={t} lang={lang} dateLabel={dateLabel} guest={guest} />}
           <Quote t={t} />
           <Couple cfg={cfg} t={t} />
-          <Seam from={PAPER} orn />
+          <Seam from={PAPER} />
           <EventLocation cfg={cfg} t={t} dateLabel={dateLabel} lang={lang} />
           <Seam from={SAGE} />
           <Story cfg={cfg} t={t} lang={lang} />
