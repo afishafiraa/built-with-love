@@ -176,8 +176,8 @@ export default function Invitation() {
 
   useEffect(() => {
     document.title = preview || guest.status === 'valid'
-      ? coupleShort + (lang === 'en' ? ' | Wedding Invitation' : ' | Undangan Pernikahan')
-      : 'Undangan Pernikahan Pribadi';
+      ? (lang === 'en' ? 'Wedding Invitation ' : 'Undangan Pernikahan ') + coupleShort
+      : document.querySelector<HTMLMetaElement>('meta[property="og:title"]')?.content || 'Undangan Pernikahan';
     document.documentElement.lang = lang;
     document.documentElement.classList.add('bl-document');
     return () => document.documentElement.classList.remove('bl-document');

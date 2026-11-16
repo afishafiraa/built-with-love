@@ -1,5 +1,9 @@
 {
   "regions": ["sin1"],
+  "buildCommand": "npm run build && node scripts/prepare-vercel.mjs",
+  "functions": {
+    "api/invitation.ts": { "includeFiles": "dist/invitation-shell.html" }
+  },
   "crons": [
     { "path": "/api/keep-alive", "schedule": "17 3 * * *" }
   ],
@@ -18,8 +22,10 @@
     }
   ],
   "rewrites": [
-    { "source": "/dashboard/:path*", "destination": "/index.html" },
-    { "source": "/studio/:path*", "destination": "/index.html" },
-    { "source": "/checkin/:path*", "destination": "/index.html" }
+    { "source": "/", "destination": "/api/invitation" },
+    { "source": "/index.html", "destination": "/api/invitation" },
+    { "source": "/dashboard/:path*", "destination": "/invitation-shell.html" },
+    { "source": "/studio/:path*", "destination": "/invitation-shell.html" },
+    { "source": "/checkin/:path*", "destination": "/invitation-shell.html" }
   ]
 }

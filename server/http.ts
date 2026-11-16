@@ -9,7 +9,7 @@ export interface ApiResponse {
   status(code: number): ApiResponse;
   json(value: unknown): void;
   setHeader(name: string, value: string | string[]): void;
-  end(): void;
+  end(body?: string): void;
 }
 
 export function header(req: ApiRequest, name: string) {

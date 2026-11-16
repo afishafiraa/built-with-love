@@ -15,12 +15,13 @@
     "monitor:test-policy": "node --test scripts/monitor-policy.test.mjs",
     "test:config-storage": "node --experimental-strip-types --test scripts/config-storage.test.mjs",
     "test:whatsapp": "node --experimental-strip-types --test scripts/whatsapp-url.test.mjs",
+    "test:invitation-page": "node --experimental-strip-types --test scripts/invitation-page.test.mjs",
     "security:generate": "node scripts/generate-secrets.mjs",
     "security:set-password": "node scripts/hash-password.mjs",
     "security:check": "node scripts/check-security.mjs",
     "typecheck:server": "tsc -p tsconfig.server.json",
     "lint": "eslint .",
-    "preflight": "npm run lint && npm run typecheck:server && npm run check:contracts && npm run monitor:test-policy && npm run test:config-storage && npm run test:whatsapp && npm run build && npm run security:check"
+    "preflight": "npm run lint && npm run typecheck:server && npm run check:contracts && npm run monitor:test-policy && npm run test:config-storage && npm run test:whatsapp && npm run test:invitation-page && npm run build && npm run security:check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
