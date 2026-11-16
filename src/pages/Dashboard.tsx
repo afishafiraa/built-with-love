@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { api, backendReady } from '../lib/api';
@@ -139,6 +139,32 @@ function Notice({ tone, title, children }: { tone: string; title: string; childr
   );
 }
 
+function GuestPagination({ page, pages, pageSize, onPage, onPageSize }: {
+  page: number; pages: number; pageSize: number; onPage: (page: number) => void; onPageSize: (size: number) => void;
+}) {
+  const arrowStyle: CSSProperties = { ...mini, display: 'grid', placeItems: 'center', width: 44, padding: 0, margin: 0, borderRadius: '50%' };
+  return (
+    <nav aria-label="Halaman daftar tamu" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, padding: '12px 0' }}>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 12 }}>
+        Tamu per halaman
+        <select value={pageSize} onChange={event => onPageSize(Number(event.target.value))}
+          style={{ minHeight: 44, padding: '8px 12px', border: '1px solid rgba(47,44,38,.22)', borderRadius: 7, background: paper, color: ink, font: 'inherit' }}>
+          {[30, 50, 100].map(size => <option key={size} value={size}>{size}</option>)}
+        </select>
+      </label>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <button type="button" aria-label="Halaman tamu sebelumnya" title="Halaman sebelumnya" disabled={page === 0} onClick={() => onPage(page - 1)} style={{ ...arrowStyle, opacity: page === 0 ? .35 : 1 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+        </button>
+        <span style={{ fontSize: 12 }}>Halaman {page + 1} dari {pages}</span>
+        <button type="button" aria-label="Halaman tamu berikutnya" title="Halaman berikutnya" disabled={page >= pages - 1} onClick={() => onPage(page + 1)} style={{ ...arrowStyle, opacity: page >= pages - 1 ? .35 : 1 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: WeddingConfig; onQr: (g: Guest) => void; onSaved: () => void | Promise<void> }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -160,6 +186,9 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const [waNotice, setWaNotice] = useState('');
   const [waCopiedText, setWaCopiedText] = useState('');
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(30);
+  const paginationRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<'all' | 'pending-rsvp' | 'attending' | 'not-attending' | 'pending-wa' | 'checked-in'>('all');
   const hasValidPhone = (g: Guest) => isValidWaNumber(g.phone);
   const hasInviteLink = (g: Guest) => /^\d{8}$/.test(g.inviteToken);
@@ -182,6 +211,16 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
       return matchesQuery && matchesFilter;
     });
   }, [filter, guests, query]);
+  const pages = Math.max(1, Math.ceil(visibleGuests.length / pageSize));
+  const currentPage = Math.min(page, pages - 1);
+  const pageGuests = visibleGuests.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  useEffect(() => { setPage(value => Math.min(value, pages - 1)); }, [pages]);
+  const changePage = (next: number) => {
+    setPage(next);
+    paginationRef.current?.focus({ preventScroll: true });
+    paginationRef.current?.scrollIntoView({ block: 'start' });
+  };
+  const changePageSize = (size: number) => { setPageSize(size); setPage(0); };
   const filters = [
     ['all', 'Semua'],
     ['pending-rsvp', 'Belum RSVP'],
@@ -337,20 +376,26 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
       <div style={{ display: 'grid', gap: 10, margin: '2px 0 14px' }}>
         <label style={{ position: 'relative', display: 'block' }}>
           <span style={{ position: 'absolute', left: 13, top: '50%', marginTop: -9, opacity: .45, pointerEvents: 'none' }} aria-hidden="true">⌕</span>
-          <input value={query} onChange={e => setQuery(e.target.value)} type="search" placeholder="Cari nama, nomor HP, atau ID tamu…" aria-label="Cari tamu"
+          <input value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} type="search" placeholder="Cari nama, nomor HP, atau ID tamu…" aria-label="Cari tamu"
             style={{ boxSizing: 'border-box', width: '100%', minHeight: 44, padding: '11px 38px', border: '1px solid rgba(47,44,38,.18)', borderRadius: 12, background: '#fff', color: ink }} />
-          {query && <button type="button" onClick={() => setQuery('')} aria-label="Hapus pencarian"
+          {query && <button type="button" onClick={() => { setQuery(''); setPage(0); }} aria-label="Hapus pencarian"
             style={{ position: 'absolute', right: 2, top: '50%', marginTop: -22, width: 44, height: 44, border: 0, borderRadius: '50%', background: 'transparent', cursor: 'pointer' }}>&times;</button>}
         </label>
         <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }} aria-label="Filter daftar tamu">
           {filters.map(([key, text]) => (
-            <button key={key} type="button" onClick={() => setFilter(key)} aria-pressed={filter === key}
+            <button key={key} type="button" onClick={() => { setFilter(key); setPage(0); }} aria-pressed={filter === key}
               style={{ ...mini, flex: '0 0 auto', borderRadius: 999, background: filter === key ? ink : 'transparent', color: filter === key ? paper : ink }}>
               {text}
             </button>
           ))}
         </div>
-        <div role="status" style={{ fontSize: 11, opacity: .58 }}>{visibleGuests.length} dari {guests.length} tamu ditampilkan</div>
+        <div role="status" style={{ fontSize: 12, color: '#626057' }}>
+          {visibleGuests.length ? `${currentPage * pageSize + 1}–${currentPage * pageSize + pageGuests.length} dari ${visibleGuests.length} tamu` : '0 tamu'}
+          {visibleGuests.length !== guests.length ? ` · ${guests.length} tamu keseluruhan` : ''}
+        </div>
+      </div>
+      <div ref={paginationRef} tabIndex={-1} role="region" aria-label="Kontrol halaman tamu">
+        <GuestPagination page={currentPage} pages={pages} pageSize={pageSize} onPage={changePage} onPageSize={changePageSize} />
       </div>
       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
         <thead>
@@ -360,7 +405,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
           </tr>
         </thead>
         <tbody>
-          {visibleGuests.map(g => {
+          {pageGuests.map(g => {
             const link = guestLink(location.origin, g.name, g.inviteToken);
             return (
               <tr key={g.id} style={{ borderTop: '1px solid rgba(47,44,38,.1)' }}>
@@ -403,6 +448,10 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
           )}
         </tbody>
       </table>
+      {visibleGuests.length > 0 && <GuestPagination page={currentPage} pages={pages} pageSize={pageSize} onPage={changePage} onPageSize={size => {
+        changePageSize(size);
+        paginationRef.current?.scrollIntoView({ block: 'start' });
+      }} />}
 
       {editing && (
         <div onClick={() => { if (!editBusy) setEditing(null); }}
