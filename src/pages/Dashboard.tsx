@@ -4,6 +4,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { api, backendReady } from '../lib/api';
 import { downloadCsv } from '../lib/csv';
 import { guestLink, slug } from '../lib/guest';
+import { encodeInviteRef } from '../../shared/invite-ref.mjs';
 import { copyText } from '../lib/clipboard';
 import { isValidWaNumber, waInviteText, waLink, waNumber, whatsAppTarget } from '../lib/whatsapp';
 import { loadCached } from '../lib/config';
@@ -166,11 +167,11 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const missingPhone = guests.filter(g => !hasValidPhone(g)).length;
   const missingToken = guests.filter(g => !hasInviteLink(g)).length;
   const currentWa = waQueue[waIndex] || null;
-  const currentWaText = currentWa ? waInviteText(currentWa.name, guestLink(location.origin, currentWa.id, currentWa.inviteToken), cfg) : '';
+  const currentWaText = currentWa ? waInviteText(currentWa.name, guestLink(location.origin, currentWa.name, currentWa.inviteToken), cfg) : '';
   const visibleGuests = useMemo(() => {
     const needle = query.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
     return guests.filter(g => {
-      const haystack = [g.name, g.phone, g.id, g.inviteToken].join(' ').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+      const haystack = [g.name, g.phone, g.id, g.inviteToken, encodeInviteRef(g.inviteToken)].join(' ').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
       const matchesQuery = !needle || haystack.includes(needle);
       const matchesFilter = filter === 'all'
         || (filter === 'pending-rsvp' && !g.rsvp)
@@ -360,10 +361,10 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
         </thead>
         <tbody>
           {visibleGuests.map(g => {
-            const link = guestLink(location.origin, g.id, g.inviteToken);
+            const link = guestLink(location.origin, g.name, g.inviteToken);
             return (
               <tr key={g.id} style={{ borderTop: '1px solid rgba(47,44,38,.1)' }}>
-                <td style={td}>{g.name}<div style={{ fontSize: 11, opacity: .5 }}>{g.id}-{g.inviteToken || 'token-belum-dibuat'}</div></td>
+                <td style={td}>{g.name}<div style={{ fontSize: 11, opacity: .5 }}>{encodeInviteRef(g.inviteToken) ? 'Ref. ' + encodeInviteRef(g.inviteToken) : 'Referensi belum tersedia'}</div></td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>{g.phone || '-'}</td>
                 <td style={td}>{g.opened ? 'ya' : '-'}</td>
                 <td style={td}>{g.rsvp === 'yes' ? 'Hadir' : g.rsvp === 'no' ? 'Tidak' : '-'}</td>

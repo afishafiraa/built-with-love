@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react';
 import type { IScannerControls } from '@zxing/browser';
 import AdminGate from '../components/AdminGate';
 import { api, backendReady } from '../lib/api';
+import { parseInviteSearch } from '../lib/invite';
 
 type State = 'idle' | 'scanning' | 'loading' | 'ready' | 'saving' | 'ok' | 'missing' | 'err';
 
@@ -16,6 +17,10 @@ function codeFromQr(rawValue: string) {
   if (!raw) return '';
   try {
     const url = new URL(raw, location.origin);
+    if (url.searchParams.has('ref')) {
+      const invite = parseInviteSearch(url.search);
+      return invite.key ? 'ref:' + invite.key : '';
+    }
     const queryCode = (url.searchParams.get('g') || url.searchParams.get('to') || '').trim().toLowerCase();
     if (queryCode) return queryCode;
     return /^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(raw) ? raw.toLowerCase() : '';

@@ -1,3 +1,5 @@
+import { decodeInviteRef, encodeInviteRef } from '../../shared/invite-ref.mjs';
+
 export type InviteParam = {
   id: string;
   inviteToken: string;
@@ -16,6 +18,23 @@ function parseInviteParam(rawValue: string): InviteParam {
   };
 }
 
+export function parseInviteSearch(search: string): InviteParam {
+  const params = new URLSearchParams(search);
+  if (params.has('ref')) {
+    const ref = (params.get('ref') || '').trim().toUpperCase();
+    const token = params.getAll('ref').length === 1 ? decodeInviteRef(ref) : '';
+    return { id: '', inviteToken: token, key: token ? ref : '', supplied: true };
+  }
+  return parseInviteParam(params.get('to') || '');
+}
+
 export function currentInviteParam() {
-  return parseInviteParam(new URLSearchParams(location.search).get('to') || '');
+  return parseInviteSearch(location.search);
+}
+
+export function guestLink(origin: string, name: string, inviteToken: string) {
+  const ref = encodeInviteRef(inviteToken);
+  if (!name.trim() || !ref) return '';
+  const params = new URLSearchParams({ to: name.trim(), ref });
+  return origin + '/?' + params.toString();
 }

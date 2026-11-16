@@ -1,6 +1,10 @@
+import { decodeInviteRef } from '../shared/invite-ref.mjs';
+
 const stringValue = (value: unknown, max: number) => typeof value === 'string' ? value.trim().slice(0, max) : '';
 
 export function invitationKey(value: unknown) {
+  const ref = stringValue(value, 130).toUpperCase();
+  if (decodeInviteRef(ref)) return ref;
   const key = stringValue(value, 130).toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*-\d{8}$/.test(key)) throw new Error('invalid invitation link');
   return key;
@@ -14,6 +18,8 @@ export function guestId(value: unknown) {
 
 /** Admin check-in accepts either an internal slug or a complete public invite key. */
 export function guestCode(value: unknown) {
+  const raw = stringValue(value, 130);
+  if (/^ref:/i.test(raw) && decodeInviteRef(raw.slice(4))) return 'ref:' + raw.slice(4).toUpperCase();
   const code = stringValue(value, 130).toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*(?:-\d{8})?$/.test(code)) throw new Error('invalid guest code');
   return code;

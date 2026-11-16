@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { after, beforeEach, test } from 'node:test';
+import { encodeInviteRef } from '../shared/invite-ref.mjs';
 
 const originalFetch = globalThis.fetch;
 const originalUrl = process.env.SUPABASE_URL;
@@ -11,7 +12,7 @@ let requests = [];
 globalThis.fetch = async (input, options) => {
   const url = new URL(input);
   assert.equal(url.hostname, 'config-storage-test.supabase.co');
-  requests.push({ path: url.pathname, method: options?.method, body: options?.body ? JSON.parse(options.body) : null });
+  requests.push({ path: url.pathname, query: Object.fromEntries(url.searchParams), method: options?.method, body: options?.body ? JSON.parse(options.body) : null });
   const response = responses.shift();
   assert.ok(response, 'Unexpected database request');
   return new Response(response.status === 204 ? null : JSON.stringify(response.body), {
@@ -130,4 +131,47 @@ test('invalid invitations cannot read an allowance or submit a wish', async () =
     await assert.rejects(callSupabase(action, wishPayload), /invalid invitation link/);
   }
   assert.equal(requests.length, 2);
+});
+
+const resolvedGuest = { status: 200, body: { id: 'test-guest', invite_token: '12345678' } };
+const reference = encodeInviteRef('12345678');
+
+test('reference bootstrap resolves the existing token and returns the canonical database name', async () => {
+  const data = { config, guest: { id: 'test-guest', name: 'Corrected guest name' } };
+  responses.push(resolvedGuest, { status: 200, body: data });
+  assert.deepEqual(await callSupabase('bootstrap', { inviteKey: reference }), data);
+  assert.equal(requests[0].query.invite_token, 'eq.12345678');
+  assert.deepEqual(requests[1].body, { p_invite_key: 'test-guest-12345678' });
+});
+
+for (const [action, rpc, body] of [['rsvp', 'submit_rsvp', true], ['listWishes', 'public_wishes', []], ['track', 'mark_invitation_opened', true]]) {
+  test(`reference ${action} uses the original invitation identity`, async () => {
+    responses.push(resolvedGuest, { status: 200, body });
+    await callSupabase(action, { inviteKey: reference, name: 'Guest', rsvp: 'yes', guests: 1, event: 'open' });
+    assert.equal(requests[1].path, '/rest/v1/rpc/' + rpc);
+    assert.equal(requests[1].body.p_invite_key, 'test-guest-12345678');
+  });
+}
+
+test('new and legacy links share the same two-wish allowance', async () => {
+  responses.push(resolvedGuest, verifiedGuest, { status: 200, body: null }, { status: 200, body: [{ id: 'one' }, { id: 'two' }] });
+  await assert.rejects(callSupabase('addWish', { ...wishPayload, inviteKey: reference }), /wish_limit_reached/);
+  assert.equal(requests[1].query.id, 'eq.test-guest');
+  assert.equal(requests.at(-1).query.guest_id, 'eq.test-guest');
+});
+
+test('unknown references do not expose config or allow a write', async () => {
+  for (const [action, result] of [['bootstrap', { config: null, guest: null }], ['getGuest', null]]) {
+    responses.push({ status: 200, body: null });
+    assert.deepEqual(await callSupabase(action, { inviteKey: reference }), result);
+  }
+  responses.push({ status: 200, body: null });
+  await assert.rejects(callSupabase('rsvp', { inviteKey: reference }), /invalid invitation link/);
+  assert.equal(requests.length, 3);
+});
+
+test('check-in accepts the new link reference without confusing it with a guest slug', async () => {
+  responses.push(resolvedGuest, { status: 200, body: true });
+  assert.equal(await callSupabase('checkIn', { guestId: 'ref:' + reference }), true);
+  assert.deepEqual(requests[1].body, { p_guest_code: 'test-guest-12345678' });
 });

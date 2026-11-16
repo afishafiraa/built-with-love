@@ -40,7 +40,7 @@ export interface WeddingConfig {
 
 export interface Guest {
   id: string;          // stable internal slug
-  inviteToken: string; // random 8-digit token paired with the slug in ?to=
+  inviteToken: string; // Stored token; short references and legacy links resolve to it.
   name: string;
   category?: string;   // keluarga / teman / kantor
   phone?: string;      // 62...

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { currentInviteParam } from './invite';
 import type { InviteParam } from './invite';
 import { api, backendReady } from './api';
+export { guestLink } from './invite';
 
 type GuestStatus = 'none' | 'loading' | 'valid' | 'invalid' | 'error';
 type GuestState = InviteParam & { name: string; status: GuestStatus; rsvp: 'yes' | 'no' | null; guests: number };
@@ -10,7 +11,7 @@ export const slug = (s: string) =>
   s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-/** ?to=budi-santoso-48271935 -> stable slug + separate 8-digit token. */
+/** Names in the URL are labels; the verified record supplies the greeting. */
 function readGuestParam(): GuestState {
   const parsed = currentInviteParam();
   // Do not infer/display a name from the URL before the token is verified.
@@ -25,7 +26,7 @@ function readGuestParam(): GuestState {
 
 /**
  * The guest this link was made for. No name is inferred from the URL: the exact
- * name only appears after the server verifies the slug and token together.
+ * name only appears after the server verifies the reference or legacy link.
  */
 export function useGuest(track = true) {
   const [guest, setGuest] = useState(readGuestParam);
@@ -55,9 +56,4 @@ export function useGuest(track = true) {
     return () => { alive = false; window.removeEventListener('wedding-rsvp-synced', onSynced); };
   }, [guest.key, track]);
   return guest;
-}
-
-export function guestLink(origin: string, id: string, inviteToken: string) {
-  if (!id || !/^\d{8}$/.test(inviteToken)) return '';
-  return origin + '/?to=' + encodeURIComponent(id + '-' + inviteToken);
 }

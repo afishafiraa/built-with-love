@@ -17,12 +17,13 @@
     "test:whatsapp": "node --experimental-strip-types --test scripts/whatsapp-url.test.mjs",
     "test:invitation-page": "node --experimental-strip-types --test scripts/invitation-page.test.mjs scripts/invitation-html.test.mjs",
     "test:hero-layout": "node --experimental-strip-types --test scripts/hero-layout.test.mjs",
+    "test:invitation-link": "node --experimental-strip-types --test scripts/invitation-link.test.mjs",
     "security:generate": "node scripts/generate-secrets.mjs",
     "security:set-password": "node scripts/hash-password.mjs",
     "security:check": "node scripts/check-security.mjs",
     "typecheck:server": "tsc -p tsconfig.server.json",
     "lint": "eslint .",
-    "preflight": "npm run lint && npm run typecheck:server && npm run check:contracts && npm run monitor:test-policy && npm run test:config-storage && npm run test:whatsapp && npm run test:invitation-page && npm run test:hero-layout && npm run build && npm run security:check"
+    "preflight": "npm run lint && npm run typecheck:server && npm run check:contracts && npm run monitor:test-policy && npm run test:config-storage && npm run test:whatsapp && npm run test:invitation-page && npm run test:hero-layout && npm run test:invitation-link && npm run build && npm run security:check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

@@ -1,5 +1,6 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { decodeInviteRef } from '../shared/invite-ref.mjs';
 
 type JsonRecord = Record<string, unknown>;
 type DatabaseResult<T> = { data: T | null; error: { code?: string; message: string } | null };
@@ -218,6 +219,22 @@ async function createAudioUpload(payload: JsonRecord) {
 
 export async function callSupabase(action: string, payload: JsonRecord = {}) {
   const client = database();
+  const adminRef = (action === 'getGuestById' || action === 'checkIn') && stringValue(payload.guestId).startsWith('ref:');
+  const refToken = decodeInviteRef(adminRef ? stringValue(payload.guestId).slice(4) : payload.inviteKey);
+  if (refToken) {
+    const result = await client.from('guests').select('id,invite_token').eq('invite_token', refToken).maybeSingle();
+    const row = value(action, result as DatabaseResult<JsonRecord>);
+    if (!row) {
+      if (action === 'bootstrap') return { config: null, guest: null };
+      if (action === 'getGuest') return null;
+      if (action === 'getGuestById') return null;
+      if (action === 'checkIn') return false;
+      throw new Error('invalid invitation link');
+    }
+    // Existing RPCs keep using the same guest identity and legacy token pair.
+    const key = stringValue(row.id) + '-' + stringValue(row.invite_token);
+    payload = { ...payload, [adminRef ? 'guestId' : 'inviteKey']: key };
+  }
 
   if (action === 'bootstrap') {
     const result = await client.rpc('invitation_bootstrap', { p_invite_key: stringValue(payload.inviteKey) });
