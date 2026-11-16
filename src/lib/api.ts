@@ -50,12 +50,13 @@ async function call<T>(action: string, payload: Record<string, unknown> = {}): P
         window.dispatchEvent(new Event('wedding-auth-required'));
         throw new Error('Sesi admin berakhir. Silakan masuk lagi.');
       }
+      if (response.status === 429) throw new Error('rate_limit_reached');
       if (!response.ok || json.error) throw new Error(String(json.error || `server ${response.status}`));
       if (!Object.prototype.hasOwnProperty.call(json, 'data')) throw new Error('Respons server tidak valid');
       return json.data as T;
     } catch (error) {
       last = error instanceof Error ? error.message : 'jaringan terputus';
-      if (/ditolak|tidak valid|invalid|required|salah|berakhir|terlalu banyak/i.test(last)) break;
+      if (/ditolak|tidak valid|invalid|required|salah|berakhir|terlalu banyak|rate_limit_reached|wish_limit_reached/i.test(last)) break;
     }
   }
   throw new Error(last);
@@ -110,6 +111,7 @@ export const api = {
   listWishes: async (all = false, inviteKey = '') =>
     (await call<Record<string, unknown>[]>('listWishes', { all, inviteKey })).map(toWish),
   addWish: (payload: { name: string; text: string; inviteKey: string; requestId: string; website?: string }) => call<{ id: string }>('addWish', payload),
+  wishStatus: (inviteKey: string) => call<{ sentCount: number; limit: number }>('wishStatus', { inviteKey }),
   moderateWish: (id: string, status: 'approved' | 'hidden') => call<void>('moderateWish', { id, status }),
   deleteWish: (id: string) => call<boolean>('deleteWish', { id }),
   getConfig: () => call<Partial<WeddingConfig> | null>('getConfig'),

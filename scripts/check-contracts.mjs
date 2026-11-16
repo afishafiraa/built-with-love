@@ -10,7 +10,7 @@ const supabase = read('server/supabase.ts');
 const migration = read('supabase/migrations/202609160001_initial_schema.sql');
 const featureMigration = read('supabase/migrations/202611060001_rsvp_and_config_history.sql');
 
-const publicActions = ['bootstrap', 'getGuest', 'listWishes', 'rsvp', 'addWish', 'track'];
+const publicActions = ['bootstrap', 'getGuest', 'listWishes', 'wishStatus', 'rsvp', 'addWish', 'track'];
 const adminActions = [
   'listGuests', 'getGuestById', 'uploadImage', 'createAudioUpload', 'upsertGuest', 'deleteGuest',
   'markGuestWaSent', 'checkIn', 'moderateWish', 'deleteWish', 'getConfig', 'saveConfig', 'listConfigVersions', 'restoreConfigVersion', 'dashboardData'

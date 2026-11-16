@@ -125,7 +125,8 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
 .ig-skip-link:focus { top: 8px; }
 
 .ig-theatre .ig-hero {
-  position: relative; height: min(850px, 100svh); min-height: 680px;
+  --hero-safe-bottom: env(safe-area-inset-bottom, 0px);
+  position: relative; height: var(--hero-height, min(850px, 100svh)); min-height: 680px;
   overflow: hidden; isolation: isolate; background: #F3EADB;
 }
 .ig-theatre .ig-hero::after { display: none; }
@@ -144,12 +145,12 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
 .ig-theatre .ig-hero-title h1 span { margin: 0; font: italic 400 .36em/1 'Fraunces', Georgia, serif; color: var(--garden-rose); }
 .ig-hero-date { display: block; max-width: 270px; margin: 12px auto 0; font: 600 12px/1.7 var(--f-ui); color: var(--garden-ink); }
 .ig-theatre .ig-hero-couple {
-  z-index: 4; bottom: calc(164px + env(safe-area-inset-bottom)); width: 76%; height: 46%;
+  z-index: 4; bottom: calc(164px + var(--hero-safe-bottom)); width: 76%; height: 46%;
   filter: drop-shadow(0 7px 8px #5B543C25); animation: gardenCharacter .85s .26s both;
 }
 .ig-theatre .ig-hero-couple > img { object-fit: contain; object-position: center bottom; }
 .ig-theatre .ig-hero-invite {
-  position: absolute; z-index: 6; bottom: calc(104px + env(safe-area-inset-bottom)); left: 50%; translate: -50% 0;
+  position: absolute; z-index: 6; bottom: calc(104px + var(--hero-safe-bottom)); left: 50%; translate: -50% 0;
   display: flex; align-items: center; justify-content: center; min-height: 52px; min-width: 48px;
   max-width: calc(100% - 48px); padding: 0 12px; border: 0;
   background: transparent; color: #A47D3F; font: 700 12px/1.4 var(--f-ui);
@@ -285,6 +286,12 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
 .ig-wish-form label:not(:first-child) { margin-top: 10px; }
 .ig-wish-form .ig-primary-action { margin-top: 12px; }
 .ig-wish-list { margin-top: 30px; }
+.ig-wish-allowance { margin: 0 0 8px; font-size: 13px; line-height: 1.7; }
+.ig-wish-form .ig-primary-action:disabled { opacity: .6; }
+.ig-wish-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; }
+.ig-wish-pagination > span { font: 600 12px/1.5 var(--f-ui); }
+.ig-theatre .ig-wish-pagination .bl-btn { display: grid; place-items: center; flex: none; width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 50%; }
+.ig-wish-pagination button:disabled { opacity: .45; }
 .ig-feed-state { padding: 20px 0; text-align: center; font-size: 13px; }
 .ig-wish-note { position: relative; padding: 22px 0; border-top: 1px solid #AB9776; }
 .ig-wish-meta h3 { margin: 0; font: 600 18px/1.4 'Fraunces', Georgia, serif; color: var(--garden-rose); }

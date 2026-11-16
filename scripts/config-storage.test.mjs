@@ -84,3 +84,50 @@ test('a guest without a WhatsApp number still gets a private invitation token', 
   assert.match(requests[1].body.invite_token, /^\d{8}$/);
   assert.equal(requests[1].body.name, 'Test guest without phone');
 });
+
+const wishPayload = { inviteKey: 'test-guest-12345678', name: 'Guest', text: 'Best wishes', requestId: 'wish-request-test-1234' };
+const verifiedGuest = { status: 200, body: { id: 'test-guest', name: 'Guest' } };
+
+test('wish allowance counts stored messages including hidden ones for the verified invitation', async () => {
+  responses.push(verifiedGuest, { status: 200, body: [{ id: 'one' }, { id: 'two' }] });
+  assert.deepEqual(await callSupabase('wishStatus', wishPayload), { sentCount: 2, limit: 2 });
+  assert.equal(requests[1].path, '/rest/v1/wishes');
+});
+
+for (const count of [0, 1]) {
+  test(`invitation with ${count} existing wishes can submit`, async () => {
+    responses.push(verifiedGuest, { status: 200, body: null }, { status: 200, body: Array.from({ length: count }, (_, i) => ({ id: String(i) })) }, { status: 200, body: 'saved-wish' });
+    assert.deepEqual(await callSupabase('addWish', wishPayload), { id: 'saved-wish' });
+    assert.equal(requests.at(-1).path, '/rest/v1/rpc/submit_wish');
+  });
+}
+
+test('a third wish returns the explicit limit and never calls the insert RPC', async () => {
+  responses.push(verifiedGuest, { status: 200, body: null }, { status: 200, body: [{ id: 'one' }, { id: 'two' }] });
+  await assert.rejects(callSupabase('addWish', wishPayload), /wish_limit_reached/);
+  assert.equal(requests.length, 3);
+});
+
+test('retrying an already saved wish succeeds even after the allowance is exhausted', async () => {
+  responses.push(verifiedGuest, { status: 200, body: { id: 'saved-wish', guest_id: 'test-guest' } });
+  assert.deepEqual(await callSupabase('addWish', wishPayload), { id: 'saved-wish' });
+  assert.equal(requests.length, 2);
+});
+
+test('a request id from another invitation cannot be reused', async () => {
+  responses.push(verifiedGuest, { status: 200, body: { id: 'other-wish', guest_id: 'another-guest' } });
+  await assert.rejects(callSupabase('addWish', wishPayload), /invalid request id/);
+});
+
+test('database concurrency limit is preserved as a specific client error', async () => {
+  responses.push(verifiedGuest, { status: 200, body: null }, { status: 200, body: [{ id: 'one' }] }, { status: 400, body: { code: 'P0001', message: 'wish_limit_reached' } });
+  await assert.rejects(callSupabase('addWish', wishPayload), /wish_limit_reached/);
+});
+
+test('invalid invitations cannot read an allowance or submit a wish', async () => {
+  for (const action of ['wishStatus', 'addWish']) {
+    responses.push({ status: 200, body: null });
+    await assert.rejects(callSupabase(action, wishPayload), /invalid invitation link/);
+  }
+  assert.equal(requests.length, 2);
+});

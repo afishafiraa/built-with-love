@@ -1,7 +1,7 @@
 import type { ApiRequest, ApiResponse } from './http.js';
 
 type PageSources = {
-  loadHtml: () => Promise<string>;
+  loadHtml: (req: ApiRequest) => Promise<string>;
   loadConfig: () => Promise<unknown>;
 };
 
@@ -19,7 +19,7 @@ export function createInvitationPage({ loadHtml, loadConfig }: PageSources) {
       return;
     }
 
-    const html = await loadHtml();
+    const html = await loadHtml(req);
     let title = 'Wedding Invitation';
     try {
       const config = await loadConfig();

@@ -57,6 +57,7 @@ function database() {
 }
 
 function databaseError(action: string, error: { code?: string; message: string }) {
+  if (error.message.includes('wish_limit_reached')) throw new Error('wish_limit_reached');
   const known = error.message.match(/invalid invitation link|invalid guest count|invalid rsvp|wish name and text required/i)?.[0];
   if (known) throw new Error(known.toLowerCase());
   console.error(JSON.stringify({ scope: 'supabase', action, code: error.code || 'unknown' }));
@@ -264,7 +265,25 @@ export async function callSupabase(action: string, payload: JsonRecord = {}) {
     const result = await client.rpc('public_wishes', { p_invite_key: stringValue(payload.inviteKey), p_limit: 100 });
     return value(action, result as DatabaseResult<JsonRecord[]>) || [];
   }
+  if (action === 'wishStatus') {
+    const guest = await findGuest(stringValue(payload.inviteKey));
+    if (!guest) throw new Error('invalid invitation link');
+    const result = await client.from('wishes').select('id').eq('guest_id', guest.id).limit(2);
+    const rows = value(action, result as DatabaseResult<JsonRecord[]>) || [];
+    return { sentCount: rows.length, limit: 2 };
+  }
   if (action === 'addWish') {
+    const guest = await findGuest(stringValue(payload.inviteKey));
+    if (!guest) throw new Error('invalid invitation link');
+    const retryResult = await client.from('wishes').select('id,guest_id').eq('request_id', stringValue(payload.requestId)).maybeSingle();
+    const existing = value(action, retryResult as DatabaseResult<JsonRecord>);
+    if (existing) {
+      if (existing.guest_id !== guest.id) throw new Error('invalid request id');
+      return { id: stringValue(existing.id) };
+    }
+    const countResult = await client.from('wishes').select('id').eq('guest_id', guest.id).limit(2);
+    const previous = value(action, countResult as DatabaseResult<JsonRecord[]>) || [];
+    if (previous.length >= 2) throw new Error('wish_limit_reached');
     const result = await client.rpc('submit_wish', {
       p_invite_key: stringValue(payload.inviteKey),
       p_name: stringValue(payload.name),

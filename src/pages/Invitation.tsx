@@ -10,6 +10,7 @@ import { InvitationNavigation } from '../components/InvitationNavigation';
 import { fontVars } from '../config/fonts';
 import { isPreview, useConfig } from '../lib/config';
 import { copyText } from '../lib/clipboard';
+import { lockHeroLayout } from '../lib/hero-layout';
 import { useGuest } from '../lib/guest';
 import { useMusic } from '../lib/music';
 import { api, backendReady } from '../lib/api';
@@ -397,8 +398,12 @@ function Cover({ cfg, t, coupleShort, guestName, langLabel, onOpen, onToggleLang
 }
 
 function Hero({ cfg, t }: S) {
+  const heroRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    if (heroRef.current) return lockHeroLayout(heroRef.current);
+  }, []);
   return (
-    <section id="hero" tabIndex={-1} className="bl-sec ig-hero" data-screen-label="Hero">
+    <section ref={heroRef} id="hero" tabIndex={-1} className="bl-sec ig-hero" data-screen-label="Hero">
       <Orn slot="v-theatre-garden" priority className="ig-theatre-backdrop" style={{ inset: 0, width: '100%', height: '100%' }} />
       <div className="ig-hero-title">
         <div className="ig-hero-kicker">{t.weddingOf}</div>
@@ -875,6 +880,10 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
+  const [page, setPage] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+  const submitting = useRef(false);
   const noteTimer = useRef<number | undefined>(undefined);
   const requestId = useRef('');
 
@@ -888,17 +897,23 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
       .catch(() => { if (alive) setLoadError(true); })
       .finally(() => { if (alive) setLoading(false); });
     load();
+    const loadStatus = () => api.wishStatus(guest.key)
+      .then(status => { if (alive) setSentCount(status.sentCount); })
+      .catch(() => { /* The submit endpoint still enforces the allowance. */ });
+    loadStatus();
     // New wishes are public immediately, so the wall also refreshes for guests
     // who leave the invitation open while others send their messages.
-    const timer = window.setInterval(load, 25000);
+    const timer = window.setInterval(() => { void load(); void loadStatus(); }, 25000);
     return () => { alive = false; window.clearInterval(timer); };
   }, [guest.key, preview, reload]);
 
   useEffect(() => () => window.clearTimeout(noteTimer.current), []);
 
   const submit = async () => {
+    if (submitting.current) return;
     const n = name.trim(), w = text.trim();
     window.clearTimeout(noteTimer.current);
+    if (sentCount >= 2) { setNoteError(true); setNote(t.wishLimit); return; }
     if (!n || !w) { setNoteError(true); setNote(!n ? t.needName : t.needWish); return; }
     if (!preview && !guest.key) { setNoteError(true); setNote(t.needInvite); return; }
     if (!requestId.current) {
@@ -910,6 +925,7 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
       }
     }
     const mine: WishView = { id: 'local-' + Date.now(), name: n, text: w, createdAt: new Date().toISOString(), mine: true };
+    submitting.current = true;
     setBusy(true);
     setNote('');
     setNoteError(false);
@@ -921,16 +937,31 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
       // A retry may return the id of a row that already reached the periodic
       // feed. Replace it instead of briefly rendering the same wish twice.
       setList(list => [posted, ...list.filter(item => item.id !== posted.id)]);
+      setPage(0);
+      setSentCount(count => Math.min(2, count + 1));
+      if (!preview && backendReady) void api.wishStatus(guest.key).then(status => setSentCount(status.sentCount)).catch(() => {});
       setText('');
       requestId.current = '';
       setNote(backendReady && !preview ? t.wishPending : t.wishPreviewSent);
       noteTimer.current = window.setTimeout(() => setNote(''), 5000);
-    } catch {
+    } catch (error) {
       setNoteError(true);
-      setNote(t.sendFailed);
+      const message = error instanceof Error ? error.message : '';
+      if (message === 'wish_limit_reached') {
+        setSentCount(2);
+        setNote(t.wishLimit);
+      } else setNote(message === 'rate_limit_reached' ? t.wishRateLimit : t.sendFailed);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
+  };
+
+  const pages = Math.max(1, Math.ceil(list.length / 4));
+  const currentPage = Math.min(page, pages - 1);
+  const changePage = (next: number) => {
+    setPage(next);
+    listRef.current?.focus({ preventScroll: true });
   };
 
   return (
@@ -943,18 +974,19 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
         </div>
         {preview && <p className="ig-preview-note">{t.wishesPreview}</p>}
         <form className="ig-wish-form" noValidate aria-busy={busy} onSubmit={event => { event.preventDefault(); void submit(); }}>
+          <p id={formId + '-allowance'} className="ig-wish-allowance" role={sentCount >= 2 ? 'status' : undefined}>{sentCount >= 2 ? t.wishLimit : t.wishAllowance}</p>
           <label htmlFor={formId + '-name'}>{t.nameLabel}</label>
           <input id={formId + '-name'} className="bl-field" value={name} onChange={e => setName(e.target.value)} placeholder={t.namePh} autoComplete="name" required aria-invalid={noteError && !name.trim()} aria-describedby={note ? formId + '-note' : undefined} />
           <label htmlFor={formId + '-wish'}>{t.wishKicker}</label>
           <textarea id={formId + '-wish'} className="bl-field" value={text} onChange={e => { setText(e.target.value); requestId.current = ''; }} rows={4} placeholder={t.wishPh} maxLength={600} required aria-invalid={noteError && !text.trim()} aria-describedby={note ? formId + '-note' : undefined} />
           {note && <div id={formId + '-note'} className={'bl-msg ' + (noteError ? 'is-error' : '')} role={noteError ? 'alert' : 'status'}>{note}</div>}
-          <button type="submit" className="bl-btn ig-primary-action" disabled={busy}>{busy ? t.sending : t.sendWish}</button>
+          <button type="submit" className="bl-btn ig-primary-action" disabled={busy || sentCount >= 2} aria-describedby={formId + '-allowance'}>{busy ? t.sending : t.sendWish}</button>
         </form>
-        <div className="ig-wish-list" aria-busy={loading}>
+        <div ref={listRef} tabIndex={-1} role="region" aria-label={t.wishKicker} className="ig-wish-list" aria-busy={loading}>
           {loading && <p className="ig-feed-state" role="status">{t.wishesLoading}</p>}
           {loadError && <div className="ig-feed-state" role="alert"><p>{t.wishesError}</p><button className="ig-text-action" onClick={() => setReload(value => value + 1)}>{t.retry}</button></div>}
           {!loading && !loadError && !list.length && <p className="ig-feed-state">{t.wishesEmpty}</p>}
-          {list.map(w => (
+          {list.slice(currentPage * 4, currentPage * 4 + 4).map(w => (
             <article key={w.id} className="ig-wish-note">
               <div className="ig-wish-meta">
                 <h3>{w.name}</h3>
@@ -964,6 +996,15 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
             </article>
           ))}
         </div>
+        {pages > 1 && <nav className="ig-wish-pagination" aria-label={t.wishPagination}>
+          <button type="button" className="bl-btn ig-secondary-action" aria-label={t.wishPrevious} title={t.wishPrevious} disabled={currentPage === 0} onClick={() => changePage(currentPage - 1)}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+          </button>
+          <span role="status">{t.wishPages.replace('{page}', String(currentPage + 1)).replace('{total}', String(pages))}</span>
+          <button type="button" className="bl-btn ig-secondary-action" aria-label={t.wishNext} title={t.wishNext} disabled={currentPage === pages - 1} onClick={() => changePage(currentPage + 1)}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6" /></svg>
+          </button>
+        </nav>}
       </div>
     </section>
   );

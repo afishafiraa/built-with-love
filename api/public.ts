@@ -3,7 +3,7 @@ import { ApiRequest, ApiResponse, clientIp, rateLimit, readJson, rejectRateLimit
 import { actionName, invitationKey, optionalText, text } from '../server/validation.js';
 
 const LIMITS: Record<string, [number, number]> = {
-  bootstrap: [120, 60_000], getGuest: [120, 60_000], listWishes: [120, 60_000],
+  bootstrap: [120, 60_000], getGuest: [120, 60_000], listWishes: [120, 60_000], wishStatus: [120, 60_000],
   rsvp: [12, 10 * 60_000], addWish: [5, 10 * 60_000], track: [40, 10 * 60_000]
 };
 
@@ -12,7 +12,7 @@ export const maxDuration = 30;
 
 function payloadFor(action: string, body: Record<string, unknown>) {
   if (action === 'listWishes') return { inviteKey: invitationKey(body.inviteKey) };
-  if (action === 'bootstrap' || action === 'getGuest') return { inviteKey: invitationKey(body.inviteKey) };
+  if (action === 'bootstrap' || action === 'getGuest' || action === 'wishStatus') return { inviteKey: invitationKey(body.inviteKey) };
   if (action === 'rsvp') {
     const rsvp = body.rsvp;
     if (rsvp !== 'yes' && rsvp !== 'no') throw new Error('invalid rsvp');
@@ -59,6 +59,9 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     // Public callers can never switch listWishes into admin/all mode.
     return send(res, 200, { data });
   } catch (error) {
+    if (error instanceof Error && error.message === 'wish_limit_reached') {
+      return send(res, 409, { error: 'wish_limit_reached' });
+    }
     if (error instanceof Error && /invalid|required|unknown/.test(error.message)) {
       return send(res, 400, { error: error.message });
     }
