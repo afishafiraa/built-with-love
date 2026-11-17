@@ -65,11 +65,16 @@ const GROUPS: { title: string; hint: string; isLang?: boolean; musicUpload?: boo
     { key: 'address', label: 'Alamat lengkap', area: true, wide: true },
     { key: 'mapsQuery', label: 'Kata kunci Google Maps', wide: true, note: 'Yang dicari di peta, mis. "Gedung Serbaguna Melati, Yogyakarta".' }
   ] },
-  { title: 'Info hari acara', hint: 'Opsional · tanpa dress code', fields: [
-    { key: 'dayParking', label: 'Akses / parkir (Indonesia)', area: true, wide: true },
-    { key: 'dayParkingEn', label: 'Access / parking (English)', area: true, wide: true },
-    { key: 'dayContactName', label: 'Nama kontak panitia' },
-    { key: 'dayContactPhone', label: 'Nomor kontak panitia', ph: '08...' }
+  { title: 'Info hari acara', hint: 'Opsional · tampil pada hari H berdasarkan waktu WIB', fields: [
+    { key: 'dayParking', label: 'Akses / parkir (Indonesia)', area: true, wide: true,
+      ph: 'Contoh: Masuk melalui gerbang utama. Parkir mobil di belakang gedung dan motor di sisi timur. Ikuti arahan petugas.',
+      note: 'Isi petunjuk yang sesuai dengan lokasi sebenarnya. Kosongkan jika tidak ada informasi tambahan.' },
+    { key: 'dayParkingEn', label: 'Access / parking (English)', area: true, wide: true,
+      ph: 'Example: Enter through the main gate. Car parking is behind the venue; motorcycle parking is on the east side. Please follow the attendants’ directions.',
+      note: 'Terjemahan petunjuk parkir. Jika kosong, versi Indonesia ditampilkan pada undangan berbahasa Inggris.' },
+    { key: 'dayContactName', label: 'Nama kontak panitia', ph: 'Contoh: Nama panitia — penerima tamu' },
+    { key: 'dayContactPhone', label: 'Nomor kontak panitia', ph: '+62 8xx xxxx xxxx',
+      note: 'Gunakan nomor panitia yang siap dihubungi pada hari H. Tamu dapat mengetuk nomor ini untuk menelepon.' }
   ] },
   { title: 'Love story', hint: 'Indonesia & English · kosongkan untuk menyembunyikan', fields: [1, 2, 3, 4].flatMap(n => [
     { key: ('story' + n + 'Year') as Key, label: 'Babak ' + n + ' — tahun' },

@@ -19,6 +19,15 @@ button, a, input, textarea, select { touch-action: manipulation; }
 .app-min-screen { min-height: 100vh; }
 .app-screen { height: 100vh; }
 .app-dashboard { padding: 28px 18px 60px; }
+.guest-delivery-toggle { display: flex; align-items: center; gap: 9px; min-height: 44px; padding: 0; border: 0; background: transparent; color: #2F2C26; font: inherit; text-align: left; cursor: pointer; }
+.guest-delivery-track { position: relative; box-sizing: border-box; flex: none; width: 46px; height: 26px; border: 1px solid #858575; border-radius: 999px; background: #DADACE; transition: background .18s, border-color .18s; }
+.guest-delivery-thumb { position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .18s; }
+.guest-delivery-toggle[aria-checked="true"] { color: #4A5343; }
+.guest-delivery-toggle[aria-checked="true"] .guest-delivery-track { background: #4A5343; border-color: #4A5343; }
+.guest-delivery-toggle[aria-checked="true"] .guest-delivery-thumb { transform: translateX(20px); }
+.guest-delivery-toggle:focus-visible { outline: 3px solid #50573B; outline-offset: 3px; }
+.guest-delivery-toggle:disabled { opacity: .6; cursor: wait; }
+@media (prefers-reduced-motion: reduce) { .guest-delivery-track, .guest-delivery-thumb { transition: none; } }
 @supports (min-height: 100dvh) { .app-min-screen { min-height: 100dvh; } }
 @supports (height: 100dvh) { .app-screen { height: 100dvh; } }
 @supports (padding: max(0px)) {

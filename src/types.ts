@@ -49,7 +49,7 @@ export interface Guest {
   rsvp?: 'yes' | 'no' | '';
   guests?: number;
   checkedInAt?: string;
-  /** Manually confirmed after the personal WhatsApp chat has been sent. */
+  /** Manually confirmed invitation delivery through WhatsApp, email, DM, or another channel. */
   waSentAt?: string;
 }
 

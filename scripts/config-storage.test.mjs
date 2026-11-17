@@ -175,3 +175,19 @@ test('check-in accepts the new link reference without confusing it with a guest 
   assert.equal(await callSupabase('checkIn', { guestId: 'ref:' + reference }), true);
   assert.deepEqual(requests[1].body, { p_guest_code: 'test-guest-12345678' });
 });
+
+test('manual invitation delivery persists without requiring a WhatsApp number', async () => {
+  responses.push({ status: 200, body: { id: 'guest-no-phone' } });
+  const sentAt = await callSupabase('markGuestWaSent', { id: 'guest-no-phone', sent: true });
+  assert.ok(Number.isFinite(Date.parse(sentAt)));
+  assert.equal(requests[0].method, 'PATCH');
+  assert.equal(requests[0].query.id, 'eq.guest-no-phone');
+  assert.deepEqual(requests[0].body, { wa_sent_at: sentAt });
+  assert.equal(requests.length, 1);
+});
+
+test('unchecking manual delivery clears the persisted timestamp', async () => {
+  responses.push({ status: 200, body: { id: 'guest-no-phone' } });
+  assert.equal(await callSupabase('markGuestWaSent', { id: 'guest-no-phone', sent: false }), '');
+  assert.deepEqual(requests[0].body, { wa_sent_at: null });
+});

@@ -190,10 +190,11 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(30);
   const paginationRef = useRef<HTMLDivElement>(null);
-  const [filter, setFilter] = useState<'all' | 'pending-rsvp' | 'attending' | 'not-attending' | 'pending-wa' | 'checked-in'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending-rsvp' | 'attending' | 'not-attending' | 'pending-sent' | 'sent' | 'checked-in'>('all');
   const hasValidPhone = (g: Guest) => isValidWaNumber(g.phone);
   const hasInviteLink = (g: Guest) => /^\d{8}$/.test(g.inviteToken);
   const pendingWa = guests.filter(g => hasValidPhone(g) && hasInviteLink(g) && !g.waSentAt);
+  const pendingInvitations = guests.filter(g => !g.waSentAt).length;
   const missingPhone = guests.filter(g => !hasValidPhone(g)).length;
   const missingToken = guests.filter(g => !hasInviteLink(g)).length;
   const currentWa = waQueue[waIndex] || null;
@@ -207,7 +208,8 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
         || (filter === 'pending-rsvp' && !g.rsvp)
         || (filter === 'attending' && g.rsvp === 'yes')
         || (filter === 'not-attending' && g.rsvp === 'no')
-        || (filter === 'pending-wa' && isValidWaNumber(g.phone) && !g.waSentAt)
+        || (filter === 'pending-sent' && !g.waSentAt)
+        || (filter === 'sent' && !!g.waSentAt)
         || (filter === 'checked-in' && !!g.checkedInAt);
       return matchesQuery && matchesFilter;
     });
@@ -227,7 +229,8 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
     ['pending-rsvp', 'Belum RSVP'],
     ['attending', 'Hadir'],
     ['not-attending', 'Tidak hadir'],
-    ['pending-wa', 'Belum WA'],
+    ['pending-sent', 'Belum dikirim'],
+    ['sent', 'Sudah dikirim'],
     ['checked-in', 'Check-in']
   ] as const;
 
@@ -263,20 +266,11 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
       setWaError(e instanceof Error ? e.message : 'Gagal menyimpan status WhatsApp');
     } finally { setWaBusy(false); }
   };
-  const resetWaSent = async (guest: Guest) => {
-    if (!window.confirm(`Masukkan ${guest.name} kembali ke antrean WhatsApp?`)) return;
+  const setInvitationSent = async (guest: Guest, sent: boolean) => {
     setWaBusy(true);
     setWaError('');
-    try { await api.markGuestWaSent(guest.id, false); await onSaved(); }
-    catch (e) { setWaError(e instanceof Error ? e.message : 'Gagal mengubah status WhatsApp'); }
-    finally { setWaBusy(false); }
-  };
-  const markExistingWa = async (guest: Guest) => {
-    if (!window.confirm(`Tandai undangan WhatsApp untuk ${guest.name} sebagai sudah dikirim?`)) return;
-    setWaBusy(true);
-    setWaError('');
-    try { await api.markGuestWaSent(guest.id); await onSaved(); }
-    catch (e) { setWaError(e instanceof Error ? e.message : 'Gagal menyimpan status WhatsApp'); }
+    try { await api.markGuestWaSent(guest.id, sent); await onSaved(); }
+    catch (e) { setWaError(e instanceof Error ? e.message : 'Gagal menyimpan status pengiriman undangan'); }
     finally { setWaBusy(false); }
   };
   const removeGuest = async (guest: Guest) => {
@@ -311,11 +305,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
     setEditError('');
     try {
       const nextPhone = editPhone.trim();
-      const phoneChanged = waNumber(nextPhone) !== waNumber(editing.phone);
       await api.upsertGuest({ id: editing.id, name: editName.trim(), phone: nextPhone });
-      // A corrected number has not received the invitation yet, even when the
-      // old number was previously marked as sent.
-      if (phoneChanged && editing.waSentAt) await api.markGuestWaSent(editing.id, false);
       await onSaved();
       setEditing(null);
     } catch (e) {
@@ -355,14 +345,14 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
           {addBusy ? 'Menambah…' : 'Tambah'}
         </button>
       </form>
-      <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.6 }}>Nomor WhatsApp boleh dikosongkan. Isi pesan dan tautan pribadi tetap bisa disalin untuk dibagikan lewat email, DM, atau platform lain.</p>
+      <p style={{ margin: '0 0 14px', fontSize: 12, lineHeight: 1.6 }}>Nomor WhatsApp boleh dikosongkan. Isi pesan dan tautan pribadi tetap bisa disalin untuk dibagikan lewat email, DM, atau platform lain. Centang status pengiriman setelah undangan dibagikan melalui platform pilihanmu.</p>
       {addError && <div role="alert" style={{ margin: '0 0 12px', color: red, fontSize: 12 }}>{addError}</div>}
       {deleteError && <div role="alert" style={{ margin: '0 0 12px', color: red, fontSize: 12 }}>{deleteError}</div>}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, margin: '4px 0 14px', padding: '12px 14px', background: '#E3E8DC', borderRadius: 12, flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontSize: 13, fontWeight: 600 }}>Bagikan undangan pribadi</div>
           <div style={{ marginTop: 3, fontSize: 11, opacity: .62 }}>
-            {pendingWa.length} belum dikirim{missingPhone ? ` · ${missingPhone} tanpa nomor valid` : ''}{missingToken ? ` · ${missingToken} tanpa invite token` : ''}
+            {pendingInvitations} belum dikirim{missingPhone ? ` · ${missingPhone} tanpa nomor valid` : ''}{missingToken ? ` · ${missingToken} tanpa invite token` : ''}
           </div>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -402,7 +392,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
         <thead>
           <tr style={{ textAlign: 'left', opacity: .55, fontSize: 10, letterSpacing: '.14em', textTransform: 'uppercase' }}>
             <th style={th}>Nama</th><th style={th}>No. HP</th><th style={th}>Dibuka</th><th style={th}>RSVP</th>
-            <th style={th}>Kursi</th><th style={th}>Check-in</th><th style={th}>WhatsApp</th><th style={th}>Aksi</th>
+            <th style={th}>Kursi</th><th style={th}>Check-in</th><th style={th}>Pengiriman undangan</th><th style={th}>Aksi</th>
           </tr>
         </thead>
         <tbody>
@@ -416,18 +406,17 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
                 <td style={td}>{g.rsvp === 'yes' ? 'Hadir' : g.rsvp === 'no' ? 'Tidak' : '-'}</td>
                 <td style={td}>{g.guests || '-'}</td>
                 <td style={td}>{g.checkedInAt ? 'ya' : '-'}</td>
-                <td style={{ ...td, minWidth: 105 }}>
-                  {g.waSentAt
-                    ? <><div style={{ color: sage, fontWeight: 600 }}>Terkirim</div><div style={{ marginTop: 2, fontSize: 10, opacity: .55 }}>{new Date(g.waSentAt).toLocaleString('id-ID')}</div></>
-                    : <>
-                        <div style={{ color: hasValidPhone(g) ? red : ink, opacity: hasValidPhone(g) ? 1 : .45 }}>{hasValidPhone(g) ? 'Belum' : 'Tanpa nomor'}</div>
-                        {hasValidPhone(g) && hasInviteLink(g) && <button type="button" onClick={() => markExistingWa(g)} disabled={waBusy}
-                          style={{ marginTop: 4, padding: 0, border: 0, background: 'transparent', color: sage, fontSize: 10, textDecoration: 'underline', cursor: waBusy ? 'default' : 'pointer' }}>Tandai sudah WA</button>}
-                      </>}
+                <td style={{ ...td, minWidth: 170 }}>
+                  <button type="button" role="switch" aria-checked={!!g.waSentAt} disabled={waBusy}
+                    aria-label={`Undangan untuk ${g.name} sudah dikirim`} className="guest-delivery-toggle"
+                    onClick={() => { void setInvitationSent(g, !g.waSentAt); }}>
+                    <span className="guest-delivery-track" aria-hidden="true"><span className="guest-delivery-thumb" /></span>
+                    <span>{g.waSentAt ? 'Sudah dikirim' : 'Belum dikirim'}</span>
+                  </button>
+                  {g.waSentAt && <div style={{ marginTop: 2, fontSize: 10, color: '#626057' }}>{new Date(g.waSentAt).toLocaleString('id-ID')}</div>}
                 </td>
                 <td style={{ ...td, whiteSpace: 'nowrap' }}>
                   {hasInviteLink(g) && <button type="button" onClick={() => startWaQueue([g])} style={waBtn}>Preview pesan</button>}
-                  {g.waSentAt && <button type="button" onClick={() => resetWaSent(g)} disabled={waBusy} style={mini}>Batalkan tanda WA</button>}
                   <button disabled={!link} onClick={async () => {
                     if (!link) return;
                     if (!await copyText(link)) return;
@@ -479,7 +468,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
                 style={{ boxSizing: 'border-box', display: 'block', width: '100%', marginTop: 7, padding: 12, border: '1px solid rgba(47,44,38,.18)', borderRadius: 9 }} />
             </label>
             <div style={{ marginTop: 9, fontSize: 11, lineHeight: 1.55, opacity: .58 }}>
-              Link undangan dan riwayat RSVP tetap sama. Jika nomor HP diubah, status WhatsApp lama akan dibatalkan agar nomor baru masuk antrean.
+              Link undangan, status pengiriman, dan riwayat RSVP tetap sama saat nama atau nomor HP diperbaiki.
             </div>
             {editError && <div role="alert" style={{ marginTop: 10, color: red, fontSize: 12 }}>{editError}</div>}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 8, marginTop: 17 }}>
