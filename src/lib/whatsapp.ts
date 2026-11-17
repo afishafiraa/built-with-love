@@ -1,35 +1,12 @@
 import { DEFAULT_CONFIG } from '../config/invitation';
-import type { WeddingConfig } from '../types';
+import type { Lang, WeddingConfig } from '../types';
+import { formatInvitationMessage } from './whatsapp-message';
 import { whatsappMessageUrl } from './whatsapp-url';
 import type { WhatsAppTarget } from './whatsapp-url';
 export { whatsAppTarget } from './whatsapp-url';
 
-export function waInviteText(guestName: string, link: string, c: WeddingConfig = DEFAULT_CONFIG) {
-  return [
-    'Kepada Yth.',
-    'Bapak/Ibu/Saudara/I',
-    (guestName || 'Bapak/Ibu/Saudara/i'),
-    '',
-    'Assalamualaikum Warahmatullahi Wabarakatuh.',
-    'Tanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk dapat hadir, dan memberikan doa restu pada acara pernikahan:',
-    '',
-    '💍 ' + c.groomFull + ' & ' + c.brideFull,
-    '',
-    'Yang insya Allah akan dilangsungkan pada : ',
-    c.dateLabel?.trim() ? '🗓️ Tanggal : ' + c.dateLabel.trim() : undefined,
-    '',
-    'Berikut link undangan kami untuk info lengkap dari acara bisa kunjungi :',
-    link,
-    '',
-    'Suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i beserta keluarga berkenan untuk dapat hadir dan memberikan doa restu kepada kami.',
-    '',
-    'Mohon maaf perihal undangan hanya di bagikan melalui pesan ini. Terima kasih banyak atas perhatiannya.',
-    '',
-    'Hormat kami,',
-    c.groomName + ', ' + c.brideName + ' & Keluarga 🤍',
-    '',
-    'Wassalamualaikum Warahmatullahi Wabarakatuh.'
-  ].filter(line => line !== undefined).join('\n');
+export function waInviteText(guestName: string, link: string, c: WeddingConfig = DEFAULT_CONFIG, lang: Lang = 'id') {
+  return formatInvitationMessage(guestName, link, c, lang);
 }
 
 /**

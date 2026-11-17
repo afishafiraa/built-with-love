@@ -14,7 +14,7 @@
     "monitor:test-email": "node --env-file=.env.monitor scripts/monitor-availability.mjs --test-email",
     "monitor:test-policy": "node --test scripts/monitor-policy.test.mjs",
     "test:config-storage": "node --experimental-strip-types --test scripts/config-storage.test.mjs",
-    "test:whatsapp": "node --experimental-strip-types --test scripts/whatsapp-url.test.mjs",
+    "test:whatsapp": "node --experimental-strip-types --test scripts/whatsapp-url.test.mjs scripts/whatsapp-message.test.mjs",
     "test:invitation-page": "node --experimental-strip-types --test scripts/invitation-page.test.mjs scripts/invitation-html.test.mjs",
     "test:hero-layout": "node --experimental-strip-types --test scripts/hero-layout.test.mjs",
     "test:invitation-link": "node --experimental-strip-types --test scripts/invitation-link.test.mjs",

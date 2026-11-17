@@ -10,7 +10,7 @@ import { isValidWaNumber, waInviteText, waLink, waNumber, whatsAppTarget } from 
 import { loadCached } from '../lib/config';
 import { mergeConfig } from '../config/invitation';
 import AdminGate from '../components/AdminGate';
-import type { Guest, WeddingConfig, Wish } from '../types';
+import type { Guest, Lang, WeddingConfig, Wish } from '../types';
 
 const ink = '#2F2C26', sage = '#4A5343', red = '#A93227', paper = '#FBF8F0';
 
@@ -185,6 +185,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const [waError, setWaError] = useState('');
   const [waNotice, setWaNotice] = useState('');
   const [waCopiedText, setWaCopiedText] = useState('');
+  const [waLang, setWaLang] = useState<Lang>('id');
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(30);
@@ -196,7 +197,7 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
   const missingPhone = guests.filter(g => !hasValidPhone(g)).length;
   const missingToken = guests.filter(g => !hasInviteLink(g)).length;
   const currentWa = waQueue[waIndex] || null;
-  const currentWaText = currentWa ? waInviteText(currentWa.name, guestLink(location.origin, currentWa.name, currentWa.inviteToken), cfg) : '';
+  const currentWaText = currentWa ? waInviteText(currentWa.name, guestLink(location.origin, currentWa.name, currentWa.inviteToken), cfg, waLang) : '';
   const visibleGuests = useMemo(() => {
     const needle = query.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').trim();
     return guests.filter(g => {
@@ -504,7 +505,18 @@ function GuestTable({ guests, cfg, onQr, onSaved }: { guests: Guest[]; cfg: Wedd
               <button type="button" onClick={() => { setWaQueue([]); setWaError(''); }} aria-label="Tutup preview pesan"
                 style={{ width: 44, height: 44, border: '1px solid rgba(47,44,38,.18)', background: 'transparent', borderRadius: '50%', cursor: 'pointer' }}>&times;</button>
             </div>
-            <div style={{ marginTop: 16, padding: 14, maxHeight: 210, overflowY: 'auto', whiteSpace: 'pre-wrap', background: '#F3EFE5', border: '1px solid rgba(47,44,38,.1)', borderRadius: 10, fontSize: 12.5, lineHeight: 1.6 }}>
+            <div role="group" aria-label="Bahasa pesan undangan" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+              {([['id', 'Bahasa Indonesia'], ['en', 'English']] as const).map(([language, label]) => (
+                <button key={language} type="button" disabled={waBusy} aria-pressed={waLang === language} onClick={() => {
+                  if (language === waLang) return;
+                  setWaLang(language);
+                  setWaOpened(false);
+                  setWaCopiedText('');
+                  setWaError('');
+                }} style={{ ...mini, margin: 0, background: waLang === language ? sage : 'transparent', color: waLang === language ? paper : ink }}>{label}</button>
+              ))}
+            </div>
+            <div lang={waLang} aria-label="Isi pesan undangan" style={{ marginTop: 12, padding: 14, maxHeight: 210, overflowY: 'auto', whiteSpace: 'pre-wrap', background: '#F3EFE5', border: '1px solid rgba(47,44,38,.1)', borderRadius: 10, fontSize: 12.5, lineHeight: 1.6 }}>
               {currentWaText}
             </div>
             {(!cfg.dateLabel.trim() || !cfg.akadTime.trim() || !cfg.resepsiTime.trim() || !cfg.venue.trim()) && (
