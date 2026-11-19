@@ -79,17 +79,16 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
 .ig-cover-monogram { flex: none; margin: 0 auto 24px; }
 .ig-theatre .ig-cover-copy { width: 100%; animation: gardenTitle .65s .08s both; }
 .ig-theatre .ig-cover-kicker { max-width: 250px; margin: auto; color: var(--garden-rose); font: 600 11px/1.7 var(--f-ui); letter-spacing: .08em; }
-.ig-theatre .ig-cover-name {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 12px;
-  margin: 12px 0 4px; font-size: clamp(52px, 13vw, 74px); line-height: 1.1; color: var(--garden-deep);
-}
-.ig-cover-name i { font: italic 400 .42em/1 'Fraunces', Georgia, serif; color: var(--garden-rose); }
-.ig-cover-date { display: block; margin-top: 12px; font: 500 13px/1.7 var(--f-body); }
 .ig-theatre .ig-cover-envelope {
-  width: min(100%, 305px); height: auto; aspect-ratio: 1.12;
-  margin: 6px auto -12px; animation: gardenLetter .8s .12s both;
+  position: relative;
+  width: min(100%, 330px); height: auto; aspect-ratio: 540 / 652;
+  margin: 12px auto 10px; animation: gardenLetter .8s .12s both;
   filter: drop-shadow(0 13px 14px #3E352C25);
 }
+.ig-cover-envelope picture, .ig-cover-envelope img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ig-cover-envelope canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.ig-cover-envelope .ig-envelope-video-source { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.ig-theatre .ig-cover-button:disabled { cursor: wait; opacity: .7; transform: none; }
 .ig-theatre .ig-envelope-addressee {
   position: relative; inset: auto; display: grid; gap: 5px; max-width: 100%;
   margin-top: 0; text-shadow: none; color: var(--garden-ink);
@@ -135,18 +134,20 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
 }
 .ig-theatre-backdrop > img { object-fit: cover; object-position: center center; }
 .ig-theatre .ig-hero-title {
-  z-index: 3; top: 12%; left: 30px; right: 30px; animation: gardenTitle .65s .12s both;
+  z-index: 3; top: 12%; left: 30px; right: 30px; animation: none;
 }
-.ig-theatre .ig-hero-kicker { font: 600 clamp(15px, 4vw, 19px)/1.5 var(--f-ui); letter-spacing: .1em; color: var(--garden-rose); }
+/* Staggered fades finish at 2.9s; the opening papers clear at .85s. */
+.ig-theatre .ig-hero-kicker { font: 600 clamp(15px, 4vw, 19px)/1.5 var(--f-ui); letter-spacing: .1em; color: var(--garden-rose); animation: gardenHeroFade .8s .5s ease-out both; }
 .ig-theatre .ig-hero-title h1 {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 11px;
   margin: 8px 0 0; font-size: clamp(54px, 14vw, 78px); line-height: 1.05; color: var(--garden-deep);
+  animation: gardenHeroFade 1s .95s ease-out both;
 }
 .ig-theatre .ig-hero-title h1 span { margin: 0; font: italic 400 .36em/1 'Fraunces', Georgia, serif; color: var(--garden-rose); }
-.ig-hero-date { display: block; max-width: 270px; margin: 12px auto 0; font: 600 12px/1.7 var(--f-ui); color: var(--garden-ink); }
+.ig-hero-date { display: block; max-width: 270px; margin: 12px auto 0; font: 600 12px/1.7 var(--f-ui); color: var(--garden-ink); animation: gardenHeroFade .8s 1.3s ease-out both; }
 .ig-theatre .ig-hero-couple {
   z-index: 4; bottom: calc(164px + var(--hero-safe-bottom)); width: 76%; height: 46%;
-  filter: drop-shadow(0 7px 8px #5B543C25); animation: gardenCharacter .85s .26s both;
+  filter: drop-shadow(0 7px 8px #5B543C25); animation: gardenHeroFade 1.2s 1.7s ease-out both;
 }
 .ig-theatre .ig-hero-couple > img { object-fit: contain; object-position: center bottom; }
 .ig-theatre .ig-hero-invite {
@@ -154,6 +155,7 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
   display: flex; align-items: center; justify-content: center; min-height: 52px; min-width: 48px;
   max-width: calc(100% - 48px); padding: 0 12px; border: 0;
   background: transparent; color: #A47D3F; font: 700 12px/1.4 var(--f-ui);
+  animation: gardenHeroFade .6s 2.3s ease-out both;
 }
 .ig-scroll-cue { animation: gardenCueBounce 2.2s cubic-bezier(.45, 0, .55, 1) infinite; animation-play-state: paused; }
 .ig-hero-invite.is-animating .ig-scroll-cue { animation-play-state: running; }
@@ -325,7 +327,7 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
 @keyframes gardenCueBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
 @keyframes gardenTitle { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes gardenLetter { from { opacity: 0; transform: translateY(18px) rotate(-2deg); } to { opacity: 1; transform: none; } }
-@keyframes gardenCharacter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes gardenHeroFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes gardenBackdrop { from { opacity: .5; } to { opacity: 1; } }
 @keyframes gardenPetal { 0% { opacity: 0; transform: translate3d(0, 0, 0) rotate(0); } 10% { opacity: .65; } 85% { opacity: .55; } 100% { opacity: 0; transform: translate3d(var(--petal-drift), calc(100svh + 48px), 0) rotate(220deg); } }
 .ig-theatre .ig-opening-paper-left { animation-duration: .8s; }
@@ -348,7 +350,6 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
   .ig-agenda-date { gap: 10px; }
   .ig-agenda-date strong { font-size: 76px; }
   .ig-agenda-date > span { font-size: 24px; }
-  .ig-theatre .ig-cover-name { gap: 0 8px; font-size: 51px; }
   .ig-theatre .ig-couple-section { padding-inline: 18px; }
   .ig-theatre .ig-portrait-copy .bl-full-name { font-size: 18px; }
   .ig-guest-stepper { align-items: flex-start; flex-direction: column; }
@@ -362,6 +363,10 @@ html.bl-document { scroll-padding-top: 12px; scroll-behavior: smooth; }
 @media (max-height: 500px) and (min-width: 480px) {
   .ig-theatre .ig-cover-content { max-width: 400px; }
   .ig-cover-monogram { margin-top: 12px; }
+}
+@media (max-height: 740px) {
+  .ig-theatre .ig-cover-monogram { width: 80px; margin-bottom: 16px; }
+  .ig-theatre .ig-cover-envelope { width: min(100%, 275px); }
 }
 @media (prefers-reduced-motion: reduce) {
   html.bl-document { scroll-behavior: auto; }

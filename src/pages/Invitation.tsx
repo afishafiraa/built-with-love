@@ -7,6 +7,7 @@ import { COPY } from '../config/copy';
 import type { Copy } from '../config/copy';
 import { RIBBON, THREAD_X, THREAD, slotSrc } from '../config/slots';
 import { InvitationNavigation } from '../components/InvitationNavigation';
+import { EnvelopePlayback } from '../components/EnvelopePlayback';
 import { fontVars } from '../config/fonts';
 import { isPreview, useConfig } from '../lib/config';
 import { copyText } from '../lib/clipboard';
@@ -209,8 +210,10 @@ export default function Invitation() {
     window.scrollTo(0, 0);
     setOpening(true);
     setClosed(false);
-    window.setTimeout(() => setOpening(false), 850);
-    if (!music.playing) music.start();
+    window.setTimeout(() => {
+      setOpening(false);
+      music.start();
+    }, 850);
     if (!preview) api.track({ inviteKey: guest.key, event: 'open-invitation' });
   };
 
@@ -276,8 +279,9 @@ export default function Invitation() {
           {giftOpen && <GiftSheet cfg={cfg} t={t} lang={lang} onClose={() => setGiftOpen(false)} />}
 
           {closed && (<main id="cover-content">
-            <Cover cfg={cfg} t={t} coupleShort={coupleShort} guestName={guest.name}
-              langLabel={lang === 'id' ? 'EN' : 'ID'} onOpen={onOpen} onToggleLang={toggleLang} />
+            <Cover t={t} guestName={guest.name}
+              langLabel={lang === 'id' ? 'EN' : 'ID'} onOpen={onOpen}
+              onStart={music.prepare} onToggleLang={toggleLang} />
           </main>)}
 
           {opening && (
@@ -368,28 +372,34 @@ function Petals() {
   );
 }
 
-function Cover({ cfg, t, coupleShort, guestName, langLabel, onOpen, onToggleLang }: S & {
-  coupleShort: string; guestName: string; langLabel: string;
-  onOpen: () => void; onToggleLang: () => void;
+function Cover({ t, guestName, langLabel, onOpen, onStart, onToggleLang }: {
+  t: Copy; guestName: string; langLabel: string;
+  onOpen: () => void; onStart: () => void; onToggleLang: () => void;
 }) {
+  const assets = useContext(Assets);
+  const [playing, setPlaying] = useState(false);
+  const start = () => {
+    if (playing) return;
+    onStart();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { onOpen(); return; }
+    setPlaying(true);
+  };
   return (
     <div className="ig-cover">
       <Orn slot="v-theatre-garden" className="ig-cover-garden" style={{ inset: 0, width: '100%', height: '100%' }} eager />
       <div className="ig-cover-content">
         <Monogram className="ig-cover-monogram" />
         <div className="ig-cover-copy">
-          <div className="ig-cover-kicker">{t.coverKicker}</div>
-          <h1 className="bl-display bl-couple-name ig-cover-name" aria-label={coupleShort}><span>{cfg.groomName}</span><i>&</i><span>{cfg.brideName}</span></h1>
-          <time className="ig-cover-date" dateTime={cfg.dateISO}>{t.and === 'and' ? cfg.dateLabelEn || cfg.dateLabel : cfg.dateLabel}</time>
+          <h1 className="ig-cover-kicker">{t.coverKicker}</h1>
         </div>
         <div className="ig-cover-envelope">
-          <Orn slot="v-envelope-closed" priority style={{ inset: 0, width: '100%', height: '100%' }} />
+          <EnvelopePlayback playing={playing} poster={slotSrc(assets, 'v-envelope-closed')} onComplete={onOpen} />
         </div>
         <div className="ig-envelope-addressee">
           <span>{t.guestGreeting}</span>
           <strong>{guestName || t.guestDefault}</strong>
         </div>
-        <button className="bl-btn ig-cover-button" onClick={onOpen}>{t.openInvite}</button>
+        <button className="bl-btn ig-cover-button" onClick={start} disabled={playing} aria-busy={playing}>{t.openInvite}</button>
         <div className="ig-cover-rule" aria-hidden="true"><span /></div>
       </div>
       <div className="ig-corner-controls"><button type="button" className="bl-icon-btn" onClick={onToggleLang} aria-label={langLabel === 'EN' ? 'Read in English' : 'Baca dalam Bahasa Indonesia'}>{langLabel}</button></div>

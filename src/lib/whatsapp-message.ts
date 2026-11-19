@@ -1,19 +1,7 @@
 import type { Lang, WeddingConfig } from '../types';
 
-function englishDate(c: WeddingConfig) {
-  if (c.dateLabelEn?.trim()) return c.dateLabelEn.trim();
-  const date = new Date(c.dateISO);
-  if (!Number.isNaN(date.getTime())) {
-    return new Intl.DateTimeFormat('en-GB', {
-      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta'
-    }).format(date);
-  }
-  return c.dateLabel?.trim();
-}
-
 export function formatInvitationMessage(guestName: string, link: string, c: WeddingConfig, lang: Lang) {
   if (lang === 'en') {
-    const date = englishDate(c);
     return [
       'Dear ' + (guestName || 'Guest') + ',',
       '',
@@ -21,9 +9,6 @@ export function formatInvitationMessage(guestName: string, link: string, c: Wedd
       'With the grace and blessings of Allah SWT, we warmly invite you and your family to attend and bless the marriage of:',
       '',
       '💍 ' + c.groomFull + ' & ' + c.brideFull,
-      '',
-      'Insha Allah, our wedding will take place on:',
-      date ? '🗓️ Date: ' + date : undefined,
       '',
       'Please visit our invitation for the full details:',
       link,
@@ -33,7 +18,7 @@ export function formatInvitationMessage(guestName: string, link: string, c: Wedd
       'Please accept our apologies for sending this invitation by message. Thank you for your kind attention.',
       '',
       'With warm regards,',
-      c.groomName + ' & ' + c.brideName + ' and families 🤍',
+      c.groomName + ' & ' + c.brideName + '🤍',
       '',
       'Wassalamualaikum Warahmatullahi Wabarakatuh.'
     ].filter(line => line !== undefined).join('\n');
@@ -48,9 +33,6 @@ export function formatInvitationMessage(guestName: string, link: string, c: Wedd
     '',
     '💍 ' + c.groomFull + ' & ' + c.brideFull,
     '',
-    'Yang insya Allah akan dilangsungkan pada : ',
-    c.dateLabel?.trim() ? '🗓️ Tanggal : ' + c.dateLabel.trim() : undefined,
-    '',
     'Berikut link undangan kami untuk info lengkap dari acara bisa kunjungi :',
     link,
     '',
@@ -59,7 +41,7 @@ export function formatInvitationMessage(guestName: string, link: string, c: Wedd
     'Mohon maaf perihal undangan hanya di bagikan melalui pesan ini. Terima kasih banyak atas perhatiannya.',
     '',
     'Hormat kami,',
-    c.groomName + ', ' + c.brideName + ' & Keluarga 🤍',
+    c.groomName + ' & ' + c.brideName + '🤍',
     '',
     'Wassalamualaikum Warahmatullahi Wabarakatuh.'
   ].filter(line => line !== undefined).join('\n');

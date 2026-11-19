@@ -11,31 +11,33 @@ const config = {
 const guest = 'Élodie & Keluarga';
 const link = guestLink('https://invitation.example', guest, '12345678');
 
-test('Indonesian version retains the existing invitation wording and personal link', () => {
+test('Indonesian version includes the couple and personal link without duplicating event details', () => {
   const text = formatInvitationMessage(guest, link, config, 'id');
   assert.ok(text.startsWith('Kepada Yth.\nBapak/Ibu/Saudara/I\n' + guest));
-  assert.ok(text.includes('🗓️ Tanggal : Minggu, 3 Januari 2027'));
+  assert.ok(text.includes('💍 Groom Full Name & Bride Full Name'));
+  assert.ok(text.includes('Groom & Bride🤍'));
+  assert.doesNotMatch(text, /Tanggal :|Minggu, 3 Januari 2027/);
   assert.ok(text.includes('Mohon maaf perihal undangan hanya di bagikan melalui pesan ini. Terima kasih banyak atas perhatiannya.'));
   assert.ok(text.includes(link));
   assert.ok(text.endsWith('Wassalamualaikum Warahmatullahi Wabarakatuh.'));
 });
 
-test('English version uses the same couple and recipient with the English date', () => {
+test('English version uses the same couple, recipient and personal link', () => {
   const text = formatInvitationMessage(guest, link, config, 'en');
   assert.ok(text.startsWith('Dear ' + guest + ','));
   assert.ok(text.includes('💍 Groom Full Name & Bride Full Name'));
-  assert.ok(text.includes('🗓️ Date: Sunday, 3 January 2027'));
-  assert.ok(text.includes('Groom & Bride and families 🤍'));
+  assert.ok(text.includes('Groom & Bride🤍'));
   assert.equal(text.split(link).length, 2);
-  assert.doesNotMatch(text, /Kepada Yth|Tanggal :|Minggu|Januari/);
+  assert.doesNotMatch(text, /Kepada Yth|Tanggal :|Date:|Sunday, 3 January 2027|Minggu|Januari/);
 });
 
-test('missing English date is formatted from the event date in Jakarta, including a UTC date boundary', () => {
-  const text = formatInvitationMessage(guest, link, { ...config, dateLabelEn: '' }, 'en');
-  assert.ok(text.includes('Sunday, 3 January 2027'));
-  const undated = formatInvitationMessage('', link, { ...config, dateLabelEn: '', dateLabel: '', dateISO: '' }, 'en');
-  assert.ok(undated.startsWith('Dear Guest,'));
-  assert.doesNotMatch(undated, /Date:|undefined|Invalid Date/);
+test('missing recipient and event dates still produce usable messages in both languages', () => {
+  for (const lang of ['id', 'en']) {
+    const text = formatInvitationMessage('', link, { ...config, dateLabelEn: '', dateLabel: '', dateISO: '' }, lang);
+    assert.ok(text.startsWith(lang === 'en' ? 'Dear Guest,' : 'Kepada Yth.\nBapak/Ibu/Saudara/I\nBapak/Ibu/Saudara/i'));
+    assert.ok(text.includes(link));
+    assert.doesNotMatch(text, /Date:|Tanggal :|undefined|Invalid Date/);
+  }
 });
 
 for (const language of ['id', 'en']) {

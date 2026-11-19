@@ -40,18 +40,49 @@ export function useMusic(url: string, title = '') {
   const timer = useRef<number | undefined>(undefined);
   const ytFrame = useRef<HTMLIFrameElement | null>(null);
   const wantYt = useRef(false);
+  const preparing = useRef(false);
   const kind = musicKind(url);
 
   const stopSynth = () => { window.clearInterval(timer.current); timer.current = undefined; };
 
+  const prepare = useCallback(() => {
+    preparing.current = true;
+    const k = musicKind(url);
+    if (k.kind === 'yt') {
+      sendYtCommand(ytFrame.current, 'mute');
+      sendYtCommand(ytFrame.current, 'playVideo');
+    } else if (k.kind === 'file') {
+      if (!audio.current || audio.current.src !== new URL(k.url, location.href).href) {
+        audio.current?.pause();
+        audio.current = new Audio(k.url);
+        audio.current.loop = true;
+        audio.current.preload = 'auto';
+      }
+      const element = audio.current;
+      element.muted = true;
+      // Unlock this media element during the tap without playing audible music.
+      void element.play().then(() => {
+        if (preparing.current) element.pause();
+      }).catch(() => {});
+    } else {
+      try {
+        const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!ctx.current) ctx.current = new AC();
+        void ctx.current.resume().catch(() => {});
+      } catch { /* The music button can retry when the hero is visible. */ }
+    }
+  }, [url]);
+
   const start = useCallback(() => {
+    const prepared = preparing.current;
+    preparing.current = false;
     const k = musicKind(url);
     setPlaying(true);
     if (k.kind === 'yt') {
-      // The iframe is mounted while the cover is visible. Sending playVideo
-      // directly from this click/tap is accepted far more consistently by
-      // iOS Safari, Chrome iOS and Samsung Internet than iframe autoplay.
       wantYt.current = true;
+      if (prepared) sendYtCommand(ytFrame.current, 'seekTo', [0, true]);
+      sendYtCommand(ytFrame.current, 'unMute');
+      setYtVolume(ytFrame.current);
       sendYtCommand(ytFrame.current, 'playVideo');
       return;
     }
@@ -63,6 +94,8 @@ export function useMusic(url: string, title = '') {
         audio.current.preload = 'auto';
       }
       audio.current.volume = MUSIC_VOLUME;
+      if (prepared) audio.current.currentTime = 0;
+      audio.current.muted = false;
       audio.current.play().catch(() => setPlaying(false));
       return;
     }
@@ -97,6 +130,7 @@ export function useMusic(url: string, title = '') {
     stopSynth();
     audio.current?.pause();
     wantYt.current = false;
+    preparing.current = false;
     sendYtCommand(ytFrame.current, 'pauseVideo');
     setPlaying(false);
   }, []);
@@ -154,13 +188,27 @@ export function useMusic(url: string, title = '') {
   const onYtLoad = useCallback((frame: HTMLIFrameElement) => {
     ytFrame.current = frame;
     setYtVolume(frame);
+    if (preparing.current) {
+      sendYtCommand(frame, 'mute');
+      sendYtCommand(frame, 'playVideo');
+    }
     // If a guest opened the card before a slow iframe finished loading, honour
     // that request as soon as the player becomes available. The music control
     // remains a second explicit user-tap fallback on restrictive browsers.
-    if (wantYt.current) sendYtCommand(frame, 'playVideo');
+    if (wantYt.current) {
+      sendYtCommand(frame, 'unMute');
+      sendYtCommand(frame, 'playVideo');
+    }
     window.setTimeout(() => {
       setYtVolume(frame);
-      if (wantYt.current) sendYtCommand(frame, 'playVideo');
+      if (preparing.current) {
+        sendYtCommand(frame, 'mute');
+        sendYtCommand(frame, 'playVideo');
+      }
+      if (wantYt.current) {
+        sendYtCommand(frame, 'unMute');
+        sendYtCommand(frame, 'playVideo');
+      }
     }, 900);
   }, []);
 
@@ -171,5 +219,5 @@ export function useMusic(url: string, title = '') {
 
   // Keep the player mounted before the opening tap; mounting it only after the
   // tap is the root cause of autoplay failures on several mobile browsers.
-  return { playing, start, stop, toggle, ytSrc, setYtFrame, onYtLoad };
+  return { playing, prepare, start, stop, toggle, ytSrc, setYtFrame, onYtLoad };
 }
