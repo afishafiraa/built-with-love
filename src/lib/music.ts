@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { bindMusicVisibility } from './music-visibility';
 
 /** youtube / youtube music / youtu.be -> embeddable player id */
 function youtubeId(url: string): string | null {
@@ -41,6 +42,9 @@ export function useMusic(url: string, title = '') {
   const ytFrame = useRef<HTMLIFrameElement | null>(null);
   const wantYt = useRef(false);
   const preparing = useRef(false);
+  const wantsPlayback = useRef(false);
+  const background = useRef(false);
+  const playbackEpoch = useRef(0);
   const kind = musicKind(url);
 
   const stopSynth = () => { window.clearInterval(timer.current); timer.current = undefined; };
@@ -74,6 +78,14 @@ export function useMusic(url: string, title = '') {
   }, [url]);
 
   const start = useCallback(() => {
+    wantsPlayback.current = true;
+    if (document.hidden || background.current) { setPlaying(false); return; }
+    const epoch = ++playbackEpoch.current;
+    const failed = () => {
+      if (epoch !== playbackEpoch.current) return;
+      wantsPlayback.current = false;
+      setPlaying(false);
+    };
     const prepared = preparing.current;
     preparing.current = false;
     const k = musicKind(url);
@@ -96,14 +108,14 @@ export function useMusic(url: string, title = '') {
       audio.current.volume = MUSIC_VOLUME;
       if (prepared) audio.current.currentTime = 0;
       audio.current.muted = false;
-      audio.current.play().catch(() => setPlaying(false));
+      audio.current.play().catch(failed);
       return;
     }
     try {
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!ctx.current) ctx.current = new AC();
       const c = ctx.current;
-      c.resume();
+      void c.resume().catch(failed);
       const scale = [392, 440, 493.88, 587.33, 659.25, 783.99, 880];
       const pattern = [0, 3, 5, 4, 2, 5, 6, 3];
       let i = 0;
@@ -123,34 +135,33 @@ export function useMusic(url: string, title = '') {
       stopSynth();
       note();
       timer.current = window.setInterval(note, 700);
-    } catch { setPlaying(false); }
+    } catch { failed(); }
   }, [url]);
 
-  const stop = useCallback(() => {
+  const pausePlayback = useCallback(() => {
+    playbackEpoch.current++;
     stopSynth();
     audio.current?.pause();
-    wantYt.current = false;
-    preparing.current = false;
+    void ctx.current?.suspend().catch(() => {});
     sendYtCommand(ytFrame.current, 'pauseVideo');
     setPlaying(false);
   }, []);
 
+  const stop = useCallback(() => {
+    wantsPlayback.current = false;
+    wantYt.current = false;
+    preparing.current = false;
+    pausePlayback();
+  }, [pausePlayback]);
+
   const toggle = useCallback(() => { if (playing) stop(); else start(); }, [playing, start, stop]);
 
-  // Keep playback intent when guests switch tabs. Browsers may still suspend a
-  // background page (especially iOS or battery-saver mode), so re-assert play
-  // when the page becomes visible again without requiring another tap.
-  useEffect(() => {
-    const onVis = () => {
-      if (document.hidden || !playing) return;
-      const k = musicKind(url);
-      if (k.kind === 'file' && audio.current?.paused) audio.current.play().catch(() => setPlaying(false));
-      if (k.kind === 'yt' && wantYt.current) sendYtCommand(ytFrame.current, 'playVideo');
-      if (k.kind === 'synth') ctx.current?.resume();
-    };
-    document.addEventListener('visibilitychange', onVis);
-    return () => document.removeEventListener('visibilitychange', onVis);
-  }, [playing, url]);
+  useEffect(() => bindMusicVisibility({
+    pause: pausePlayback,
+    resume: start,
+    shouldResume: () => wantsPlayback.current,
+    onVisibility: hidden => { background.current = hidden; }
+  }), [pausePlayback, start]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
@@ -180,27 +191,30 @@ export function useMusic(url: string, title = '') {
     prevUrl.current = url;
     stopSynth();
     audio.current?.pause();
-    if (playing) start(); else setPlaying(false);
-  }, [url, playing, start]);
+    sendYtCommand(ytFrame.current, 'pauseVideo');
+    wantYt.current = false;
+    if (wantsPlayback.current) start(); else setPlaying(false);
+  }, [url, start]);
 
-  useEffect(() => () => { stopSynth(); audio.current?.pause(); ctx.current?.close(); }, []);
+  useEffect(() => () => {
+    playbackEpoch.current++;
+    wantsPlayback.current = false;
+    wantYt.current = false;
+    preparing.current = false;
+    stopSynth();
+    audio.current?.pause();
+    sendYtCommand(ytFrame.current, 'pauseVideo');
+    void ctx.current?.close().catch(() => {});
+  }, []);
 
   const onYtLoad = useCallback((frame: HTMLIFrameElement) => {
     ytFrame.current = frame;
-    setYtVolume(frame);
-    if (preparing.current) {
-      sendYtCommand(frame, 'mute');
-      sendYtCommand(frame, 'playVideo');
-    }
-    // If a guest opened the card before a slow iframe finished loading, honour
-    // that request as soon as the player becomes available. The music control
-    // remains a second explicit user-tap fallback on restrictive browsers.
-    if (wantYt.current) {
-      sendYtCommand(frame, 'unMute');
-      sendYtCommand(frame, 'playVideo');
-    }
-    window.setTimeout(() => {
+    const syncPlayer = () => {
       setYtVolume(frame);
+      if (document.hidden || background.current) {
+        sendYtCommand(frame, 'pauseVideo');
+        return;
+      }
       if (preparing.current) {
         sendYtCommand(frame, 'mute');
         sendYtCommand(frame, 'playVideo');
@@ -209,7 +223,9 @@ export function useMusic(url: string, title = '') {
         sendYtCommand(frame, 'unMute');
         sendYtCommand(frame, 'playVideo');
       }
-    }, 900);
+    };
+    syncPlayer();
+    window.setTimeout(syncPlayer, 900);
   }, []);
 
   const setYtFrame = useCallback((frame: HTMLIFrameElement | null) => { ytFrame.current = frame; }, []);

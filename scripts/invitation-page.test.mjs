@@ -24,8 +24,26 @@ test('published names update both titles without a rebuild and private config is
     assert.ok(res.body.includes(`<title>${title}</title>`));
     assert.ok(res.body.includes(`content="${title}"`));
     assert.ok(res.body.includes('/assets/app.js'));
-    assert.doesNotMatch(res.body, /PRIVATE_|og:image|og:description|twitter:image/);
+    assert.ok(res.body.includes('<meta name="twitter:title" content="' + title + '" />'));
+    assert.ok(res.body.includes('<meta property="og:image" content="https://hanif-afi.my.id/share-logo-v1.png" />'));
+    assert.doesNotMatch(res.body, /PRIVATE_|og:description|og\.jpg/);
     assert.equal(res.headers['Cache-Control'], 'no-store, max-age=0');
+  }
+});
+
+test('share crawlers receive an absolute logo URL on custom, preview and local domains', async () => {
+  const handler = createInvitationPage({ loadHtml: async () => html, loadConfig: async () => ({ groomName: 'Groom', brideName: 'Bride' }) });
+  for (const [host, origin] of [
+    ['hanif-afi.my.id', 'https://hanif-afi.my.id'],
+    ['invitation-test.vercel.app', 'https://invitation-test.vercel.app'],
+    ['localhost:3001', 'http://localhost:3001'],
+    ['bad.host/" onload="', 'https://hanif-afi.my.id']
+  ]) {
+    const res = response();
+    await handler({ method: 'GET', headers: { host, 'user-agent': 'WhatsApp/2.24.5' } }, res);
+    assert.ok(res.body.includes('<meta property="og:image" content="' + origin + '/share-logo-v1.png" />'));
+    assert.ok(res.body.includes('<meta name="twitter:card" content="summary" />'));
+    assert.doesNotMatch(res.body, /onload=/);
   }
 });
 

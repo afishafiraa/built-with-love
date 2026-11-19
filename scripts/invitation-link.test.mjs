@@ -18,7 +18,7 @@ test('six-character references preserve existing unique tokens without ambiguous
   for (const invalid of ['', '123', '123456789', 'abc12345']) assert.equal(encodeInviteRef(invalid), '');
 });
 
-test('new links contain the full name with plus-separated spaces and a six-character reference', () => {
+test('short names remain complete with plus-separated spaces and a six-character reference', () => {
   const name = 'Shafira Putri Ananda';
   const link = guestLink('https://invitation.example', name, '12345678');
   const url = new URL(link);
@@ -34,12 +34,25 @@ test('new links contain the full name with plus-separated spaces and a six-chara
 
 test('Unicode and query characters in names round-trip without changing the reference identity', () => {
   const original = new URL(guestLink('https://invitation.example', 'Élodie & أحمد + Keluarga', '12345678'));
-  assert.equal(original.searchParams.get('to'), 'Élodie & أحمد + Keluarga');
+  assert.equal(original.searchParams.get('to'), 'Élodie & أحمد + Kelu');
   const key = parseInviteSearch(original.search).key;
   original.searchParams.set('to', 'Another name');
   assert.equal(parseInviteSearch(original.search).key, key);
   original.searchParams.delete('to');
   assert.equal(parseInviteSearch(original.search).key, key);
+});
+
+test('link names are limited to 20 Unicode characters without changing guest identity', () => {
+  const name = 'Muhammad Hanif Musthofa dan Keluarga';
+  const link = new URL(guestLink('https://invitation.example', name, '12345678'));
+  assert.equal(link.searchParams.get('to'), 'Muhammad Hanif Musth');
+  assert.equal(parseInviteSearch(link.search).inviteToken, '12345678');
+  assert.equal(name, 'Muhammad Hanif Musthofa dan Keluarga');
+  const unicode = new URL(guestLink('https://invitation.example', 'あ'.repeat(19) + '🌸extra', '12345678'));
+  assert.equal(unicode.searchParams.get('to'), 'あ'.repeat(19) + '🌸');
+  assert.equal(Array.from(unicode.searchParams.get('to')).length, 20);
+  const spaced = new URL(guestLink('https://invitation.example', '  Guest   Name  ', '12345678'));
+  assert.equal(spaced.searchParams.get('to'), 'Guest Name');
 });
 
 test('legacy links still work and a malformed new reference cannot fall back to a legacy name', () => {

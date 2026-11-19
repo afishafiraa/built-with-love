@@ -87,7 +87,7 @@ function IgButton({ handle, align }: { handle: string; align: 'left' | 'right' }
       <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8">
         <rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4.2" /><circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none" />
       </svg>
-      <span>@{h}</span>
+      <span>INSTAGRAM</span>
     </a>
   );
 }

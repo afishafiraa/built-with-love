@@ -35,6 +35,7 @@ export function currentInviteParam() {
 export function guestLink(origin: string, name: string, inviteToken: string) {
   const ref = encodeInviteRef(inviteToken);
   if (!name.trim() || !ref) return '';
-  const params = new URLSearchParams({ to: name.trim(), ref });
+  const linkName = Array.from(name.trim().normalize('NFC').replace(/\s+/g, ' ')).slice(0, 20).join('').trimEnd();
+  const params = new URLSearchParams({ to: linkName, ref });
   return origin + '/?' + params.toString();
 }
