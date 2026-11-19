@@ -45,6 +45,7 @@ export function useMusic(url: string, title = '') {
   const wantsPlayback = useRef(false);
   const background = useRef(false);
   const playbackEpoch = useRef(0);
+  const activePlayback = useRef(false);
   const kind = musicKind(url);
 
   const stopSynth = () => { window.clearInterval(timer.current); timer.current = undefined; };
@@ -83,14 +84,16 @@ export function useMusic(url: string, title = '') {
     const epoch = ++playbackEpoch.current;
     const failed = () => {
       if (epoch !== playbackEpoch.current) return;
-      wantsPlayback.current = false;
+      stopSynth();
+      activePlayback.current = false;
       setPlaying(false);
     };
     const prepared = preparing.current;
     preparing.current = false;
     const k = musicKind(url);
-    setPlaying(true);
     if (k.kind === 'yt') {
+      activePlayback.current = true;
+      setPlaying(true);
       wantYt.current = true;
       if (prepared) sendYtCommand(ytFrame.current, 'seekTo', [0, true]);
       sendYtCommand(ytFrame.current, 'unMute');
@@ -108,14 +111,23 @@ export function useMusic(url: string, title = '') {
       audio.current.volume = MUSIC_VOLUME;
       if (prepared) audio.current.currentTime = 0;
       audio.current.muted = false;
-      audio.current.play().catch(failed);
+      const element = audio.current;
+      element.play().then(() => {
+        if (epoch !== playbackEpoch.current) return;
+        activePlayback.current = true;
+        setPlaying(true);
+      }).catch(failed);
       return;
     }
     try {
       const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!ctx.current) ctx.current = new AC();
       const c = ctx.current;
-      void c.resume().catch(failed);
+      void c.resume().then(() => {
+        if (epoch !== playbackEpoch.current) return;
+        activePlayback.current = c.state === 'running';
+        setPlaying(activePlayback.current);
+      }).catch(failed);
       const scale = [392, 440, 493.88, 587.33, 659.25, 783.99, 880];
       const pattern = [0, 3, 5, 4, 2, 5, 6, 3];
       let i = 0;
@@ -140,6 +152,7 @@ export function useMusic(url: string, title = '') {
 
   const pausePlayback = useCallback(() => {
     playbackEpoch.current++;
+    activePlayback.current = false;
     stopSynth();
     audio.current?.pause();
     void ctx.current?.suspend().catch(() => {});
@@ -160,8 +173,14 @@ export function useMusic(url: string, title = '') {
     pause: pausePlayback,
     resume: start,
     shouldResume: () => wantsPlayback.current,
+    isPlaying: () => {
+      const k = musicKind(url);
+      if (k.kind === 'file') return !!audio.current && !audio.current.paused && audio.current.readyState >= 3;
+      if (k.kind === 'synth') return ctx.current?.state === 'running' && timer.current !== undefined;
+      return activePlayback.current;
+    },
     onVisibility: hidden => { background.current = hidden; }
-  }), [pausePlayback, start]);
+  }), [pausePlayback, start, url]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
@@ -198,6 +217,7 @@ export function useMusic(url: string, title = '') {
 
   useEffect(() => () => {
     playbackEpoch.current++;
+    activePlayback.current = false;
     wantsPlayback.current = false;
     wantYt.current = false;
     preparing.current = false;
