@@ -280,7 +280,7 @@ export default function Invitation() {
 
           {closed && (<main id="cover-content">
             <Cover t={t} guestName={guest.name}
-              langLabel={lang === 'id' ? 'EN' : 'ID'} onOpen={onOpen}
+              lang={lang} onOpen={onOpen}
               onStart={music.prepare} onToggleLang={toggleLang} />
           </main>)}
 
@@ -330,12 +330,21 @@ function InvitationState({ title, body, retry = false }: { title: string; body: 
 
 type S = { cfg: WeddingConfig; t: Copy };
 
+function LanguageButton({ lang, onToggle }: { lang: Lang; onToggle: () => void }) {
+  const target = lang === 'id' ? 'en' : 'id';
+  return (
+    <button className="bl-icon-btn" type="button" onClick={onToggle} aria-label={target === 'en' ? 'Read in English' : 'Baca dalam Bahasa Indonesia'}>
+      {target.toUpperCase()}
+    </button>
+  );
+}
+
 function InvitationPreferences({ lang, t, playing, onToggleLang, onToggleMusic }: {
   lang: Lang; t: Copy; playing: boolean; onToggleLang: () => void; onToggleMusic: () => void;
 }) {
   return (
     <div className="ig-corner-controls" role="group" aria-label={lang === 'en' ? 'Language and music' : 'Bahasa dan musik'}>
-      <button className="bl-icon-btn" type="button" onClick={onToggleLang} aria-label={lang === 'id' ? 'Read in English' : 'Baca dalam Bahasa Indonesia'}>{lang === 'id' ? 'EN' : 'ID'}</button>
+      <LanguageButton lang={lang} onToggle={onToggleLang} />
       <button className="bl-icon-btn" type="button" onClick={onToggleMusic} aria-label={playing ? t.musicOn : t.musicOff} aria-pressed={playing}>
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
           {playing ? <path d="M9 5v14M15 5v14" /> : <><path d="M9 18V5l11-2v13M9 8l11-2" /><ellipse cx="6" cy="18" rx="3" ry="2" /><ellipse cx="17" cy="16" rx="3" ry="2" /></>}
@@ -372,8 +381,8 @@ function Petals() {
   );
 }
 
-function Cover({ t, guestName, langLabel, onOpen, onStart, onToggleLang }: {
-  t: Copy; guestName: string; langLabel: string;
+function Cover({ t, guestName, lang, onOpen, onStart, onToggleLang }: {
+  t: Copy; guestName: string; lang: Lang;
   onOpen: () => void; onStart: () => void; onToggleLang: () => void;
 }) {
   const assets = useContext(Assets);
@@ -402,7 +411,7 @@ function Cover({ t, guestName, langLabel, onOpen, onStart, onToggleLang }: {
         <button className="bl-btn ig-cover-button" onClick={start} disabled={playing} aria-busy={playing}>{t.openInvite}</button>
         <div className="ig-cover-rule" aria-hidden="true"><span /></div>
       </div>
-      <div className="ig-corner-controls"><button type="button" className="bl-icon-btn" onClick={onToggleLang} aria-label={langLabel === 'EN' ? 'Read in English' : 'Baca dalam Bahasa Indonesia'}>{langLabel}</button></div>
+      <div className="ig-corner-controls"><LanguageButton lang={lang} onToggle={onToggleLang} /></div>
     </div>
   );
 }
@@ -984,13 +993,13 @@ function Wishes({ t, guest, preview }: { t: Copy; guest: GuestInfo; preview: boo
         </div>
         {preview && <p className="ig-preview-note">{t.wishesPreview}</p>}
         <form className="ig-wish-form" noValidate aria-busy={busy} onSubmit={event => { event.preventDefault(); void submit(); }}>
-          <p id={formId + '-allowance'} className="ig-wish-allowance" role={sentCount >= 2 ? 'status' : undefined}>{sentCount >= 2 ? t.wishLimit : t.wishAllowance}</p>
+          {sentCount >= 2 && <p id={formId + '-allowance'} className="ig-wish-allowance" role="status">{t.wishLimit}</p>}
           <label htmlFor={formId + '-name'}>{t.nameLabel}</label>
           <input id={formId + '-name'} className="bl-field" value={name} onChange={e => setName(e.target.value)} placeholder={t.namePh} autoComplete="name" required aria-invalid={noteError && !name.trim()} aria-describedby={note ? formId + '-note' : undefined} />
           <label htmlFor={formId + '-wish'}>{t.wishKicker}</label>
           <textarea id={formId + '-wish'} className="bl-field" value={text} onChange={e => { setText(e.target.value); requestId.current = ''; }} rows={4} placeholder={t.wishPh} maxLength={600} required aria-invalid={noteError && !text.trim()} aria-describedby={note ? formId + '-note' : undefined} />
           {note && <div id={formId + '-note'} className={'bl-msg ' + (noteError ? 'is-error' : '')} role={noteError ? 'alert' : 'status'}>{note}</div>}
-          <button type="submit" className="bl-btn ig-primary-action" disabled={busy || sentCount >= 2} aria-describedby={formId + '-allowance'}>{busy ? t.sending : t.sendWish}</button>
+          <button type="submit" className="bl-btn ig-primary-action" disabled={busy || sentCount >= 2} aria-describedby={sentCount >= 2 ? formId + '-allowance' : undefined}>{busy ? t.sending : t.sendWish}</button>
         </form>
         <div ref={listRef} tabIndex={-1} role="region" aria-label={t.wishKicker} className="ig-wish-list" aria-busy={loading}>
           {loading && <p className="ig-feed-state" role="status">{t.wishesLoading}</p>}
